@@ -14,7 +14,7 @@ def encode_image(image_path):
 
 # Path to your image
 image_path_0 = "test_0.png"
-image_path_1 = "test_0.png"
+image_path_1 = "test_1.png"
 
 # Getting the base64 string
 base64_image_0 = encode_image(image_path_0)
@@ -33,13 +33,18 @@ payload = {
       "content": [
         {
           "type": "text",
-          "text": "The robot executes the skill: pickup(apple). What are the change of truth values regarding the predicates: hand_is_empty, picked_up(Apple)?"
+          "text": "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
         },
         {
           "type": "image_url",
           "image_url": {
-            "url": f"data:image/jpeg;base64,{base64_image_0}",
             "url": f"data:image/jpeg;base64,{base64_image_1}"
+          }
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_image_0}"
           }
         }
       ]

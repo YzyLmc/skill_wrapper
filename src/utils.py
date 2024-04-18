@@ -1,4 +1,6 @@
 from openai import OpenAI
+import base64
+import requests
 from time import sleep
 import logging
 import json
@@ -15,6 +17,8 @@ import sys
 from copy import deepcopy
 import itertools
 
+# OpenAI API Key
+api_key=os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # General utils
@@ -61,7 +65,11 @@ def save_to_file(data, fpth, mode=None):
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
 
-def prompt2msg(query_prompt):
+def encode_image(image_path):
+  with open(image_path, "rb") as image_file:
+    return base64.b64encode(image_file.read()).decode('utf-8')
+
+def prompt2msg(query_prompt, vision=False):
     """
     Make prompts for GPT-3 compatible with GPT-3.5 and GPT-4.
     Support prompts for
@@ -77,20 +85,10 @@ def prompt2msg(query_prompt):
     examples = prompt_splits[1: -1]
     query = prompt_splits[-1]
 
-    msg = [{"role": "system", "content": task_description}]
-    # for example in examples:
-    #     if "\n" in example:
-    #         example_splits = example.split("\n")
-    #         q = '\n'.join(example_splits[0:-1])  # every line except the last in 1 example block
-    #         a_splits = example_splits[-1].split(" ")  # last line is the response
-    #         q += f"\n{a_splits.pop(0)}"
-    #         a = " ".join(a_splits)
-    #         msg.append({"role": "user", "content": q})
-    #         msg.append({"role": "assistant", "content": a})
-    #     else:  # info should be in system prompt, e.g., landmark list
-    #         msg[0]["content"] += f"\n{example}"
-    # msg.append({"role": "user", "content": query})
-    msg.append({"role": "user", "content": "\n\n".join(prompt_splits[1:])})
+    tag = "text" if vision else "content"
+    msg = [{"role": "system", tag: task_description}]
+    if len(msg) > 1:
+        msg.append({"role": "user", tag: "\n\n".join(prompt_splits[1:])})
     # breakpoint()
     return msg
 
@@ -103,9 +101,10 @@ class GPT4:
         self.stop = stop
 
     def generate(self, query_prompt):
+        '''query_prompt: query with task description and in-contex examples splited with \n\n'''
         complete = False
         ntries = 0
-        while not complete:
+        while not complete and ntries < 15:
             # try:
                 raw_responses = client.chat.completions.create(model=self.engine,
                 messages=prompt2msg(query_prompt),
@@ -125,3 +124,47 @@ class GPT4:
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses.choices]
         return responses
+    
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=300):
+        '''separate function on purpose to call multimodal API.'''
+        complete = False
+        ntries = 0
+
+        headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+        }
+        txts = prompt2msg(query_prompt, vision=True)
+        payload = {
+            "model": "gpt-4-turbo",
+            "messages": [],
+            "max_tokens": max_tokens}
+        msg = {"role": "user", "content": []}
+        for line_txt in txts:
+            line_txt["type"] = "text"
+            msg["content"].append(line_txt)
+        for img in imgs:
+            base64_img = encode_image(img)
+            line_img = {"type": "image_url", "image_url": {
+            "url": f"data:image/jpeg;base64,{base64_img}"
+          }}
+            msg["content"].append(line_img)
+        payload["messages"].append(msg)
+
+        # while not complete and ntries < 15:
+        raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+
+        if self.n == 1:
+            responses = [raw_responses["choices"][0]["message"]["content"].strip()]
+        else:
+            responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
+        return responses
+
+if __name__ == "__main__":
+    gpt = GPT4()
+    imgs = ["test_imgs/test_0.png", "test_imgs/test_1.png"]
+    txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
+
+    responses = gpt.generate_multimodal(txt, imgs)
+    # responses = gpt.generate(txt)
+    print(responses)
