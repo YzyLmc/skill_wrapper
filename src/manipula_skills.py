@@ -14,7 +14,11 @@ def MoveRight(controller):
     pass
 
 def GoTo(obj_name):
-    '''The goto function has to be imperfect'''
+    '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
+    pass
+
+def LookAt(obj_name):
+    '''rotate the base to center the obj. No idea how to look up or down for centering.'''
     pass
 
 # Gripper movement

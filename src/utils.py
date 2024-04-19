@@ -93,7 +93,7 @@ def prompt2msg(query_prompt, vision=False):
     return msg
 
 class GPT4:
-    def __init__(self, engine="gpt-4-0613", temp=0.0, max_tokens=128, n=1, stop=['\n']):
+    def __init__(self, engine="gpt-4-0613", temp=0.0, max_tokens=128, n=1, stop=['\n\n']):
         self.engine = engine
         self.temp = temp
         self.max_tokens = max_tokens
@@ -125,8 +125,8 @@ class GPT4:
             responses = [choice["message"]["content"].strip() for choice in raw_responses.choices]
         return responses
     
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=300):
-        '''separate function on purpose to call multimodal API.'''
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=50):
+        '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
         ntries = 0
 
@@ -153,6 +153,7 @@ class GPT4:
 
         # while not complete and ntries < 15:
         raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+        complete = True
 
         if self.n == 1:
             responses = [raw_responses["choices"][0]["message"]["content"].strip()]
