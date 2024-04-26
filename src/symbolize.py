@@ -1,16 +1,17 @@
 'Get symbolic representation from skill semantic info and observation'
 from utils import GPT4, load_from_file
 
-def predicates_per_skill(prompt, obs, model):
+def predicates_per_skill(prompt, obs, model, skill=None):
     '''
     Propose set of predicates for one skill and observations (optionally)
     '''
     # return model.generate_multimodal(prompt, obs)
     return model.generate(prompt)
 
-def task_proposal():
+def task_proposal(prompt):
     '''
-    Proposing task for each predicate and skill. It should be able to prpoposed based on existing roll-outs.
+    Proposing task for each predicate of a skill.
+    It should be able to prpoposed based on existing roll-outs.
     '''
     pass
 
@@ -31,6 +32,11 @@ def predicates2effect():
     Compose predicates to effect
     '''
     pass
+
+def symbolize():
+    '''
+    
+    '''
 
 if __name__ == "__main__":
     imgs = ["test_imgs/test_0.png"]
