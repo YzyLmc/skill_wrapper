@@ -1,0 +1,6 @@
+(define (problem move-room)
+    (:domain moving)
+    (:objects room1 room2 - room)
+    (:init (room room1) (room room2) (robot-at room1))
+    (:goal (robot-at room2))
+)
