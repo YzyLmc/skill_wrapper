@@ -4,6 +4,10 @@ from PIL import Image
 # from procthor.generation import PROCTHOR10K_ROOM_SPEC_SAMPLER, HouseGenerator
 import copy
 import pdb
+
+import os
+import random 
+
 '''
 Train Set: dataset["train"]
 Train Element dataset["train"][0]
@@ -55,6 +59,8 @@ class ManipulaTHOR:
                 fieldOfView=60
             )
         
+        self.controller.step(action="SetHandSphereRadius", radius=0.1)
+        
         self.last_observation_frame = None
 
         self.split = split
@@ -62,6 +68,7 @@ class ManipulaTHOR:
     def change_scene(self, new_scene_id):
         new_house = self.dataset[self.split][new_scene_id]
         self.controller.reset(scene=new_house)
+        self.current_scene = new_house
 
     
     def get_top_down_frame(self):
@@ -98,26 +105,64 @@ class ManipulaTHOR:
         
         return Image.fromarray(observation)
     
-    def step(self, action=None, **kwargs):
+    def step(self, action_name=None, **kwargs):
 
 
-        self.event = self.controller.step(action=action)
+        self.controller.step(action=action_name, kwargs)
 
-        return self.event
+   
+   
+   
+if __name__ == "__main__":   
 
-
-if __name__ =="__main__":
     test = ManipulaTHOR()
-
-    pdb.set_trace()
-    print(current_scene['objects'].keys())
-    for i in range(0,len(test.dataset["train"]),5):
-
+    for i in [5,10,25,35,40,50,55,65,90,95]:
         print("Scene: ", i)
         test.change_scene(i)
-        top_down_frame = test.get_top_down_frame()
-        top_down_frame.show()
-        pdb.set_trace()
+
+        positions = test.controller.step(action="GetReachablePositions").metadata["actionReturn"]
+
+        for i in range(10):
+            random_position = random.choice(positions)
+
+            for y_val in [0, 90, 180, 270]:
+                event = test.controller.step(action="Teleport", position = random_position, rotation=dict(x=0, y=y_val, z=0), horizon=30, standing=True)
+                pdb.set_trace()
+
+
+    # for i in range(0,len(test.dataset["train"]),5):
+
+    #     print("Scene: ", i)
+    #     test.change_scene(i)
+    #     print(test.current_scene['rooms'])
+
+    #     all_objects =  set([])
+    #     unexplored_objects = copy.copy(test.current_scene['objects'])
+
+    #     pdb.set_trace()
+    #     while len(unexplored_objects) > 0:
+
+    #         for obj in unexplored_objects:
+
+    #             all_objects.add(obj['assetId'])
+            
+    #             if 'children' in list(obj.keys()):
+    #                 unexplored_objects += obj['children']
+
+    #             unexplored_objects.remove(obj)
+        
+        
+    #     print('Total Objects: ', len(all_objects))
+    #     print(all_objects)
+
+    #     pdb.set_trace()
+    #     save = input('Save: [y/n]')
+
+    #     if str(save)=='y':
+    #         top_down_frame = test.get_top_down_frame()
+    #         top_down_frame.show()
+    #     else:
+    #         continue 
 
     
-    #potential scenes: 
+    #potential scenes: 5, 10, 25, 35, 40, 50, 55, 65, 90, 95
