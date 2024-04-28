@@ -184,16 +184,15 @@ class AI2ThorInteractor(object):
 
         self.last_event = None
 
+
+        #create save dir if it doesn't already exist
+        if not os.path.isdir(save_dir):
+            os.mkdir(save_dir)
         
 
     def interact(
         self,
         controller,
-        semantic_segmentation_frame=False,
-        instance_segmentation_frame=False,
-        depth_frame=False,
-        color_frame=False,
-        metadata=False,
     ):
 
         if not sys.stdout.isatty():
@@ -354,7 +353,7 @@ class AI2ThorInteractor(object):
 
 
 
-    def save_image_and_state(self):
+    def save_image_and_state(self, controller):
 
         self.last_event
         self.save_dir
@@ -395,23 +394,40 @@ class AI2ThorInteractor(object):
         save_image(self.image_counter, 'depth', array, flip_br=False)
 
         # 5) Save Metadata
-        json_write('metadata', self.last_event.metadata)
+        metadata = copy(self.last_event.metadata)
+        metadata["arm"]["arm_base_height"] = controller.robot_arm_base_height
+        json_write('metadata', metadata)
 
-if __name__ == "__main__":   
 
-    test = ManipulaTHOR()
-    for i in [5,10,25,35,40,50,55,65,90,95]:
-        print("Scene: ", i)
-        test.change_scene(i)
 
-        positions = test.controller.step(action="GetReachablePositions").metadata["actionReturn"]
+def run_interactor_for_scene():
+    print('Scene Options: 5, 10, 25, 35, 40, 50, 55, 65, 90, 95')
+    scene_num = int(input("Enter Scene: "))
 
-        for i in range(10):
-            random_position = random.choice(positions)
+    env = ManipulaTHOR()
+    env.change_scene(scene_num)
+    interactor = AI2ThorInteractor(save_dir='./dataset')
 
-            for y_val in [0, 90, 180, 270]:
-                event = test.controller.step(action="Teleport", position = random_position, rotation=dict(x=0, y=y_val, z=0), horizon=30, standing=True)
-                pdb.set_trace()
+    #run ManipulaTHOR interactor
+    interactor.interact(env.controller)
+
+if __name__ == "__main__":  
+
+    run_interactor_for_scene()
+   
+
+    # for i in [5,10,25,35,40,50,55,65,90,95]:
+    #     print("Scene: ", i)
+    #     test.change_scene(i)
+
+    #     positions = test.controller.step(action="GetReachablePositions").metadata["actionReturn"]
+
+    #     for i in range(10):
+    #         random_position = random.choice(positions)
+
+    #         for y_val in [0, 90, 180, 270]:
+    #             event = test.controller.step(action="Teleport", position = random_position, rotation=dict(x=0, y=y_val, z=0), horizon=30, standing=True)
+    #             pdb.set_trace()
 
 
     # for i in range(0,len(test.dataset["train"]),5):
