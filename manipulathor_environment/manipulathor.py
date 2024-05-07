@@ -309,6 +309,10 @@ class AI2ThorInteractor(object):
 
             elif 'openable' in self.special_objects and (a['action'] == "OpenObject" or a['action']=="CloseObject"):
                 
+                
+                if len(self.last_event.metadata['arm']['heldObjects']) > 0:
+                    continue
+                
                 min_dist_obj = None; min_distance = float('inf')
 
                 
@@ -329,6 +333,9 @@ class AI2ThorInteractor(object):
                 a['objectId'] = min_dist_obj
 
             elif 'togglable' in self.special_objects and (a['action'] == "ToggleObjectOff" or a['action']=="ToggleObjectOn"):
+
+                if len(self.last_event.metadata['arm']['heldObjects']) > 0:
+                    continue
                 
                 min_dist_obj = None; min_distance = float('inf')
 
@@ -336,13 +343,14 @@ class AI2ThorInteractor(object):
                 for obj in self.special_objects['togglable']:
                     index = manipulathor.object_id_to_index[obj]
 
-                    obj_position = self.last_event.metadata["objects"][index]['position']
+                    obj_center = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['center']
+                    obj_size = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['size']
+
                     arm_position = self.last_event.metadata["arm"]["handSphereCenter"]
                     
-                
-                    if euclidean_distance(obj_position, arm_position) <= ARM_INFLUENCE_RADIUS and euclidean_distance(obj_position, arm_position) < min_distance:
+                    if sphere_intersects_cuboid(arm_position, ARM_GRASPING_RADIUS, obj_center, obj_size) and euclidean_distance(obj_center, arm_position) < min_distance:
 
-                        min_distance = euclidean_distance(obj_position, arm_position)
+                        min_distance = euclidean_distance(obj_center, arm_position)
                         min_dist_obj = obj
 
                 a['objectId'] = min_dist_obj
@@ -578,7 +586,7 @@ class AI2ThorInteractor(object):
         metadata = copy.copy(self.last_event.metadata)
         metadata["arm"]["arm_base_height"] = robot_arm_base_height
         metadata["special_objects"] = self.special_objects
-        json_write('metadata', metadata)
+        json_write(self.image_counter, metadata)
 
 
 
