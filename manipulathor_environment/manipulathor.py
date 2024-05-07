@@ -223,7 +223,8 @@ class AI2ThorInteractor(object):
             "u": dict(action="ToggleObjectOff", objectId=None),
             "i": dict(action="ToggleObjectOn", objectId=None),
             #slice object
-            "f": dict(action="SliceObject", objectId=None)
+            "f": dict(action="SliceObject", objectId=None),
+            "g": dict(action="UseUpObject", objectId=None)
             
         }
 
@@ -261,6 +262,28 @@ class AI2ThorInteractor(object):
 
             def euclidean_distance(v1, v2):
                 return np.sqrt((v2['x']-v1['x'])**2 + (v2['y']-v1['y'])**2 + (v2['z']-v1['z'])**2)
+
+            def sphere_intersects_cuboid(sphere_center, radius, obj_center, obj_size):
+                c_x, c_y, c_z = sphere_center['x'], sphere_center['y'], sphere_center['z']
+                x1, x2 = obj_center['x']-obj_size['x']/2, obj_center['x'] + obj_size['x']/2
+                y1, y2 = obj_center['y']-obj_size['y']/2, obj_center['y'] + obj_size['y']/2
+                z1, z2 = obj_center['z']-obj_size['z']/2, obj_center['z'] + obj_size['z']/2
+                
+                # Check if the center of the sphere is inside the cuboid
+                if (x1 <= c_x <= x2) and (y1 <= c_y <= y2) and (z1 <= c_z <= z2):
+                    return True
+                
+                # If center of sphere is not in cuboid, find distance to closest surface on cuboid
+                dx = min(abs(c_x-x1), abs(c_x - x2))
+                dy = min(abs(c_y-y1), abs(c_y - y2))
+                dz = min(abs(c_z-z1), abs(c_z - z2))
+
+                # check if part of sphere (not center) inside cuboid
+                if np.sqrt(dx**2 + dy**2 + dz**2) <= radius:
+                    return True
+
+                return False
+    
             
             if a is None and char == "p":
 
@@ -292,13 +315,15 @@ class AI2ThorInteractor(object):
                 for obj in self.special_objects['openable']:
                     index = manipulathor.object_id_to_index[obj]
 
-                    obj_position = self.last_event.metadata["objects"][index]['position']
+                    #obj_position = self.last_event.metadata["objects"][index]['position']
+                    obj_center = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['center']
+                    obj_size = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['size']
+
                     arm_position = self.last_event.metadata["arm"]["handSphereCenter"]
                     
-                    #euclidean_distance(obj_position, arm_position) <= ARM_GRASPING_RADIUS
-                    if euclidean_distance(obj_position, arm_position) <= ARM_INFLUENCE_RADIUS and euclidean_distance(obj_position, arm_position) < min_distance:
+                    if sphere_intersects_cuboid(arm_position, ARM_GRASPING_RADIUS, obj_center, obj_size) and euclidean_distance(obj_center, arm_position) < min_distance:
 
-                        min_distance = euclidean_distance(obj_position, arm_position)
+                        min_distance = euclidean_distance(obj_center, arm_position)
                         min_dist_obj = obj
 
                 a['objectId'] = min_dist_obj
@@ -341,11 +366,31 @@ class AI2ThorInteractor(object):
 
                 a['objectId'] = min_dist_obj
 
+            elif 'usable' in self.special_objects and (a['action']=="UseUpObject"):
+                
+                min_dist_obj = None; min_distance = float('inf')
+
+                
+                for obj in self.special_objects['usable']:
+                    index = manipulathor.object_id_to_index[obj]
+
+                    #obj_position = self.last_event.metadata["objects"][index]['position']
+                    obj_center = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['center']
+                    obj_size = self.last_event.metadata["objects"][index]['axisAlignedBoundingBox']['size']
+
+                    arm_position = self.last_event.metadata["arm"]["handSphereCenter"]
+                    
+                    if sphere_intersects_cuboid(arm_position, ARM_GRASPING_RADIUS, obj_center, obj_size) and euclidean_distance(obj_center, arm_position) < min_distance:
+
+                        min_distance = euclidean_distance(obj_center, arm_position)
+                        min_dist_obj = obj
+
+                a['objectId'] = min_dist_obj
             event = manipulathor.controller.step(a)
             
 
-            if a['action'] == "PickupObject":
-                pdb.set_trace()
+            # if a['action'] == "PickupObject":
+            #     pdb.set_trace()
 
             self.last_event = copy.copy(event)
             
@@ -354,6 +399,7 @@ class AI2ThorInteractor(object):
             pickupable_objects = []
             toggleable_objects = []
             sliceable_objects = []
+            usable_objects = []
             
 
             self.counter += 1
@@ -387,7 +433,9 @@ class AI2ThorInteractor(object):
                         
                         if o["sliceable"]:
                             sliceable_objects.append(o["objectId"])
-
+                        
+                        if o["canBeUsedUp"]:
+                            usable_objects.append(o["objectId"])
                         if len(event.metadata["inventoryObjects"]) > 0:
                             inventoryObjectId = event.metadata["inventoryObjects"][0][
                                 "objectId"
@@ -437,6 +485,7 @@ class AI2ThorInteractor(object):
             self.special_objects['openable'] = openable_objects
             self.special_objects['togglable'] = toggleable_objects
             self.special_objects['sliceable'] = sliceable_objects
+            self.special_objects['usable'] = usable_objects
 
             # print("Position: {}".format(event.metadata["agent"]["position"]))
             # print(command_message)
@@ -539,7 +588,7 @@ def run_interactor_for_scene():
     print('Scene Options: 5, 10, 25, 35, 40, 50, 55, 65, 90, 95 or FloorPlan{X}')
     scene_num = input("Enter Scene: ")
 
-    if len(scene_num) == 1:
+    if not scene_num.startswith('FloorPlan'):
         scene_num = int(scene_num)
     else:
         scene_num = str(scene_num)
@@ -603,7 +652,22 @@ if __name__ == "__main__":
     #     else:
     #         continue 
 
-    
+
+    #Training Scenes: 3 iTHOR + 3 ProcTHOR
+    #ProcTHOR: Scene 10, Scene 40, Scene 90
+    #iTHOR: FloorPlan1, FloorPlan311, FloorPlan417
+
+
+    #Testing Scenes: 3 iTHOR + 3 ProcTHOR
+    #ProcTHOR: Scene 25, Scene 35, Scene 108
+    #iTHOR: FloorPlan4, FloorPlan305, FloorPlan403
+
+
+
+    #Scene 50, Scene 55, Scene 65 ^^
+    #UNUSED: Scene 5,
+
+
     #potential scenes: 5, 10, 25, 35, 40, 50, 55, 65, 90, 95
     #iTHOR scenes: FloorPlan1, FloorPlan4, FloorPlan311, FloorPlan305, FloorPlan 403, FloorPlan413
 
