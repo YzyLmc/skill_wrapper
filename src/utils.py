@@ -14,8 +14,10 @@ import numpy as np
 import dill
 import random
 import sys
+import copy
 from copy import deepcopy
 import itertools
+from PIL import Image
 
 # OpenAI API Key
 api_key=os.getenv("OPENAI_API_KEY")
@@ -160,6 +162,31 @@ class GPT4:
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
         return responses
+
+# ai2thor utils
+def get_top_down_frame(controller):
+    # Setup the top-down camera
+    event = controller.step(action="GetMapViewCameraProperties", raise_for_failure=True)
+    breakpoint()
+    pose = copy.deepcopy(event.metadata["actionReturn"])
+    bounds = event.metadata["sceneBounds"]["size"]
+    max_bound = max(bounds["x"], bounds["z"])
+
+    pose["fieldOfView"] = 50
+    pose["position"]["y"] += 1.1 * max_bound
+    pose["orthographic"] = False
+    pose["farClippingPlane"] = 50
+    del pose["orthographicSize"]
+
+    # add the camera to the scene
+    event = controller.step(
+        action="AddThirdPartyCamera",
+        **pose,
+        skyboxColor="white",
+        raise_for_failure=True,
+    )
+    top_down_frame = event.third_party_camera_frames[-1]
+    return Image.fromarray(top_down_frame)
 
 if __name__ == "__main__":
     gpt = GPT4()

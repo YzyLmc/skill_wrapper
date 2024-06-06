@@ -13,29 +13,29 @@ def MoveLeft(controller):
 def MoveRight(controller):
     pass
 
-def GoTo(obj_name):
+def GoTo(controller, obj_name):
     '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
     pass
 
-def LookAt(obj_name):
+def LookAt(controller, obj_name):
     '''rotate the base to center the obj. No idea how to look up or down for centering.'''
     pass
 
 # Gripper movement
-def GripperUp():
+def GripperUp(controller):
     pass
 
-def GripperDown():
+def GripperDown(controller):
     pass
 
-def GripperForward():
+def GripperForward(controller):
     pass
 
-def GripperBackward():
+def GripperBackward(controller):
     pass
 
-def PickUp(obj_names):
+def PickUp(controller, obj_name):
     pass
 
-def Drop():
+def Drop(controller):
     pass
