@@ -28,6 +28,12 @@ def GripperUp(controller):
 def GripperDown(controller):
     pass
 
+def GripperRight(controller):
+    pass
+
+def GripperLeft(controller):
+    pass
+
 def GripperForward(controller):
     pass
 
@@ -38,4 +44,10 @@ def PickUp(controller, obj_name):
     pass
 
 def Drop(controller):
+    pass
+
+def Open(controller):
+    pass
+
+def Close(controller):
     pass
