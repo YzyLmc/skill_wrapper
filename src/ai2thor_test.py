@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import random
 from PIL import Image
 
@@ -17,6 +18,15 @@ def dist_pose(obj1, obj2):
     p2 = np.array([x2, y2, z2])
 
     return np.sqrt(np.sum((p1-p2)**2, axis=0))
+
+def viewing_angle(agent, pos):
+    rot1 = agent['rotation']['y']
+    x1, z1 = agent['position']['x'], agent['position']['z']
+    x2, z2 = pos['x'], pos['z']
+    rot2 = math.degrees(math.atan2(z2-z1, x2-x1))
+    breakpoint()
+    print(np.abs(rot2- rot1))
+    return np.abs(rot2- rot1)
 
 def LookAt(metadata, object):
     pass
@@ -69,46 +79,54 @@ event = controller.step(
     action="GetInteractablePoses",
     # objectId=drawer_id,
     objectId=laptop_id,
-    horizons=np.linspace(-30, 60, 30),
-    standings=[True, False]
+    horizons=np.linspace(-30, 0),
+    standings=[True]
 )
 poses = event.metadata["actionReturn"]
 
 # teleport to interactable pose
 # pose = random.choice(poses)
+# pose = {'x': 3.25, 'y': 0.9009991884231567, 'z': 0.4999999701976776, 'rotation': 270.0, 'standing': True, 'horizon': -4.285714149475098}
 
 drawer = get_obj(drawer_id, event.metadata["objects"])[0]
 laptop = get_obj(laptop_id, event.metadata["objects"])[0]
 creditcard = get_obj(creditcard_id, event.metadata["objects"])[0]
 
-pose = min(poses, key = lambda p:dist_pose(p, drawer['position']))
-pose = min(poses, key = lambda p:dist_pose(p, laptop['position']))
-pose = min(poses, key = lambda p:dist_pose(p, creditcard['position']))
-pose = min(poses, key = lambda p:dist_pose(p, drawer['position']))
+# poses = [p for p in poses if viewing_angle(event.metadata["agent"], p) < 300]
 
-event = controller.step("Teleport", **pose)
+# pose = min(poses, key = lambda p:dist_pose(p, drawer['position']))
+pose = min(poses, key = lambda p:dist_pose(p, laptop['position']))
+poses = sorted(poses, key=lambda p:dist_pose(p, laptop['position']))
+pose = random.choice(poses[:10])
+# pose = min(poses, key = lambda p:dist_pose(p, creditcard['position']))
+# pose = min(poses, key = lambda p:dist_pose(p, drawer['position']))
+
+event = controller.step("TeleportFull", **pose)
 # controller.step("Teleport", **pose)
 im = Image.fromarray(event.frame)
 im.show()
 # print state of the drawer
-
+# angle = viewing_angle(event.metadata['agent'], drawer['position'])
+# angle = viewing_angle(event.metadata['agent'], laptop['position'])
+event = controller.step("LookDown")
+# print(angle)
 breakpoint() # drawer should be closed
 im = Image.fromarray(event.frame)
 im.show()
 # move to the drawer
-event = controller.step("MoveArm",
-                # position=laptop_pos,
-                position=drawer['position'],
-                coordinateSpace="world",
-                returnToStart=False)
-breakpoint()
-# open it
 event = controller.step(
-    action="OpenObject",
-    objectId=drawer_id,
-    openness=1,
-    forceAction=False
-)
+    "MoveArm",
+    position=laptop["position"],
+    coordinateSpace="world",
+    returnToStart=False
+    )
+
+# # open it
+# event = controller.step(
+#     action="OpenObject",
+#     objectId=drawer_id,
+#     openness=1,
+# )
 
 breakpoint()
 
@@ -121,20 +139,19 @@ remote_pos = remote["position"]
 laptop_pos = laptop['position']
 creditcard_pos = creditcard["position"]
 
-event = controller.step("MoveArm",
-                # position=laptop_pos,
-                position=creditcard_pos,
-                coordinateSpace="world",
-                returnToStart=False)
+# event = controller.step("MoveArm",
+#                 # position=laptop_pos,
+#                 position=laptop_pos,
+#                 coordinateSpace="world",
+#                 returnToStart=False)
 
 im = Image.fromarray(event.frame)
 im.show()         
-breakpoint()    
+# breakpoint()    
 # Pick the remote up
 event = controller.step(
     action="PickupObject",
-    # objectId=laptop_id,
-    objectIdCandidates=[creditcard_id],
+    objectIdCandidates=[laptop_id],
 )
 # see if it's opened
 drawer = get_obj(drawer_id, event.metadata["objects"])

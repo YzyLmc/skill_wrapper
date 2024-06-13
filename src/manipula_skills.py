@@ -1,21 +1,62 @@
 '''wrapped skills for manipulaThor agent desgined for the adaptation pipeline, both high-level and low-level'''
 
 # Base movement
-def MoveForward(controller):
-    pass
+def MoveForward(controller, interval=0.25):
+    event = controller.step(
+        action='MoveAgent',
+                    ahead=0.25
+    )
+    return event
 
 def MoveBackward(controller):
-    pass
+    event = controller.step(
+        action='MoveAgent',
+        ahead=-0.25
+    )
+    return event
 
 def MoveLeft(controller):
-    pass
+    event = controller.step(
+        action='MoveAgent',
+        right=-0.25
+    )
+    return event
 
 def MoveRight(controller):
-    pass
+    event = controller.step(
+        action='MoveAgent',
+        right=0.25
+    )
+    return event
 
-def GoTo(controller, obj_name):
+def TurnLeft(controller):
+    event = controller.step(
+        action='RotateAgent',
+        degrees=-30
+    )
+
+def TurnRight(controller):
+    event = controller.step(
+        action='RotateAgent',
+        degrees=30
+    )
+
+def GoTo(controller, obj_name, metadata):
     '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
-    pass
+    def dist_pose(obj1, obj2):
+        x1, y1, z1 = obj1["x"], obj1["y"], obj1["z"]
+        x2, y2, z2 = obj2["x"], obj2["y"], obj2["z"]
+        p1 = np.array([x1, y1, z1])
+        p2 = np.array([x2, y2, z2])
+
+        return np.sqrt(np.sum((p1-p2)**2, axis=0))
+
+    obj_names = [obj['objectId'] for obj in metadata["objects"]]
+    obj = [obj for obj in openable_objs if obj_name in obj][0]
+    poses = sorted(poses, key=lambda p:dist_pose(p, laptop['position']))
+    pose = random.choice(poses[:10])
+    event = controller.step("TeleportFull", **pose)
+    return event
 
 def LookAt(controller, obj_name):
     '''rotate the base to center the obj. No idea how to look up or down for centering.'''
@@ -23,29 +64,95 @@ def LookAt(controller, obj_name):
 
 # Gripper movement
 def GripperUp(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=0.5, z=0),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
 def GripperDown(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=-0.5, z=0),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
 def GripperRight(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0.5, y=0, z=0),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
 def GripperLeft(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=-0.5, y=0, z=0),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
 def GripperForward(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=0, z=0.5),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
 def GripperBackward(controller):
-    pass
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=0, z=0.5),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+    return event
 
-def PickUp(controller, obj_name):
-    pass
+def PickUp(controller, obj_name, metadata):
+    obj_names = [obj['objectId'] for obj in metadata["objects"]]
+    obj = [obj for obj in openable_objs if obj_name in obj][0]
+    poses = sorted(poses, key=lambda p:dist_pose(p, laptop['position']))
+    pose = random.choice(poses[:10])
+    event = controller.step(
+        "MoveArm",
+        position=obj["position"],
+        coordinateSpace="world",
+        returnToStart=False
+    )
+    event = controller.step(
+        action="PickupObject",
+        objectIdCandidates=[obj['objectId']],
+    )
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=0.5, z=0),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=False
+    )
+
+    return event
 
 def Drop(controller):
-    pass
+    event = controller.step(action="ReleaseObject")
+    return event
 
+# not for the workshop. Too tricky to implement
 def Open(controller):
     pass
 
