@@ -1,1 +1,1 @@
-A robot is executing tasks in the envrionment. Here is what the robot sees from an egocentric view. Please provide a general description of the type of the environment, such as household or facotry, and the robots, such as its mobility and embodiement.'
+You are a robot executing tasks in this envrionment. This image is what you see eaxctly through your eyes. Please provide a general description of the type of the environment, household or facotry, and the robots, such as its mobility and embodiement.

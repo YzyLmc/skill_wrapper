@@ -89,7 +89,7 @@ def prompt2msg(query_prompt, vision=False):
 
     tag = "text" if vision else "content"
     msg = [{"role": "system", tag: task_description}]
-    if len(msg) > 1:
+    if len(prompt_splits) > 1:
         msg.append({"role": "user", tag: "\n\n".join(prompt_splits[1:])})
     # breakpoint()
     return msg

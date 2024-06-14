@@ -1,1 +1,20 @@
-There are different sets of predicates designed for different skills, but some of them could be overlapped. Your task is to unifiy the predicates by changing the predicate names with same semantic but different name into same names.
+There are different sets of predicates designed for different skills, but some of them could be overlapped. Your task is to unifiy the predicates by mapping different predicate names with same semantic or same function together. Strictly follow this format below:
+
+Input:
+
+Skill: Open
+Predicates: CloseToObject(robot, object), ObjectOpenable(object) ObjectIsClosed(object)
+
+Skill: Close
+Predicates: ObjectIsOpen(object), ObjectIsGrasped(robot, object), NearObject(robot, object)
+
+Skill: Find
+Predicates: CloseTo(robot, object), LookingAt(robot, object)
+
+Equivalent Predicates:
+
+- CloseToObject(robot, object) | NearObject(robot, object) | CloseTo(robot, object)
+
+- ObjectIsClosed(object) | ObjectIsOpen(object)
+
+Input:

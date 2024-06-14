@@ -4,7 +4,7 @@ def get_nearest_pair(observation, database):
     '''get a contrastive pair from the database'''
     pass
 
-def predict_success(observation, pair):
+def predict_success(skill, observation, pair):
     '''
     predict if the execution will succeed.
     Multiple backends including GPT, cosine similarity.
