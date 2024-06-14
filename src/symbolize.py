@@ -36,29 +36,58 @@ def unifiy_predicates(model, skill2pred, prompt_fpath='prompts/predicates_unify.
     return model.generate(prompt)
     
 
-def task_proposal(model, prompt_fpath='prompts/task_proposing.txt'):
+def task_proposal(model, predicate, skill, action_list=[MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, GoTo, GripperUp, GripperDown, GripperLeft, GripperRight, GripperForward, GripperBackward, PickUp, Drop], prompt_fpath='prompts/task_proposing.txt'):
     '''
     Proposing task for each predicate of a skill.
     It should be able to prpoposed based on existing roll-outs.
+    predicate: str
+    action_list: list(func)
     '''
+    def construct_prompt(prompt, predicate_name, action_list):
+        actiom_list_strs = [a.__name__ for a in action_list]
+        action_list_strs_joined = ", ".join(actiom_list_strs)
+        while "[PRED]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt:
+            prompt = prompt.replace("[SKILL]", skill.__name__)
+            prompt = prompt.replace("[PRED]", predicate_name)
+            prompt = prompt.replace("[ACTION_LIST]", action_list_strs_joined)
+        return prompt
     prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, predicate, action_list)
     return model.generate(prompt)
 
-def predicates2precond():
+def pred2precond(model, skill2pred, contrastive_pair, prompt_fpath='prompts/pred2precond.txt'):
     '''
-    Compose predicates to precondition
+    Compose candidate predicates to precondition
+    skills2pred: {str:[str]}
+    contrastive_pair: {str:img} : one "success", one "fail"
     '''
-    pass
+    def construct_prompt(prompt, skill2pred):
+        for skill, pred in skill2pred.items():
+            while "[SKILL]" or "[PREDICATE_LIST]" in prompt:
+                prompt = prompt.replace("[SKILL]", skill)
+                prompt = prompt.replace("[PREDICATE_LIST]", pred)
+    prompt = load_from_file(prompt_fpath)
 
-def predicates2effect():
+
+
+    
+
+def pred2effect(model, skill2pred, consecutive_pair, prompt_fpath=''):
     '''
     Compose predicates to effect
+    skills2pred: {str:[str]}
+    contrastive_pair: {str:img}: one "before", one "after"
     '''
-    pass
+    def construct_prompt(prompt, skill2pred):
+        for skill, pred in skill2pred.items():
+            while "[SKILL]" or "[PREDICATE_LIST]" in prompt:
+                prompt = prompt.replace("[SKILL]", skill)
+                prompt = prompt.replace("[PREDICATE_LIST]", pred)
+    prompt = load_from_file(prompt_fpath)
 
 def symbolize():
     '''
-    put together all components
+    Not implemented because execution of propsoed tasks are handled manually now
     '''
     pass
 
@@ -70,5 +99,5 @@ if __name__ == "__main__":
     # predicates = predicates_per_skill(model, PickUp)
     # predicates = predicates_per_skill(model, Drop)
     # print(predicates)
-    task = task_proposal(model)
+    task = task_proposal(model, "withinDistance()", PickUp)
     print(task)

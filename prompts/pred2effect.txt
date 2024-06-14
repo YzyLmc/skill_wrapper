@@ -1,0 +1,3 @@
+There are certain predicates associated with different skills, please find out the ones that have changed their truth value by comparing the visual observation before and after the execution of the skill.
+Skill: [SKILL]
+Predicates: [PREDICATE_LIST]

@@ -1,2 +1,2 @@
-Given the visual observation, your task is to propose a set of predicate names involved a robotic task.
-For the skill `pickup(obj)`, give me a list of predicate names separated by new lines:
+Your task is to propose a set of predicate names involved a robotic task.
+For the skill [SKILL], give me a list of predicate names separated by new lines:

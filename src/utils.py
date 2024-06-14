@@ -95,7 +95,7 @@ def prompt2msg(query_prompt, vision=False):
     return msg
 
 class GPT4:
-    def __init__(self, engine="gpt-4-0613", temp=0.0, max_tokens=128, n=1, stop=['\n\n']):
+    def __init__(self, engine="gpt-4o", temp=0.0, max_tokens=500, n=1, stop=['\n\n\n']):
         self.engine = engine
         self.temp = temp
         self.max_tokens = max_tokens
@@ -127,7 +127,7 @@ class GPT4:
             responses = [choice["message"]["content"].strip() for choice in raw_responses.choices]
         return responses
     
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=50):
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=500):
         '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
         ntries = 0
@@ -191,7 +191,23 @@ def get_top_down_frame(controller):
 if __name__ == "__main__":
     gpt = GPT4()
     imgs = ["test_imgs/test_0.png", "test_imgs/test_1.png"]
-    txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
+    imgs = ["test_imgs/pickup.png"]
+    imgs = ["test_imgs/success.png", "test_imgs/failure.png"]
+    imgs = ["test_imgs/failure.png"]
+
+    # txt = "The robot is executing pickup() action. There are certain PDDL predicates that are related to the task. Please propose them."
+    # txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
+    # txt = 'A robot is executing tasks in the envrionment. Here is what the robot sees from an egocentric view. Please provide a general description of the type of the environment, such as household or facotry, and the robots, such as its mobility and embodiement.'
+    txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, and the first image shows a successful attempt, while the second one is a failure. How can you guide the robot from the failure image to the successful image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
+    # txt = 'If this is what you see exactly, in which picture the robot gripper is on the left of the image? Is it the first one or the second?'
+    # txt = "If this is what you see exactly, is the bread located on the left of the table or the right in both pictures?"
+    # txt = 'What is on the left of the table?'
+    # txt = "If this is what you see exactly, is the bread on the left of the gripper or on the right?"
+    # txt = "You are a mobile manipulator robot. Is this image from a first-person view or a third-person view?"
+    # txt = "If these images are what you see exactly, from the second image to the first image, which direction did the gripper move to, left or right?"
+    
+    # txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, how can you guide the robot from the second image to the first image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
+    txt = "You are a robot,  this image is exactly what you see right now. You are commanded to execute PickUp() action, and you have two actions available: MoveGripperLeft() amd MoveGripperRight(), if this image is exactly what you are seeing from your eyes, what would be your next action?"
 
     responses = gpt.generate_multimodal(txt, imgs)
     # responses = gpt.generate(txt)

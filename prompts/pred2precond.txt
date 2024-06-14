@@ -1,0 +1,3 @@
+There are certain predicates associated with different skills, from which certain predicates are essential to determine if the skill can be executed. Given the first visual obeservation for the success execution and the second for the failed execution, try to find the essential predicates from the provided list to compose them into preconditions (predicates and their truth value) for the skill.
+Skill: [SKILL]
+Predicates: [PREDICATE_LIST]

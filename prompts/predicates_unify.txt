@@ -1,0 +1,1 @@
+There are different sets of predicates designed for different skills, but some of them could be overlapped. Your task is to unifiy the predicates by changing the predicate names with same semantic but different name into same names.
