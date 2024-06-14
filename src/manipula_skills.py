@@ -147,8 +147,21 @@ def PickUp(controller, obj_name, metadata):
 
     return event
 
-def Drop(controller):
+def DropAt(controller, obj_name, metadata):
+    obj_names = [obj['objectId'] for obj in metadata["objects"]]
+    obj = [obj for obj in obj_names if obj_name in obj][0]
+    obj_pos = obj['position']
+    hover_pos = dict(x=obj_pos['x'], y=obj_pos['y']+0.5, z=obj_pos['z'])
+    event = controller.step(
+        "MoveArm",
+        position=obj["position"],
+        coordinateSpace="world",
+        returnToStart=False
+    )
     event = controller.step(action="ReleaseObject")
+    # make sure the thing is dropped
+    for i in range(10):
+        controller.step(action="Done")
     return event
 
 # not for the workshop. Too tricky to implement
