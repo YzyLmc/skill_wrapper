@@ -1,0 +1,21 @@
+argument,image
+"(Tomato, Bowl)",../dataset/put_down/success/10_color.png
+"(Apple, Pot)",../dataset/put_down/success/12_color.png
+"(Pan, Stove)",../dataset/put_down/success/14_color.png
+"(Mug, Sink)",../dataset/put_down/success/16_color.png
+"(Lettuce, Bin)",../dataset/put_down/success/19_color.png
+"(Bowl, Shelf)",../dataset/put_down/is_arm_over_receptacle/10_color.png
+"(Book, CounterTop)",../dataset/put_down/is_arm_over_receptacle/12_color.png
+"(Cup, Sink)",../dataset/put_down/is_arm_over_receptacle/14_color.png
+"(Tomato, Fridge)",../dataset/put_down/is_closed/10_color.png
+"(Potato, Microwave)",../dataset/put_down/is_closed/12_color.png
+"(Kettle, Cabinet)",../dataset/put_down/is_closed/14_color.png
+"(Potato, Pot)",../dataset/put_down/is_facing/10_color.png
+"(Kettle, Sink)",../dataset/put_down/is_facing/12_color.png
+"(Book, CounterTop)",../dataset/put_down/is_facing/15_color.png
+"(Mug, Sink)",../dataset/put_down/is_holding/10_color.png
+"(BreadSlice, Toaster)",../dataset/put_down/is_holding/12_color.png
+"(Kettle, Shelf)",../dataset/put_down/is_holding/14_color.png
+"(Potato, Microwave)",../dataset/put_down/is_occupied/10_color.png
+"(Mug, TableTop)",../dataset/put_down/is_occupied/12_color.png
+"(Pan, Stove)",../dataset/put_down/is_occupied/14_color.png

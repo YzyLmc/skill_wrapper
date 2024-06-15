@@ -1,0 +1,38 @@
+,argument,image,responses
+0,Faucet,../dataset/toggle_on/success/2_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a potato."
+1,Toaster,../dataset/toggle_on/success/6_color.png," No, the robot cannot execute ToggleOn(Toaster). 
+The robot is not facing the Toaster."
+2,StoveKnob,../dataset/toggle_on/success/11_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a blue sphere."
+3,LightSwitch,../dataset/toggle_on/success/20_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a blue cube."
+4,Microwave,../dataset/toggle_on/success/24_color.png," No, the robot cannot execute ToggleOn(Microwave). The robot is not near the object 'Microwave'."
+5,LightSwitch,../dataset/toggle_on/is_facing/4_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
+6,StoveKnob,../dataset/toggle_on/is_facing/12_color.png," No, the precondition 'The robot is near object 'x'' is not satisfied."
+7,Toaster,../dataset/toggle_on/is_facing/24_color.png," No, the robot cannot execute ToggleOn(Toaster). 
+The robot is not near the Toaster."
+8,StoveKnob,../dataset/toggle_on/is_holding/2_color.png," No, the robot cannot execute ToggleOn(StoveKnob). The robot is not near the object 'StoveKnob'."
+9,Faucet,../dataset/toggle_on/is_holding/7_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a potato."
+10,Toaster,../dataset/toggle_on/is_holding/14_color.png," No, the robot cannot execute ToggleOn(Toaster). 
+The robot gripper is not overlapping with the Toaster."
+11,StoveKnob,../dataset/toggle_on/is_nearby/10_color.png," No, the precondition 'The robot is near object 'x'' is not satisfied."
+12,Faucet,../dataset/toggle_on/is_nearby/16_color.png," No, the precondition ""The robot is not holding any object"" is not met. The robot is currently holding a blue sphere."
+13,Toaster,../dataset/toggle_on/is_nearby/22_color.png," No, the precondition 'The robot is near object x' is not satisfied."
+14,Faucet,../dataset/toggle_on/is_on/4_color.png," No, the precondition that the robot is not holding any object is not met. The robot is currently holding a potato."
+15,Toaster,../dataset/toggle_on/is_on/8_color.png," No, the robot cannot execute ToggleOn(Toaster). 
+The robot gripper is not overlapping with the Toaster."
+16,LightSwitch,../dataset/toggle_on/is_on/22_color.png," Yes. All preconditions for ToggleOn(LightSwitch) are met:
+- The robot is near the LightSwitch.
+- The robot is facing the LightSwitch.
+- The robot is not holding any object.
+- The LightSwitch is togglable.
+- The LightSwitch is not on.
+- The blue sphere (region of influence) around the robot arm gripper overlaps with the LightSwitch."
+17,CeilingLight,../dataset/toggle_on/is_togglable/11_color.png," No, the precondition that the robot's gripper must overlap with the CeilingLight is not met."
+18,Kettle,../dataset/toggle_on/is_togglable/9_color.png," No, the robot cannot execute ToggleOn(Kettle). 
+The robot is not near the Kettle."
+19,WashingMachine,../dataset/toggle_on/is_togglable/4_color.png," No
+- The robot is not near the WashingMachine
+- The robot is not facing the WashingMachine"
+20,LightSwitch,../dataset/toggle_on/is_within_gripper_reach/8_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
+21,StoveKnob,../dataset/toggle_on/is_within_gripper_reach/14_color.png," No, the robot cannot execute ToggleOn(StoveKnob). 
+The robot is not facing the object 'StoveKnob'."
+22,Toaster,../dataset/toggle_on/is_within_gripper_reach/26_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
