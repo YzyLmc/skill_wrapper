@@ -1,1 +1,4 @@
-Please propose a task for testing the boundary of executability of a predicate {}.
+Please propose a task for testing the boundary of executability of the skill [SKILL] regarding a predicate [PRED].
+Here is the list of actions you can use for the task: [ACTION_LIST].
+We aims to find the boundary, so if the task is completed succesfully, make it harder next time, otherwise make it easier.
+Also, you should make the tasks to be diverse, probably by trying low-level motions a lot.

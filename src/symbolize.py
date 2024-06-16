@@ -50,13 +50,14 @@ def task_proposal(model, predicate, skill, action_list=[MoveForward, MoveBackwar
     Proposing task for each predicate of a skill.
     It should be able to prpoposed based on existing roll-outs.
     predicate: str
+    skill: str
     action_list: list(func)
     '''
     def construct_prompt(prompt, predicate_name, action_list):
         actiom_list_strs = [a.__name__ for a in action_list]
         action_list_strs_joined = ", ".join(actiom_list_strs)
         while "[PRED]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt:
-            prompt = prompt.replace("[SKILL]", skill.__name__)
+            prompt = prompt.replace("[SKILL]", skill)
             prompt = prompt.replace("[PRED]", predicate_name)
             prompt = prompt.replace("[ACTION_LIST]", action_list_strs_joined)
         return prompt
@@ -68,16 +69,20 @@ def pred2precond(model, skill2pred, contrastive_pair, prompt_fpath='prompts/pred
     '''
     Compose candidate predicates to precondition
     skills2pred: {str:[str]}
-    contrastive_pair: {str:img} : one "success", one "fail"
+    contrastive_pair: {str:img} : first one "success", second one "fail"
     '''
     def construct_prompt(prompt, skill2pred):
         for skill, pred in skill2pred.items():
-            while "[SKILL]" or "[PREDICATE_LIST]" in prompt:
+            while "[SKILL]" in prompt or "[PREDICATE_LIST]" in prompt:
                 prompt = prompt.replace("[SKILL]", skill)
-                prompt = prompt.replace("[PREDICATE_LIST]", pred)
+                prompt = prompt.replace("[PREDICATE_LIST]", ", ".join(pred))
+        return prompt
     prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, skill2pred)
+    print(prompt)
+    return model.generate_multimodal(prompt, contrastive_pair)[0]
 
-def pred2effect(model, skill2pred, consecutive_pair, prompt_fpath=''):
+def pred2effect(model, skill2pred, consecutive_pair, prompt_fpath='prompts/pred2effect.txt'):
     '''
     Compose predicates to effect
     skills2pred: {str:[str]}
@@ -85,10 +90,13 @@ def pred2effect(model, skill2pred, consecutive_pair, prompt_fpath=''):
     '''
     def construct_prompt(prompt, skill2pred):
         for skill, pred in skill2pred.items():
-            while "[SKILL]" or "[PREDICATE_LIST]" in prompt:
+            while "[SKILL]" in prompt or "[PREDICATE_LIST]" in prompt:
                 prompt = prompt.replace("[SKILL]", skill)
-                prompt = prompt.replace("[PREDICATE_LIST]", pred)
+                prompt = prompt.replace("[PREDICATE_LIST]", ", ".join(pred))
+        return prompt
     prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, skill2pred)
+    return model.generate_multimodal(prompt, consecutive_pair)[0]
 
 def symbolize():
     '''
@@ -107,5 +115,11 @@ if __name__ == "__main__":
     # task = task_proposal(model, "withinDistance()", PickUp)
     # print(task)
     skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
-    unified_pred = unifiy_predicates(model, skill2pred)
-    print(unified_pred)
+    # unified_pred = unifiy_predicates(model, skill2pred)
+    # print(unified_pred)
+    # contrastive_pair = ['test_imgs/2.jpg', 'test_imgs/1.jpg']
+    # response = pred2precond(model, skill2pred, contrastive_pair)
+    # print(response)
+    consecutive_pair = ['test_imgs/2.jpg', 'test_imgs/3.jpg']
+    response = pred2effect(model, skill2pred, consecutive_pair)
+    print(response)
