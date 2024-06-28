@@ -5,7 +5,7 @@ from image_similarity_measures.evaluate import evaluation
 from manipula_skills import *
 from utils import load_from_file, GPT4
 
-def get_contrastive_pair(skill, obs, database):
+def get_contrastive_pair(skill, obs, database, metrics=['fsim']):
     '''
     get a contrastive pair from the database
     obs: image_path
@@ -14,9 +14,10 @@ def get_contrastive_pair(skill, obs, database):
     # find success and fail imgs seprately
     success_list = deepcopy(database[skill.__name__]["Success"])
     fail_list = deepcopy(database[skill.__name__]["Fail"])
+    # breakpoint()
     contrastive_pair = [
-        sorted(success_list, key=lambda img_path:evaluation(org_img_path=obs, pred_img_path=img_path, metrics=["rmse"]))[0],
-        sorted(fail_list, key=lambda img_path:evaluation(org_img_path=obs, pred_img_path=img_path, metrics=["rmse"]))[0]
+        sorted(success_list, key=lambda img_path:evaluation(org_img_path=obs, pred_img_path=img_path, metrics=metrics)[metrics[0]])[-1],
+        sorted(fail_list, key=lambda img_path:evaluation(org_img_path=obs, pred_img_path=img_path, metrics=metrics)[metrics[0]])[-1]
     ]
     return contrastive_pair
 
@@ -59,17 +60,18 @@ def adapt(observation, database, prompt):
     pass
 
 if __name__ == "__main__":
-    database = {"PickUp":{"Success":'test_imgs/2.jpg',"Fail": 'test_imgs/0.jpg'}}
+    database = {"PickUp":{"Success":['test_imgs/1.jpg', 'test_imgs/2.jpg', 'test_imgs/3.jpg'],"Fail": ['test_imgs/4.jpg', 'test_imgs/5.jpg']}}
     obs = 'test_imgs/1.jpg' # 1 should succeed
     obs = 'test_imgs/5.jpg' # 5 should fail
+    obs = 'test_imgs/0.jpg'
     
-    # contrastive_pair = get_contrastive_pair(PickUp, obs, database)
-    contrastive_pair = ['test_imgs/2.jpg', 'test_imgs/0.jpg']
-    model = GPT4()
-    skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
-    # response = predict_success(model, PickUp, skill2pred, obs, contrastive_pair)
+    contrastive_pair = get_contrastive_pair(PickUp, obs, database)
+    # contrastive_pair = ['test_imgs/2.jpg', 'test_imgs/0.jpg']
+    # model = GPT4()
+    # skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
+    # # response = predict_success(model, PickUp, skill2pred, obs, contrastive_pair)
+    # # print(response)
+    # success_state = 'test_imgs/1.jpg' # 1 should succeed
+    # obs = 'test_imgs/4.jpg' #  4 should fail too
+    # response = back_to_success_state(model, PickUp, skill2pred, obs, success_state)
     # print(response)
-    success_state = 'test_imgs/1.jpg' # 1 should succeed
-    obs = 'test_imgs/4.jpg' #  4 should fail too
-    response = back_to_success_state(model, PickUp, skill2pred, obs, success_state)
-    print(response)

@@ -91,6 +91,7 @@ task1 = '''
 GoTo(Object)
 PickUp(Object)
 '''
+
 task2 = '''
 GoTo(Object)
 MoveLeft()
