@@ -3,7 +3,7 @@ There are different sets of predicates designed for different skills, but some o
 Input:
 
 Skill: Open
-Predicates: CloseToObject(robot, object), ObjectOpenable(object) ObjectIsClosed(object)
+Predicates: CloseToObject(object), ObjectOpenable(object) ObjectIsClosed(object)
 
 Skill: Close
 Predicates: ObjectIsOpen(object), ObjectIsGrasped(robot, object), NearObject(robot, object)
@@ -13,7 +13,7 @@ Predicates: CloseTo(robot, object), LookingAt(robot, object)
 
 Equivalent Predicates:
 
-- CloseToObject(robot, object) | NearObject(robot, object) | CloseTo(robot, object)
+- CloseToObject(object) | NearObject(robot, object) | CloseTo(robot, object)
 
 - ObjectIsClosed(object) | ObjectIsOpen(object)
 

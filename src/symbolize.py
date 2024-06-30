@@ -1,5 +1,6 @@
 'Get symbolic representation from skill semantic info and observation'
 from utils import GPT4, load_from_file
+import inspect
 from manipula_skills import *
 
 def predicates_per_skill(model, skill, basic_info=None, obs=None, prompt_fpath = "prompts/predicates_proposing.txt"):
@@ -8,7 +9,7 @@ def predicates_per_skill(model, skill, basic_info=None, obs=None, prompt_fpath =
     '''
     def construct_prompt(prompt, skill, basic_info):
         'replace placeholders with skill name'
-        skill_name = skill.__name__
+        skill_name = f'{skill.__name__}({", ".join(inspect.getfullargspec(skill)[0][:-2])})'
         while "[SKILL]" in prompt or "[BASIC_INFO]" in prompt:
             prompt = prompt.replace("[SKILL]", skill_name)
             prompt = prompt.replace("[BASIC_INFO]", basic_info)
@@ -28,6 +29,25 @@ def unifiy_predicates(model, skill2pred, prompt_fpath='prompts/predicates_unify.
     Make sure predicates for different skills have consistent names
     skill2predicts :: dict(String: list(String))
     '''
+    def convert_skill2preds(skill2preds, equal_preds):
+        '''
+        skill2preds :dict(str:list(str)):
+        equal_preds :list(list(str)): list of equivalent predicates
+        '''
+        unified_skill2preds = {}
+        for skill, preds in skill2preds.items():
+            unified_preds = []
+            for pred in preds:
+                for equal_pred in equal_preds:
+                    dup = False
+                    if pred in equal_pred:
+                        unified_preds.append(equal_pred[0])
+                        dup = True
+                if not dup:
+                    unified_preds.append(pred)
+            unified_skill2preds[skill] = unified_preds
+        return unified_skill2preds
+    
     def construct_prompt(prompt, skill2pred):
         for skill_name, pred_names in skill2pred.items():
             prompt += "\nSkill: " + skill_name
@@ -42,28 +62,34 @@ def unifiy_predicates(model, skill2pred, prompt_fpath='prompts/predicates_unify.
     equal_preds = response.split("\n\n")[1:]
     equal_preds = [pred.replace("-","").replace(" ","").split('|') for pred in equal_preds]
     breakpoint()
-    return equal_preds
+    unified_skill2preds = convert_skill2preds(skill2pred, equal_preds)
+    breakpoint()
+    return unified_skill2preds
     
 
-def task_proposal(model, predicate, skill, action_list=[MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, GoTo, GripperUp, GripperDown, GripperLeft, GripperRight, GripperForward, GripperBackward, PickUp, DropAt], prompt_fpath='prompts/task_proposing.txt'):
+def task_proposal(model, predicate, skill, basic_info, history=None, action_list=[MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, GoTo, GripperUp, GripperDown, GripperLeft, GripperRight, GripperForward, GripperBackward, PickUp, DropAt], prompt_fpath='prompts/task_proposing_init.txt'):
     '''
-    Proposing task for each predicate of a skill.
+    Proposing task for one predicate of a skill.
     It should be able to prpoposed based on existing roll-outs.
     predicate: str
     skill: str
     action_list: list(func)
     '''
-    def construct_prompt(prompt, predicate_name, action_list):
-        actiom_list_strs = [a.__name__ for a in action_list]
+    def construct_prompt(prompt, predicate_name, action_list, basic_info, history):
+        actiom_list_strs = [f'{a.__name__}({", ".join(inspect.getfullargspec(a)[0][:-2])})' for a in action_list]
         action_list_strs_joined = ", ".join(actiom_list_strs)
-        while "[PRED]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt:
-            prompt = prompt.replace("[SKILL]", skill)
+        while "[PRED]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt or '[BASIC_INFO]' in prompt:
+            prompt = prompt.replace("[SKILL]", f'{skill.__name__}({", ".join(inspect.getfullargspec(skill)[0][:-2])})')
             prompt = prompt.replace("[PRED]", predicate_name)
             prompt = prompt.replace("[ACTION_LIST]", action_list_strs_joined)
+            prompt = prompt.replace("[BASIC_INFO]", basic_info)
+        if history:
+            prompt = prompt.replace("[HISTORY]", history)
         return prompt
+    prompt_fpath = 'prompts/task_proposing_next.txt' if history else prompt
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, predicate, action_list)
-    return model.generate(prompt)
+    prompt = construct_prompt(prompt, predicate, action_list, basic_info, history)
+    return model.generate(prompt)[0]
 
 def pred2precond(model, skill2pred, contrastive_pair, prompt_fpath='prompts/pred2precond.txt'):
     '''
@@ -111,15 +137,17 @@ if __name__ == "__main__":
     model = GPT4()
     # predicates = predicates_per_skill(model, PickUp)
     # predicates = predicates_per_skill(model, DropAt)
+    # predicates = predicates_per_skill(model, GoTo)
     # print(predicates)
-    # task = task_proposal(model, "withinDistance()", PickUp)
-    # print(task)
-    skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
+    basic_info = 'The robot visible in the image appears to have a humanoid form with an articulated arm, which suggests it is designed for multipurpose tasks, such as handling objects, performing household chores, or interacting with the environment in a human-like manner. It seems to possess mobility, indicated by its positioning away from the walls and navigating the hallway, allowing it to perform tasks throughout the home. The embodiment of the robot, featuring multiple joints and a sleek design, points towards advanced robotics meant for a domestic setting, enabling it to maneuver and operate effectively within the confines of typical household spaces.'
+    task = task_proposal(model, 'IsReachable(object)', PickUp, basic_info)
+    print(task)
+    # skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
     # unified_pred = unifiy_predicates(model, skill2pred)
     # print(unified_pred)
     # contrastive_pair = ['test_imgs/2.jpg', 'test_imgs/1.jpg']
     # response = pred2precond(model, skill2pred, contrastive_pair)
     # print(response)
-    consecutive_pair = ['test_imgs/2.jpg', 'test_imgs/3.jpg']
-    response = pred2effect(model, skill2pred, consecutive_pair)
-    print(response)
+    # consecutive_pair = ['test_imgs/2.jpg', 'test_imgs/3.jpg']
+    # response = pred2effect(model, skill2pred, consecutive_pair)
+    # print(response)

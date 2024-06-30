@@ -1,3 +1,4 @@
-Your task is to propose a set of predicate names involved a robotic task (no more than five). The predicates should be parameterized if neccessary, such as when it take other objects into account.
+Your task is to propose a set of predicates involved a robotic task (no more than five). The predicates should be parameterized ('robot' is not a parameter, and empty parenthesis is allowed), and they should be sufficient to describe important aspects, such as the precondition need to be satisfied for the skill execution, the change of the skill to the environment before and after execution, and physical constraints (whether the robot has empty hands, whether it's close enough to the target).
 Here is a description of the environmental setup: [BASIC_INFO]
-For the skill [SKILL], give me a list of predicate names separated by new lines:
+
+For the skill [SKILL], give me a list of predicate names only, separated by new lines:

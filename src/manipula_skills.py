@@ -43,7 +43,7 @@ def TurnRight(controller):
         degrees=30
     )
 
-def GoTo(controller, obj_name, metadata):
+def GoTo(object_or_location, controller, metadata):
     '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
     def dist_pose(obj1, obj2):
         x1, y1, z1 = obj1["x"], obj1["y"], obj1["z"]
@@ -53,7 +53,7 @@ def GoTo(controller, obj_name, metadata):
         return np.sqrt(np.sum((p1-p2)**2, axis=0))
 
     obj_names = [obj['objectId'] for obj in metadata["objects"]]
-    obj = [obj for obj in obj_names if obj_name in obj][0]
+    obj = [obj for obj in obj_names if object_or_location in obj][0]
     poses = sorted(poses, key=lambda p:dist_pose(p, obj['position']))
     pose = random.choice(poses[:10])
     event = controller.step("TeleportFull", **pose)
@@ -124,9 +124,12 @@ def GripperBackward(controller):
     )
     return event
 
-def PickUp(controller, obj_name, metadata):
+def PickUp(object, controller, metadata):
+    '''
+    object: str : name of the object
+    '''
     obj_names = [obj['objectId'] for obj in metadata["objects"]]
-    obj = [obj for obj in obj_names if obj_name in obj][0]
+    obj = [obj for obj in obj_names if object in obj][0]
     event = controller.step(
         "MoveArm",
         position=obj["position"],
@@ -147,9 +150,12 @@ def PickUp(controller, obj_name, metadata):
 
     return event
 
-def DropAt(controller, obj_name, metadata):
+def DropAt(location, controller, metadata):
+    '''
+    location: str : name of the object to drop. Named location for LLM to reason
+    '''
     obj_names = [obj['objectId'] for obj in metadata["objects"]]
-    obj = [obj for obj in obj_names if obj_name in obj][0]
+    obj = [obj for obj in obj_names if location in obj][0]
     obj_pos = obj['position']
     hover_pos = dict(x=obj_pos['x'], y=obj_pos['y']+0.5, z=obj_pos['z'])
     event = controller.step(
