@@ -1,24 +1,47 @@
 {
     "DropAt(location)": {
-        "At(location)": {},
+        "At(location)": {
+            "1": "Success",
+            "2": "Fail"
+        },
         "AtLocation(object,location)": {},
         "Clear(location)": {},
         "Holding(object)": {},
-        "IsFreeHand()": {
-            "1": "Success"
-        }
+        "IsFreeHand()": {}
     },
     "GoTo(object_or_location)": {
-        "At(location)": {},
+        "At(location)": {
+            "1": "Success",
+            "2": "Success"
+        },
         "BatterySufficient()": {},
         "Clear(location)": {},
         "IsFreeHand()": {}
     },
     "PickUp(object)": {
-        "At(location)": {},
-        "AtLocation(object,location)": {},
-        "Holding(object)": {},
-        "IsFreeHand()": {},
-        "IsReachable(object)": {}
+        "At(location)": {
+            "1": "Fail",
+            "2": "Success",
+            "3": "Success"
+        },
+        "AtLocation(object,location)":  {
+            "1": "Fail",
+            "2": "Success"
+    },
+        "Holding(object)": {
+            "1": "Fail",
+            "2": "Success",
+            "3": "Success"
+        },
+        "IsFreeHand()": {
+            "1": "Success",
+            "2": "Fail"
+        },
+        "IsReachable(object)": {
+            "1": "Fail",
+            "2": "Success",
+            "3": "Success",
+            "4": "Fail"
+        }
     }
 }

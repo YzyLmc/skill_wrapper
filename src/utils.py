@@ -95,7 +95,7 @@ def prompt2msg(query_prompt, vision=False):
     return msg
 
 class GPT4:
-    def __init__(self, engine="gpt-4o", temp=0.0, max_tokens=500, n=1, stop=['\n\n\n']):
+    def __init__(self, engine="gpt-4o", temp=0, max_tokens=500, n=1, stop=['\n\n\n']):
         self.engine = engine
         self.temp = temp
         self.max_tokens = max_tokens
@@ -106,6 +106,8 @@ class GPT4:
         '''query_prompt: query with task description and in-contex examples splited with \n\n'''
         complete = False
         ntries = 0
+        msg = prompt2msg(query_prompt)
+        breakpoint()
         while not complete and ntries < 15:
             # try:
                 raw_responses = client.chat.completions.create(model=self.engine,
@@ -136,6 +138,7 @@ class GPT4:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
         }
+        breakpoint()
         txts = prompt2msg(query_prompt, vision=True)
         payload = {
             "model": "gpt-4-turbo",
@@ -194,6 +197,8 @@ if __name__ == "__main__":
     imgs = ["test_imgs/pickup.png"]
     imgs = ["test_imgs/success.png", "test_imgs/failure.png"]
     imgs = ["test_imgs/failure.png"]
+    imgs = ["test_imgs/caption.png"]
+    imgs = ["test_imgs/1.jpg", "test_imgs/3.jpg"]
 
     # txt = "The robot is executing pickup() action. There are certain PDDL predicates that are related to the task. Please propose them."
     # txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
@@ -208,7 +213,13 @@ if __name__ == "__main__":
     
     # txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, how can you guide the robot from the second image to the first image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
     txt = "You are a robot,  this image is exactly what you see right now. You are commanded to execute PickUp() action, and you have two actions available: MoveGripperLeft() amd MoveGripperRight(), if this image is exactly what you are seeing from your eyes, what would be your next action?"
-
+    txt = "What are the objects in this picture?"
+    txt = """
+    There are certain predicates associated with different skills, please find out the ones that have changed their truth value by comparing the visual observation before and after the execution of the skill. You only have to fill the predicates and truth values before and after the execution on the "Effect" line without explanation. Note that not all predicates are necessary to form the effect, you should only select the most essential ones based on the visual observation.
+    Skill: PickUp(object, location)
+    Predicates: 'AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsReachable(object)', 'IsFreeHand()'
+    object = Book, location = Table
+    """
     responses = gpt.generate_multimodal(txt, imgs)
     # responses = gpt.generate(txt)
     print(responses)

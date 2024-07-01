@@ -1,6 +1,7 @@
 'adapt original skill into current environment by combining it with lower level actions'
 
 from copy import deepcopy
+import inspect
 from image_similarity_measures.evaluate import evaluation
 from manipula_skills import *
 from utils import load_from_file, GPT4
@@ -36,16 +37,18 @@ def predict_success(model, skill, skill2pred, obs, contrastive_pair, prompt_fpat
     contrastive_pair.append(obs)
     return model.generate_multimodal(prompt, contrastive_pair)[0]
 
-def back_to_success_state(model, skill, skill2pred, obs, success_state, action_list= [MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, GoTo, GripperUp, GripperDown, GripperLeft, GripperRight, GripperForward, GripperBackward, PickUp, DropAt] , prompt_fpath="prompts/adaptation.txt"):
+def back_to_success_state(model, skill, skill2pred, obs, success_state, action_list= [MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, MoveGripperUp, MoveGripperDown, MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward] , prompt_fpath="prompts/adaptation.txt"):
     '''
     Drive back the agent to the successful state. Only triggered when predicted to fail
+    Only low-level skills are used for adaptation.
     '''
     def construct_prompt(prompt, skill2pred, action_list):
-        actiom_list_strs = [a.__name__ for a in action_list]
-        action_list_strs_joined = ", ".join(actiom_list_strs)
+        action_list_strs = [f'{a.__name__}({", ".join(inspect.getfullargspec(a)[0][:-2])})' for a in action_list]
+        action_list_strs_joined = ", ".join(action_list_strs)
+        skill_name = f'{skill.__name__}({", ".join(inspect.getfullargspec(skill)[0][:-2])})'
         while "[PREDICATE_LIST]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt:
-            prompt = prompt.replace("[SKILL]", skill.__name__)
-            prompt = prompt.replace("[PREDICATE_LIST]", ' ,'.join((skill2pred[skill.__name__])))
+            prompt = prompt.replace("[SKILL]", skill_name)
+            prompt = prompt.replace("[PREDICATE_LIST]", ' ,'.join((skill2pred[skill_name])))
             prompt = prompt.replace("[ACTION_LIST]", action_list_strs_joined)
         return prompt
     prompt = load_from_file(prompt_fpath)
@@ -65,13 +68,19 @@ if __name__ == "__main__":
     obs = 'test_imgs/5.jpg' # 5 should fail
     obs = 'test_imgs/0.jpg'
     
-    contrastive_pair = get_contrastive_pair(PickUp, obs, database)
+    # contrastive_pair = get_contrastive_pair(PickUp, obs, database)
     # contrastive_pair = ['test_imgs/2.jpg', 'test_imgs/0.jpg']
-    # model = GPT4()
+    model = GPT4()
     # skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
+    skill2preds = {
+    'PickUp(object, location)': ['AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsReachable(object)', 'IsFreeHand()'],
+    'DropAt(object, location)': ['Clear(location)', 'AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsFreeHand()'],
+    'GoTo(location)': ['At(location)', 'IsFreeHand()', 'Clear(location)', 'BatterySufficient()']
+               }
     # # response = predict_success(model, PickUp, skill2pred, obs, contrastive_pair)
     # # print(response)
-    # success_state = 'test_imgs/1.jpg' # 1 should succeed
-    # obs = 'test_imgs/4.jpg' #  4 should fail too
-    # response = back_to_success_state(model, PickUp, skill2pred, obs, success_state)
-    # print(response)
+    success_state = 'test_imgs/1.jpg' # 1 should succeed
+    obs = 'test_imgs/4.jpg' #  4 should fail too
+    # skill_name = f'{PickUp.__name__}({", ".join(inspect.getfullargspec(PickUp)[0][:-2])})'
+    response = back_to_success_state(model, PickUp, skill2preds, obs, success_state)
+    print(response)
