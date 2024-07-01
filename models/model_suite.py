@@ -1,29 +1,32 @@
-from openai import OpenAI
-import base64
-import numpy as np
+#from openai import OpenAI
+#import base64
+#import numpy as np
 import pandas as pd
 
 
-import google.generativeai as genai
+#import google.generativeai as genai
 #Using Gemini Guide: https://ai.google.dev/gemini-api/docs/get-started/python?_gl=1*1tyxd27*_up*MQ..&gclid=Cj0KCQjw0MexBhD3ARIsAEI3WHJWMzD8_zedKR_LoV2Zc0e23VzI7kMDhS_cHWDTOfrv-ROgfZa5W7waAlwnEALw_wcB
 
-import clip
+#import clip
 from PIL import Image
 import torch
 import pdb
 
-import vertexai
-from vertexai.generative_models import GenerationConfig, GenerativeModel, Part
+from transformers import AutoProcessor, LlavaForConditionalGeneration
+from transformers import InstructBlipProcessor, InstructBlipForConditionalGeneration
 
-from IPython.display import display
-from IPython.display import Markdown
+#import vertexai
+#from vertexai.generative_models import GenerationConfig, GenerativeModel, Part
 
-from lavis.models import load_model_and_preprocess
+#from IPython.display import display
+#from IPython.display import Markdown
+
+#from lavis.models import load_model_and_preprocess
 
 
-from LLaVa.llava.model.builder import load_pretrained_model
-from LLaVa.llava.mm_utils import get_model_name_from_path
-from LLaVa.llava.eval.run_llava import eval_model
+#from LLaVa.llava.model.builder import load_pretrained_model
+#from LLaVa.llava.mm_utils import get_model_name_from_path
+#from LLaVa.llava.eval.run_llava import eval_model
 #Using LAVIS InstructBLIP: https://github.com/salesforce/LAVIS/tree/main
 
 #https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md
@@ -331,7 +334,7 @@ class FoundationModel():
 
 class OpensourceModels():
 
-    def __init__ (self, model_type, model_name, finetuned=False):
+    def __init__ (self, model_type, model_name=None, finetuned=False):
 
 
         '''
@@ -348,55 +351,75 @@ class OpensourceModels():
             '''
             model names: (blip2_vicuna_instruct, vicuna7b) (blip2_vicuna_instruct, vicuna13b) (blip2_t5, pretrain_flant5xxl)
             '''
-            self.model, self.image_preprocessor, _ = load_model_and_preprocess(name="blip2_vicuna_instruct", model_type="vicuna7b", is_eval=True, device=self.device)
+	    #self.model, self.image_preprocessor, _ = load_model_and_preprocess(name="blip2_vicuna_instruct", model_type="vicuna7b", is_eval=True, device=self.device)
+            self.model = InstructBlipForConditionalGeneration.from_pretrained("Salesforce/instructblip-vicuna-7b")
+            self.processor = InstructBlipProcessor.from_pretrained("Salesforce/instructblip-vicuna-7b")
+            self.model.to(self.device)
 
         elif model_type == 'PaLME':
-
+            pass
         elif model_type == 'LLaVa':
-            self.model_path = "liuhaotian/llava-v1.5-7b"
+	    #self.model_path = "liuhaotian/llava-v1.5-7b"
+            self.model = LlavaForConditionalGeneration.from_pretrained("llava-hf/llava-1.5-7b-hf")
+            self.processor = AutoProcessor.from_pretrained("llava-hf/llava-1.5-7b-hf")
             
         elif model_type == 'Llama':
             pass
         #NOTE: skipping OpenFlamingo because it is poor performing compared to LLava and InstructBLIP
-        opensource_models = {'instruct_BLIP': run_instruct_blip, 'LLaVa': run_llava, 'Llama': run_llama}
+        opensource_models = {'instruct_BLIP': self.run_instruct_blip, 'LLaVa': self.run_llava, 'Llama': self.run_llama}
         self.run_model = opensource_models[model_type]
 
     
     def run_instruct_blip(self, kwargs):
 
-        image = self.image_preprocessor["eval"](kwargs['image_prompt']).unsqueeze(0).to(self.device)
-        response = self.model.generate({"image": kwargs['image_prompt'], "prompt": kwargs['text_prompt'], 
-            "length_penalty": kwargs['length_penalty'], 
-            "repetition_penalty": kwargs['repetition_penalty'],
-            "num_beams": kwargs['num_beams'],
-            "max_length": kwargs['max_len'],
-            "min_length": kwargs['min_len'],
-            "top_p": kwargs['top_p'],
-            "use_nucleus_sampling": kwargs['use_nucleus_sampling']})
-           
+	#image = self.image_preprocessor["eval"](kwargs['image_prompt']).unsqueeze(0).to(self.device)
+	#response = self.model.generate({"image": kwargs['image_prompt'], "prompt": kwargs['text_prompt'], 
+	#    "length_penalty": kwargs['length_penalty'], 
+	#    "repetition_penalty": kwargs['repetition_penalty'],
+	#    "num_beams": kwargs['num_beams'],
+	#    "max_length": kwargs['max_len'],
+	#    "min_length": kwargs['min_len'],
+	#    "top_p": kwargs['top_p'],
+	#    "use_nucleus_sampling": kwargs['use_nucleus_sampling']})
+        image = Image.open(kwargs['image_prompt']).convert('RGB')
+        prompt = kwargs['text_prompt']
+
+        model_inputs = self.processor(images=image, text=prompt, return_tensors='pt').to(device)
+
+        output = self.model.generate(**model_inputs, do_sample=kwargs['do_sample'], num_beams=kwargs['num_beams'], max_length = kwargs['max_length'], min_length = kwargs['min_length'], top_p=kwargs['top_p'], repetition_penalty = kwargs['repetition_penalty'], length_penalty = kwargs['length_penalty'], temperature = kwargs['temperature'])
+
+        response = self.processor.batch_decode(output, skip_special_tokens=True)[0].strip()
 
         return response
         
 
     def run_llava(self, kwargs, finetuned=False):
-        
+	#pdb.set_trace() 
         prompt = kwargs['context_prompt'] +'\n\n'+ kwargs['prompt']
-        args = type('Args', (), {
-            "model_path": self.model_path,
-            "model_base": None,
-            "model_name": get_model_name_from_path(self.model_path),
-            "query": prompt,
-            "conv_mode": None,
-            "image_file": kwargs['image_paths'][0],
-            "sep": ",",
-            "temperature": 0.7,
-            "top_p": 1.0,
-            "num_beams": 1,
-            "max_new_tokens": 80
-        })()
+	#args = type('Args', (), {
+	#    "model_path": self.model_path,
+	#    "model_base": None,
+	#    "model_name": get_model_name_from_path(self.model_path),
+	#    "query": prompt,
+	#    "conv_mode": None,
+	#    "image_file": kwargs['image_paths'][0],
+	#    "sep": ",",
+	#    "temperature": 0.7,
+	#    "top_p": 1.0,
+	#    "num_beams": 1,
+	#    "max_new_tokens": 80
+	#})()
 
-        response = eval_model(args)
+	#response = eval_model(args)
+        
+        prompt = "USER: <image>\n{}\nASSISTANT:".format(prompt)
+        image = Image.open(kwargs['image_paths'][0])
+        inputs = self.processor(text=prompt, images=image, return_tensors="pt")
 
+        generate_ids = self.model.generate(**inputs, max_new_tokens=kwargs['max_tokens'])
+        response = self.processor.batch_decode(generate_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False)[0]
+        
+        response = response.split('ASSISTANT:')[1].strip()
         return response
 
     def run_llama(self, kwargs, finetuned=False):
@@ -411,18 +434,18 @@ class MessagePrompt():
     
     def create_pickup_prompt(self, obj):
 
-        return f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The preconditions for PickUp(x) are:\n- The robot is facing 'x'\n- The robot is not holding 'x'\n- The robot arm is empty\n- The object 'x' is movable\n- The robot is nearby object 'x'\n- The path between the object 'x' and robot arm is not obstructed\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n- The object 'x' is on a receptacle\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state breifly what preconditions prevent PickUp({obj}) from being executed?",
+        return f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The preconditions for PickUp(x) are:\n- The robot is facing 'x'\n- The robot is not holding 'x'\n- The robot arm is empty\n- The object 'x' is movable\n- The robot is nearby object 'x'\n- The path between the object 'x' and robot arm is not obstructed\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n- The object 'x' is on a receptacle\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?"
 
     def create_putdown_prompt(self, obj, receptacle):
-        return f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The preconditions for PutDown(x,r) are:\n- The blue sphere (region of influence) around the robot arm is above the receptacle 'r'\n- The receptacle 'r' is not closed\n- The receptacle 'r' is not occupied with other objects\n- The robot is facing receptacle 'r'\n- The robot is holding object 'x'\n- The object 'x' is not on receptacle 'r'\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state breifly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?"
+        return f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The preconditions for PutDown(x,r) are:\n- The blue sphere (region of influence) around the robot arm is above the receptacle 'r'\n- The receptacle 'r' is not closed\n- The receptacle 'r' is not occupied with other objects\n- The robot is facing receptacle 'r'\n- The robot is holding object 'x'\n- The object 'x' is not on receptacle 'r'\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?"
 
     def create_turnon_prompt(self, obj):
 
-        return f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The preconditions for ToggleOn(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is not on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state breifly what preconditions prevent ToggleOn({obj}) from being executed?"
+        return f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The preconditions for ToggleOn(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is not on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?"
     
     def create_turnoff_prompt(self, obj):
 
-        return f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The preconditions for ToggleOff(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state breifly what preconditions prevent ToggleOff({obj}) from being executed?"
+        return f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The preconditions for ToggleOff(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?"
 
 
 
@@ -439,13 +462,13 @@ Trained Binary Classifier (for each task)
 '''
 
 if __name__ == '__main__':
-
+    pdb.set_trace()
     # model = FoundationModel('gemini')
-    model = OpensourceModels(model_type='LLaVa')
+    model = OpensourceModels(model_type='instruct_BLIP')
 
     message_generator = MessagePrompt()
 
-    dataframe = pd.read_csv('./toggle_on_data.csv')
+    dataframe = pd.read_csv('./turn_off_data.csv')
 
     responses = []
 
@@ -455,20 +478,20 @@ if __name__ == '__main__':
         
 
         obj = row['argument']
-        # receptacle = row['argument'].split(',')[1].split(')')[0].strip()
+	#receptacle = row['argument'].split(',')[1].split(')')[0].strip()
 
         
 
         model_args = {
             'image_paths': [row['image']],
             'context_prompt': 'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
-            'prompt': message_generator.create_turnon_prompt(obj),
+            'prompt': message_generator.create_turnoff_prompt(obj),
             'max_tokens':80,
             'top_p':1.0,
             'temperature':0.7
         }
-
-        response = model.run_model(model_args, with_vision=True)
+	#pdb.set_trace()
+        response = model.run_model(model_args)
 
         
 
