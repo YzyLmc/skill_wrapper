@@ -64,7 +64,7 @@ def LookAt(controller, obj_name):
     pass
 
 # Gripper movement
-def GripperUp(controller):
+def MoveGripperUp(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=0, y=0.5, z=0),
@@ -74,7 +74,7 @@ def GripperUp(controller):
     )
     return event
 
-def GripperDown(controller):
+def MoveGripperDown(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=0, y=-0.5, z=0),
@@ -84,7 +84,7 @@ def GripperDown(controller):
     )
     return event
 
-def GripperRight(controller):
+def MoveGripperRight(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=0.5, y=0, z=0),
@@ -94,7 +94,7 @@ def GripperRight(controller):
     )
     return event
 
-def GripperLeft(controller):
+def MoveGripperLeft(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=-0.5, y=0, z=0),
@@ -104,7 +104,7 @@ def GripperLeft(controller):
     )
     return event
 
-def GripperForward(controller):
+def MoveGripperForward(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=0, y=0, z=0.5),
@@ -114,7 +114,7 @@ def GripperForward(controller):
     )
     return event
 
-def GripperBackward(controller):
+def MoveGripperBackward(controller):
     event = controller.step(
         action='MoveArm',
         position=dict(x=0, y=0, z=0.5),
@@ -124,7 +124,7 @@ def GripperBackward(controller):
     )
     return event
 
-def PickUp(object, controller, metadata):
+def PickUp(object, location, controller, metadata):
     '''
     object: str : name of the object
     '''
@@ -150,7 +150,7 @@ def PickUp(object, controller, metadata):
 
     return event
 
-def DropAt(location, controller, metadata):
+def DropAt(object, location, controller, metadata):
     '''
     location: str : name of the object to drop. Named location for LLM to reason
     '''

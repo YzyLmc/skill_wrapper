@@ -1,0 +1,25 @@
+{
+    "DropAt(location)": {
+        "At(location)": {},
+        "AtLocation(object,location)": {},
+        "Clear(location)": {},
+        "Holding(object)": {},
+        "IsFreeHand()": {
+            "1": "GoTo(Book)\nPickUp(Book, Table)",
+            "2": ""
+        }
+    },
+    "GoTo(object_or_location)": {
+        "At(location)": {},
+        "BatterySufficient()": {},
+        "Clear(location)": {},
+        "IsFreeHand()": {}
+    },
+    "PickUp(object)": {
+        "At(location)": {},
+        "AtLocation(object,location)": {},
+        "Holding(object)": {},
+        "IsFreeHand()": {},
+        "IsReachable(object)": {}
+    }
+}

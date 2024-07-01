@@ -67,7 +67,7 @@ def unifiy_predicates(model, skill2pred, prompt_fpath='prompts/predicates_unify.
     return unified_skill2preds
     
 
-def task_proposal(model, predicate, skill, basic_info, history=None, action_list=[MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, GoTo, GripperUp, GripperDown, GripperLeft, GripperRight, GripperForward, GripperBackward, PickUp, DropAt], prompt_fpath='prompts/task_proposing_init.txt'):
+def task_proposal(model, predicate, skill, basic_info, history=None, highlv_actions=[PickUp, DropAt, GoTo], lowlv_actions=[MoveForward, MoveBackward, MoveLeft, MoveRight, TurnLeft, TurnRight, MoveGripperUp, MoveGripperDown, MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward], prompt_fpath='prompts/task_proposing_init.txt'):
     '''
     Proposing task for one predicate of a skill.
     It should be able to prpoposed based on existing roll-outs.
@@ -75,20 +75,22 @@ def task_proposal(model, predicate, skill, basic_info, history=None, action_list
     skill: str
     action_list: list(func)
     '''
-    def construct_prompt(prompt, predicate_name, action_list, basic_info, history):
-        actiom_list_strs = [f'{a.__name__}({", ".join(inspect.getfullargspec(a)[0][:-2])})' for a in action_list]
-        action_list_strs_joined = ", ".join(actiom_list_strs)
-        while "[PRED]" in prompt or "[ACTION_LIST]" in prompt or '[SKILL]' in prompt or '[BASIC_INFO]' in prompt:
+    def construct_prompt(prompt, predicate_name, highlv_actions, lowlv_actions, basic_info, history):
+        highlv_actions_strs = [f'{a.__name__}({", ".join(inspect.getfullargspec(a)[0][:-2])})' for a in highlv_actions]
+        lowlv_actions_strs = [f'{a.__name__}({", ".join(inspect.getfullargspec(a)[0][:-2])})' for a in lowlv_actions]
+        # action_list_strs_joined = ", ".join(actiom_list_strs)
+        while "[PRED]" in prompt or "[HIGHLV_ACTION_LIST]" in prompt or "[LOWLV_ACTION_LIST]" in prompt or '[SKILL]' in prompt or '[BASIC_INFO]' in prompt:
             prompt = prompt.replace("[SKILL]", f'{skill.__name__}({", ".join(inspect.getfullargspec(skill)[0][:-2])})')
             prompt = prompt.replace("[PRED]", predicate_name)
-            prompt = prompt.replace("[ACTION_LIST]", action_list_strs_joined)
+            prompt = prompt.replace("[HIGHLV_ACTION_LIST]", ", ".join(highlv_actions_strs))
+            prompt = prompt.replace("[LOWLV_ACTION_LIST]", ", ".join(lowlv_actions_strs))
             prompt = prompt.replace("[BASIC_INFO]", basic_info)
         if history:
-            prompt = prompt.replace("[HISTORY]", history)
+            prompt = prompt.replace("[TASK_HISTORY]", history)
         return prompt
-    prompt_fpath = 'prompts/task_proposing_next.txt' if history else prompt
+    prompt_fpath = 'prompts/task_proposing_next.txt' if history else prompt_fpath
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, predicate, action_list, basic_info, history)
+    prompt = construct_prompt(prompt, predicate, highlv_actions, lowlv_actions, basic_info, history)
     return model.generate(prompt)[0]
 
 def pred2precond(model, skill2pred, contrastive_pair, prompt_fpath='prompts/pred2precond.txt'):
@@ -140,7 +142,14 @@ if __name__ == "__main__":
     # predicates = predicates_per_skill(model, GoTo)
     # print(predicates)
     basic_info = 'The robot visible in the image appears to have a humanoid form with an articulated arm, which suggests it is designed for multipurpose tasks, such as handling objects, performing household chores, or interacting with the environment in a human-like manner. It seems to possess mobility, indicated by its positioning away from the walls and navigating the hallway, allowing it to perform tasks throughout the home. The embodiment of the robot, featuring multiple joints and a sleek design, points towards advanced robotics meant for a domestic setting, enabling it to maneuver and operate effectively within the confines of typical household spaces.'
-    task = task_proposal(model, 'IsReachable(object)', PickUp, basic_info)
+    # task = task_proposal(model, 'IsFreeHand()', PickUp, basic_info)
+    history = '1.\nGoTo(Book)\nPickUp(Book, Table)\n\nSuccess'
+    # history = '1.\nPickUp(Book)\n\nFailed\n\n2.\nGoTo(KeyChain)\nMoveGripperForward()\nMoveGripperDown()\nPickUp(KeyChain)\n\nSuccess'
+    # history = '1.\nPickUp(Book)\n\nFailed\n\n2.\nGoTo(KeyChain)\nMoveGripperForward()\nMoveGripperDown()\nPickUp(KeyChain)\n\nSuccess\n\n3.\nGoTo(CellPhone)\nMoveGripperForward()\nMoveGripperDown()\nPickUp(CellPhone)\n\nSuccess'
+    # history = 'GoTo(Book)\nPickUp(Book)\n\nSuccess'
+    # history = 'GoTo(Book)\nPickUp(Book)\n\nSuccess\n\nMoveForward()\nGoTo(KeyChain)\nPickUp(KeyChain)\n\nSuccess'
+    # task = task_proposal(model, 'IsReachable(object)', PickUp, basic_info, history=history)
+    task = task_proposal(model, 'IsFreeHand()', PickUp, basic_info, history=history)
     print(task)
     # skill2pred = {'PickUp': ['IsObjectReachable(object)', 'IsObjectGraspable(object)', 'IsObjectOnSurface(object,surface)', 'IsSurfaceStable(surface)', 'IsObjectClearOfObstructions(object)', 'IsObjectWithinArmRange(object)', 'IsObjectTypeSupported(object)', 'IsObjectWeightSupported(object)', 'IsObjectPositionKnown(object)', 'IsArmInPositionForGrasp(object)'], 'DropAt': ['IsHolding(object)', 'IsAtLocation(robot,location)', 'IsClear(location)', 'IsObjectType(object,type)', 'IsWithinReach(robot,location)', 'IsStableSurface(location)', 'IsAligned(robot,location)', 'IsDropHeightSafe(robot,location)', 'IsObjectIntact(object)', 'IsLocationAccessible(robot,location)']}
     # unified_pred = unifiy_predicates(model, skill2pred)
