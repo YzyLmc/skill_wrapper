@@ -1,22 +1,23 @@
-#from openai import OpenAI
-#import base64
-#import numpy as np
+from openai import OpenAI
+import base64
+import numpy as np
 import pandas as pd
+import time
 
-
-#import google.generativeai as genai
+import google.generativeai as genai
 #Using Gemini Guide: https://ai.google.dev/gemini-api/docs/get-started/python?_gl=1*1tyxd27*_up*MQ..&gclid=Cj0KCQjw0MexBhD3ARIsAEI3WHJWMzD8_zedKR_LoV2Zc0e23VzI7kMDhS_cHWDTOfrv-ROgfZa5W7waAlwnEALw_wcB
 
 #import clip
 from PIL import Image
 import torch
 import pdb
+from tqdm import tqdm
 
 from transformers import AutoProcessor, LlavaForConditionalGeneration
 from transformers import InstructBlipProcessor, InstructBlipForConditionalGeneration
 
 #import vertexai
-#from vertexai.generative_models import GenerationConfig, GenerativeModel, Part
+# from vertexai.generative_models import GenerationConfig, GenerativeModel, Part
 
 #from IPython.display import display
 #from IPython.display import Markdown
@@ -32,136 +33,7 @@ from transformers import InstructBlipProcessor, InstructBlipForConditionalGenera
 #https://github.com/haotian-liu/LLaVA/blob/main/docs/MODEL_ZOO.md
 
 #Using LlaVa: https://llava-vl.github.io/ | https://github.com/haotian-liu/LLaVA
-'''
-OpenAI GPT4
-Google Gemini
-Instruct BLIP (with + without fine-tuning)
-LLaVa (with + without fine-tuning)
-OpenFlamingo
-CLIP With Pair
-Trained Binary Classifier (for each task)
-'''
 
-
-'''
-"""Example usage of GPT4-V API.
-
-Usage:
-
-    OPENAI_API_KEY=<your_api_key> python3 gpt4v.py \
-        [<path/to/image1.png>] [<path/to/image2.jpg>] [...] "text prompt"
-
-Example:
-
-    OPENAI_API_KEY=xxx python3 gpt4v.py photo.png "What's in this photo?"
-"""
-
-from pprint import pprint
-import base64
-import json
-import mimetypes
-import os
-import requests
-import sys
-
-
-api_key = os.getenv("OPENAI_API_KEY")
-
-
-def encode_image(image_path: str):
-    """Encodes an image to base64 and determines the correct MIME type."""
-    mime_type, _ = mimetypes.guess_type(image_path)
-    if mime_type is None:
-        raise ValueError(f"Cannot determine MIME type for {image_path}")
-
-    with open(image_path, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-        return f"data:{mime_type};base64,{encoded_string}"
-
-
-def create_payload(images: list[str], prompt: str, model="gpt-4-vision-preview", max_tokens=100, detail="high"):
-    """Creates the payload for the API request."""
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": prompt,
-                },
-            ],
-        },
-    ]
-
-    for image in images:
-        base64_image = encode_image(image)
-        messages[0]["content"].append({
-            "type": "image_url",
-            "image_url": {
-                "url": base64_image,
-                "detail": detail,
-            }
-        })
-
-    return {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens
-    }
-
-
-def query_openai(payload):
-    """Sends a request to the OpenAI API and prints the response."""
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
-    }
-    response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    return response.json()
-
-
-def main():
-    if len(sys.argv) < 3:
-        print("Usage: python script.py [image1.jpg] [image2.png] ... \"Text Prompt\"")
-        sys.exit(1)
-
-    # All arguments except the last one are image paths
-    image_paths = sys.argv[1:-1]
-
-    # The last argument is the text prompt
-    prompt = sys.argv[-1]
-
-    payload = create_payload(image_paths, prompt)
-    response = query_openai(payload)
-    pprint(response)
-
-
-if __name__ == "__main__":
-    main()
-
-
-'''
-
-
-'''
-
-openai.api_key = os.getenv("OPENAI_API_KEY")
-image = b"..."  # binary image stream
-completion = openai.ChatCompletion.create(
-    model="gpt-4-0xxx",
-    messages=[
-        {
-            "role": "system",
-            "content": "You are a helpful assistant and can describe images.",
-        },
-        {
-            "role": "user",
-            "content": ["What's in this screenshot?", {"image": image}],
-        },
-    ],
-)
-print(completion["choices"][0]["message"]["content"])
-'''
 
 
 class FoundationModel():
@@ -175,9 +47,6 @@ class FoundationModel():
             self.model = OpenAI(api_key='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')
 
             self.model_args = {
-                'image_paths': [],
-                'context_prompt': 'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
-                'prompt': message_generator.create_turnoff_prompt(obj),
                 'temperature': 0.7,
                 'presence_penalty': 0.4,
                 'frequency_penalty': 0.3,
@@ -192,6 +61,14 @@ class FoundationModel():
             # self.model = GenerativeModel(model_name="gemini-1.0-pro-vision-001")
 
             genai.configure(api_key = 'AIzaSyDcllVAUVVmw-YiJKXOljWGBQ4C4r8v4_0')
+
+            self.model_args = {
+                'temperature': 0.7,
+                'presence_penalty': 0.4,
+                'frequency_penalty': 0.3,
+                'top_p': 1.0,
+                'max_tokens':80,
+            }
 
         elif model_type == 'clip':
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -235,7 +112,9 @@ class FoundationModel():
 
 
 
-    def run_openai_api(self, kwargs, max_iters = 100, engine = 'gpt-4-turbo', with_vision=False):
+    def run_openai_api(self, kwargs, max_iters = 100, engine = 'gpt-4o', with_vision=True):
+
+        #gpt-4-turbo'
 
         def load_image(image_paths):
 
@@ -282,6 +161,7 @@ class FoundationModel():
                     encoded_images = load_image(kwargs['image_paths'])
                 else:
                     encoded_images = None
+                    raise NotImplementedError
 
                 messages, other_params = create_payload(kwargs['context_prompt'],kwargs['prompt'], encoded_images, kwargs)
 
@@ -302,9 +182,9 @@ class FoundationModel():
         return response.to_dict()['choices'][0]['message']['content']
 
     
-    def run_gemini_api(self, kwargs, engine = 'gemini-pro-vision', with_vision=False):
+    def run_gemini_api(self, kwargs, engine = 'gemini-pro-vision', with_vision=True):
 
-        config = GenerationConfig(max_output_tokens=kwargs['max_tokens'], temperature=kwargs['temperature'], top_p=kwargs['top_p'])
+        # config = GenerationConfig(max_output_tokens=kwargs['max_tokens'], temperature=kwargs['temperature'], top_p=kwargs['top_p'], frequency_penalty=kwargs['frequency_penalty'], presence_penalty=kwargs['presence_penalty'])
 
         def to_markdown(text):
             text = text.replace('•', '  *')
@@ -322,7 +202,10 @@ class FoundationModel():
             # response = self.model.generate_content([kwargs['context_prompt'] + '\n\n'+ kwargs['prompt'], image_contents[0]], generation_config=config)
 
             image_prompt = [Image.open(img) for img in kwargs['image_paths']]
+
+           
             response = self.model.generate_content([kwargs['context_prompt'] + '\n\n'+ kwargs['prompt'], image_prompt[0]], stream=True)
+            
         else:
             response = self.model.generate_content(kwargs['context_prompt'] + '\n\n'+ kwargs['prompt'], generation_config=config)
 
@@ -372,15 +255,15 @@ class OpensourceModels():
     
     def run_instruct_blip(self, kwargs):
 
-	#image = self.image_preprocessor["eval"](kwargs['image_prompt']).unsqueeze(0).to(self.device)
-	#response = self.model.generate({"image": kwargs['image_prompt'], "prompt": kwargs['text_prompt'], 
-	#    "length_penalty": kwargs['length_penalty'], 
-	#    "repetition_penalty": kwargs['repetition_penalty'],
-	#    "num_beams": kwargs['num_beams'],
-	#    "max_length": kwargs['max_len'],
-	#    "min_length": kwargs['min_len'],
-	#    "top_p": kwargs['top_p'],
-	#    "use_nucleus_sampling": kwargs['use_nucleus_sampling']})
+        #image = self.image_preprocessor["eval"](kwargs['image_prompt']).unsqueeze(0).to(self.device)
+        #response = self.model.generate({"image": kwargs['image_prompt'], "prompt": kwargs['text_prompt'], 
+        #    "length_penalty": kwargs['length_penalty'], 
+        #    "repetition_penalty": kwargs['repetition_penalty'],
+        #    "num_beams": kwargs['num_beams'],
+        #    "max_length": kwargs['max_len'],
+        #    "min_length": kwargs['min_len'],
+        #    "top_p": kwargs['top_p'],
+        #    "use_nucleus_sampling": kwargs['use_nucleus_sampling']})
         image = Image.open(kwargs['image_prompt']).convert('RGB')
         prompt = kwargs['text_prompt']
 
@@ -394,24 +277,24 @@ class OpensourceModels():
         
 
     def run_llava(self, kwargs, finetuned=False):
-	#pdb.set_trace() 
+	    #pdb.set_trace() 
         prompt = kwargs['context_prompt'] +'\n\n'+ kwargs['prompt']
-	#args = type('Args', (), {
-	#    "model_path": self.model_path,
-	#    "model_base": None,
-	#    "model_name": get_model_name_from_path(self.model_path),
-	#    "query": prompt,
-	#    "conv_mode": None,
-	#    "image_file": kwargs['image_paths'][0],
-	#    "sep": ",",
-	#    "temperature": 0.7,
-	#    "top_p": 1.0,
-	#    "num_beams": 1,
-	#    "max_new_tokens": 80
-	#})()
+        #args = type('Args', (), {
+        #    "model_path": self.model_path,
+        #    "model_base": None,
+        #    "model_name": get_model_name_from_path(self.model_path),
+        #    "query": prompt,
+        #    "conv_mode": None,
+        #    "image_file": kwargs['image_paths'][0],
+        #    "sep": ",",
+        #    "temperature": 0.7,
+        #    "top_p": 1.0,
+        #    "num_beams": 1,
+        #    "max_new_tokens": 80
+        #})()
 
-	#response = eval_model(args)
-        
+        #response = eval_model(args)
+            
         prompt = "USER: <image>\n{}\nASSISTANT:".format(prompt)
         image = Image.open(kwargs['image_paths'][0])
         inputs = self.processor(text=prompt, images=image, return_tensors="pt")
@@ -429,25 +312,66 @@ class OpensourceModels():
 
 class MessagePrompt():
 
-    def __init__(self):
-        pass
+    def __init__(self, skill):
+
+        skill_predicates = {'pickup': ["The robot is facing 'x'", "The robot is not holding 'x'", "The robot arm is empty", "The object 'x' is movable", "The robot is nearby object 'x'", "The path between the object 'x' and robot arm is not obstructed", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'", "The object 'x' is on a receptacle"],
+        
+        'putdown': ["The blue sphere (region of influence) around the robot arm is above the receptacle 'r'", "The receptacle 'r' is not closed", "The receptacle 'r' is not occupied with other objects", "The robot is facing receptacle 'r'", "The robot is holding object 'x'", "The object 'x' is not on receptacle 'r'"],
+
+        'turnon': ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is not on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"],
+
+        'turnoff': ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"]
+        
+        }
+        
+        self.num_predicates  = len(skill_predicates[skill])
     
-    def create_pickup_prompt(self, obj):
+    def create_pickup_prompt(self, obj, mode, predicate_idx=None):
+        predicates = ["The robot is facing 'x'", "The robot is not holding 'x'", "The robot arm is empty", "The object 'x' is movable", "The robot is nearby object 'x'", "The path between the object 'x' and robot arm is not obstructed", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'", "The object 'x' is on a receptacle"]
+        prompt = {
+            'precondition': f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The preconditions for PickUp(x) are:\n- The robot is facing 'x'\n- The robot is not holding 'x'\n- The robot arm is empty\n- The object 'x' is movable\n- The robot is nearby object 'x'\n- The path between the object 'x' and robot arm is not obstructed\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n- The object 'x' is on a receptacle\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?",
+            'predicate': [f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). One of the predicates that are required for PickUp(x) is {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to PickUp({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The evaluated preconditions for PickUp(x) are:{}",f"\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?"],
+        }
 
-        return f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The preconditions for PickUp(x) are:\n- The robot is facing 'x'\n- The robot is not holding 'x'\n- The robot arm is empty\n- The object 'x' is movable\n- The robot is nearby object 'x'\n- The path between the object 'x' and robot arm is not obstructed\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n- The object 'x' is on a receptacle\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?"
+        return prompt[mode], predicates
 
-    def create_putdown_prompt(self, obj, receptacle):
-        return f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The preconditions for PutDown(x,r) are:\n- The blue sphere (region of influence) around the robot arm is above the receptacle 'r'\n- The receptacle 'r' is not closed\n- The receptacle 'r' is not occupied with other objects\n- The robot is facing receptacle 'r'\n- The robot is holding object 'x'\n- The object 'x' is not on receptacle 'r'\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?"
+    def create_putdown_prompt(self, obj, receptacle, mode, predicate_idx=None):
+        predicates = ["The blue sphere (region of influence) around the robot arm is above the receptacle 'r'", "The receptacle 'r' is not closed", "The receptacle 'r' is not occupied with other objects", "The robot is facing receptacle 'r'", "The robot is holding object 'x'", "The object 'x' is not on receptacle 'r'"]
+        prompt = {
+            'precondition': f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The preconditions for PutDown(x,r) are:\n- The blue sphere (region of influence) around the robot arm is above the receptacle 'r'\n- The receptacle 'r' is not closed\n- The receptacle 'r' is not occupied with other objects\n- The robot is facing receptacle 'r'\n- The robot is holding object 'x'\n- The object 'x' is not on receptacle 'r'\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?",
+            'predicate': [f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). One of the predicates that are required for PutDown(x,r) is {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The evaluated preconditions for PutDown(x,r) are:{}",f"\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?"],
+        }
+        return prompt[mode], predicates
 
-    def create_turnon_prompt(self, obj):
+    def create_turnon_prompt(self, obj, mode, predicate_idx=None):
+        predicates  = ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is not on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"]
 
-        return f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The preconditions for ToggleOn(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is not on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?"
+        prompt = {
+            'precondition': f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The preconditions for ToggleOn(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is not on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?",
+
+            'predicate': [f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). One of the predicates that are required for ToggleOn(x) is that {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to ToggleOn({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The evaluated preconditions for ToggleOn(x) are:{}",f"\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?"],
+        }
+
+        return prompt[mode], predicates
     
-    def create_turnoff_prompt(self, obj):
+    def create_turnoff_prompt(self, obj, mode, predicate_idx=None):
 
-        return f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The preconditions for ToggleOff(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?"
+        predicates  = ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"]
+
+        prompt = {
+            'precondition':f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The preconditions for ToggleOff(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?",
+            'predicate': [f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). One of the predicates that are required for ToggleOff(x) is that {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to ToggleOff({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The evaluated preconditions for ToggleOff(x) are:{}",f"\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?"],
+        }
+        return prompt[mode], predicates
 
 
+    def create_prompt_content(self, mode):
+
+        context_dict = {'precondition':'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
+                        'predicate': 'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the predicates that form the action preconditions, you need to determine whether the given predicate evaluates to true or false',
+        }
+
+        return context_dict[mode]
 
 
 
@@ -461,15 +385,7 @@ OpenFlamingo
 Trained Binary Classifier (for each task)
 '''
 
-if __name__ == '__main__':
-    pdb.set_trace()
-    # model = FoundationModel('gemini')
-    model = OpensourceModels(model_type='instruct_BLIP')
-
-    message_generator = MessagePrompt()
-
-    dataframe = pd.read_csv('./turn_off_data.csv')
-
+def run_model_preconditions(dataframe, message_generator, model):
     responses = []
 
     for index, row in dataframe.iterrows():
@@ -478,29 +394,123 @@ if __name__ == '__main__':
         
 
         obj = row['argument']
-	#receptacle = row['argument'].split(',')[1].split(')')[0].strip()
+	    #receptacle = row['argument'].split(',')[1].split(')')[0].strip()
 
-        
+        context = message_generator.create_prompt_content(mode='precondition')
+        prompt, predicates = message_generator.create_turnoff_prompt(obj)
 
         model_args = {
             'image_paths': [row['image']],
-            'context_prompt': 'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
-            'prompt': message_generator.create_turnoff_prompt(obj),
-            'max_tokens':80,
-            'top_p':1.0,
-            'temperature':0.7
+            'context_prompt': context,
+            'prompt': prompt,
         }
-	#pdb.set_trace()
+
+        for k, v in model.model_args.items():
+            model_args[k] = v
+
+	    #pdb.set_trace()
         response = model.run_model(model_args)
-
-        
-
         
 
         responses.append(response)
+    
+    return responses
+
+def run_model_predicates(dataframe, message_generator, model, skill):
+    responses = []
+    joined_predicate_responses = []
+
+    for index, row in tqdm(dataframe.iterrows()):
+
+        predicate_responses = []
+
+        for predicate_idx in range(message_generator.num_predicates):
+
+            if skill == 'putdown':
+
+                obj = row['argument'].split(',')[0].split('(')[1].strip()
+                receptacle = row['argument'].split(',')[1].split(')')[0].strip()
+
+                prompt, predicates = message_generator.create_putdown_prompt(obj, receptacle, mode='predicate', predicate_idx = predicate_idx)
+            else:
+
+                obj = row['argument']
+
+                prompt_generator_for_skill = {'pickup': message_generator.create_pickup_prompt, 'turnon': message_generator.create_turnon_prompt, 'turnoff': message_generator.create_turnoff_prompt}
+                prompt, predicates = prompt_generator_for_skill[skill](obj, mode='predicate', predicate_idx = predicate_idx)
+
+
+            context = message_generator.create_prompt_content(mode='predicate')
+            
+
+            model_args = {
+                'image_paths': [row['image']],
+                'context_prompt': context,
+                'prompt': prompt[0],
+            }
+
+            for k, v in model.model_args.items():
+                model_args[k] = v
+
+            if 'max_tokens' in model.model_args.keys():
+                model_args['max_tokens'] = 5
+
+            response = model.run_model(model_args)
+            predicate_responses.append(response)
+            time.sleep(0.2)
+        
+
+        # pdb.set_trace()
+        overall_context = message_generator.create_prompt_content(mode='precondition')
+        
+
+        predicates_segment = []
+
+        for response, predicate in zip(predicate_responses, predicates):
+            predicates_segment.append('- {}: {}'.format(predicate, response))
+        
+        predicates_segment = '\n'.join(predicates_segment)
+
+        overall_prompt = prompt[1].format('\n' + predicates_segment) + prompt[2]
+
+
+        model_args = {
+            'image_paths': [row['image']],
+            'context_prompt': overall_context,
+            'prompt': overall_prompt
+        }
+       
+
+        for k, v in model.model_args.items():
+            model_args[k] = v
+
+        # pdb.set_trace()
+        response = model.run_model(model_args)
+        responses.append(response)
+        joined_predicate_responses.append(';'.join(predicate_responses))
+    
+    return responses, joined_predicate_responses
+        
+
+
+
+
+
+if __name__ == '__main__':
+    pdb.set_trace()
+    model = FoundationModel('gemini')
+    # model = OpensourceModels(model_type='instruct_BLIP')
+
+    message_generator = MessagePrompt('pickup')
+
+    dataframe = pd.read_csv('./pick_up_data.csv')
+
+    
+    responses, predicate_responses = run_model_predicates(dataframe, message_generator, model, 'pickup')
 
     pdb.set_trace()
     dataframe['responses'] = responses
+    dataframe['predicate_responses'] = predicate_responses
     dataframe.to_csv('temp.csv')
 
     

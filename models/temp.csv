@@ -1,38 +1,184 @@
-,argument,image,responses
-0,Faucet,../dataset/toggle_on/success/2_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a potato."
-1,Toaster,../dataset/toggle_on/success/6_color.png," No, the robot cannot execute ToggleOn(Toaster). 
-The robot is not facing the Toaster."
-2,StoveKnob,../dataset/toggle_on/success/11_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a blue sphere."
-3,LightSwitch,../dataset/toggle_on/success/20_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a blue cube."
-4,Microwave,../dataset/toggle_on/success/24_color.png," No, the robot cannot execute ToggleOn(Microwave). The robot is not near the object 'Microwave'."
-5,LightSwitch,../dataset/toggle_on/is_facing/4_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
-6,StoveKnob,../dataset/toggle_on/is_facing/12_color.png," No, the precondition 'The robot is near object 'x'' is not satisfied."
-7,Toaster,../dataset/toggle_on/is_facing/24_color.png," No, the robot cannot execute ToggleOn(Toaster). 
-The robot is not near the Toaster."
-8,StoveKnob,../dataset/toggle_on/is_holding/2_color.png," No, the robot cannot execute ToggleOn(StoveKnob). The robot is not near the object 'StoveKnob'."
-9,Faucet,../dataset/toggle_on/is_holding/7_color.png," No, the precondition 'The robot is not holding any object' is not met. The robot is currently holding a potato."
-10,Toaster,../dataset/toggle_on/is_holding/14_color.png," No, the robot cannot execute ToggleOn(Toaster). 
-The robot gripper is not overlapping with the Toaster."
-11,StoveKnob,../dataset/toggle_on/is_nearby/10_color.png," No, the precondition 'The robot is near object 'x'' is not satisfied."
-12,Faucet,../dataset/toggle_on/is_nearby/16_color.png," No, the precondition ""The robot is not holding any object"" is not met. The robot is currently holding a blue sphere."
-13,Toaster,../dataset/toggle_on/is_nearby/22_color.png," No, the precondition 'The robot is near object x' is not satisfied."
-14,Faucet,../dataset/toggle_on/is_on/4_color.png," No, the precondition that the robot is not holding any object is not met. The robot is currently holding a potato."
-15,Toaster,../dataset/toggle_on/is_on/8_color.png," No, the robot cannot execute ToggleOn(Toaster). 
-The robot gripper is not overlapping with the Toaster."
-16,LightSwitch,../dataset/toggle_on/is_on/22_color.png," Yes. All preconditions for ToggleOn(LightSwitch) are met:
-- The robot is near the LightSwitch.
-- The robot is facing the LightSwitch.
-- The robot is not holding any object.
-- The LightSwitch is togglable.
-- The LightSwitch is not on.
-- The blue sphere (region of influence) around the robot arm gripper overlaps with the LightSwitch."
-17,CeilingLight,../dataset/toggle_on/is_togglable/11_color.png," No, the precondition that the robot's gripper must overlap with the CeilingLight is not met."
-18,Kettle,../dataset/toggle_on/is_togglable/9_color.png," No, the robot cannot execute ToggleOn(Kettle). 
-The robot is not near the Kettle."
-19,WashingMachine,../dataset/toggle_on/is_togglable/4_color.png," No
-- The robot is not near the WashingMachine
-- The robot is not facing the WashingMachine"
-20,LightSwitch,../dataset/toggle_on/is_within_gripper_reach/8_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
-21,StoveKnob,../dataset/toggle_on/is_within_gripper_reach/14_color.png," No, the robot cannot execute ToggleOn(StoveKnob). 
-The robot is not facing the object 'StoveKnob'."
-22,Toaster,../dataset/toggle_on/is_within_gripper_reach/26_color.png," No, the precondition 'The robot is near object 'x' is not satisfied."
+,argument,image,responses,predicate_responses
+0,Bread,../dataset/pick_up/success/5_color.png,"No, the robot cannot execute PickUp(Bread).
+
+The preconditions that prevent the action from being executed are:
+1. The robot is not holding 'x': False. The robot is.
+2. The robot arm is empty: False. The robot arm.
+
+These conditions indicate that the robot is already holding something and its arm is not empty, preventing it from picking up the bread.","True. 
+
+The robot;False. The robot is;False. The robot arm;True;True. The robot's;True. 
+
+The path;True;True. The bread is"
+1,FryingPan,../dataset/pick_up/success/9_color.png,"No, the robot cannot execute PickUp(FryingPan). 
+
+The precondition that prevents PickUp(FryingPan) from being executed is:
+- The robot arm is empty: False. 
+
+The robot arm is not empty, as it is already holding an object, which prevents it from picking up the frying pan.","True. 
+
+The robot;True. 
+
+The robot;False. The robot arm;True;True. 
+
+The blue;True. The path between;True;True. The frying pan"
+2,Lettuce,../dataset/pick_up/success/11_color.png,"No, the robot cannot execute PickUp(Lettuce).
+
+The precondition that prevents PickUp(Lettuce) from being executed is:
+- The robot arm is empty: False
+
+This indicates that the robot's arm is not empty and is likely holding another object, which prevents it from picking up the lettuce.",True;True. The robot is;False;True;True. The blue sphere;True;True. The blue sphere;True
+3,BreadSlice,../dataset/pick_up/success/17_color.png,"No, the robot cannot execute PickUp(BreadSlice).
+
+The precondition that prevents PickUp(BreadSlice) from being executed is:
+- The robot arm is empty: False. The robot arm is already holding another object.","True. The robot is;True. 
+
+In the;False. The robot arm;True. In the image;True;True. 
+
+The image;True;True"
+4,Pot,../dataset/pick_up/success/23_color.png,"No, the robot cannot execute PickUp(Pot). The precondition that prevents the action from being executed is that the robot arm is not empty (The robot arm is empty: False).","True. 
+
+The robot;True. The robot is;False;True;True;True.
+
+The image depicts;True;True. The object '"
+5,Book,../dataset/pick_up/is_facing/book9_color.png,"No, the robot cannot execute PickUp(Book).
+
+The preconditions preventing PickUp(Book) from being executed are:
+- The robot is not facing 'x': False
+- The object 'x' is movable: False
+- The robot is nearby object 'x': False
+- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x': False","False;True. The robot is;True.
+
+The predicate "";False
+
+The robot is;False;True. 
+
+In the;False;True. The book is"
+6,Bread,../dataset/pick_up/is_facing/bread3_color.png,"No, the robot cannot execute PickUp(Bread).
+
+The preconditions preventing PickUp(Bread) from being executed are:
+- The robot is not facing 'x' (the bread).
+- The object 'x' (the bread) is not movable.
+- The robot is not nearby object 'x' (the bread).
+- The path between the object 'x' (the bread) and","False
+
+The robot is;True
+
+In the image;True. The robot arm;False. The robot is;False;False;False;False"
+7,Kettle,../dataset/pick_up/is_facing/kettle5_color.png,"No, the robot cannot execute PickUp(Kettle). The preconditions that prevent PickUp(Kettle) from being executed are:
+
+- The robot is facing 'x' (the kettle): False
+- The robot arm is empty: False","False;True. The predicate "";False;True
+
+The object ';True;True. The path between;True;True. The kettle is"
+8,Bowl,../dataset/pick_up/is_holding/1_color.png,"No, the robot cannot execute PickUp(Bowl). 
+
+The preconditions that prevent PickUp(Bowl) from being executed are:
+- The robot is facing 'x': False
+- The robot is not holding 'x': False
+- The robot arm is empty: False
+- The path between the object 'x' and robot arm is not obstructed: False",False;False;False;True. The bowl appears;True. The blue sphere;False;True. The blue sphere;True. The bowl is
+9,Book,../dataset/pick_up/is_holding/3_color.png,"No, the robot cannot execute PickUp(Book).
+
+The preconditions that prevent PickUp(Book) from being executed are:
+- The robot arm is empty: False
+- The object 'x' is movable: False",True;True. The robot is;False. The robot arm;False;True;True. The path between;True. The blue sphere;True. The book is
+10,Spatula,../dataset/pick_up/is_holding/9_color.png,"No, the robot cannot execute PickUp(Spatula).
+
+The precondition that prevents PickUp(Spatula) from being executed is:
+- The robot arm is empty: False
+
+This indicates that the robot's arm is not empty and is currently holding something else, preventing it from picking up the spatula.",True;True. The robot is;False;True. The spatula;True. The spatula;True. There are no;True;True. The spatula
+11,CoffeeMachine,../dataset/pick_up/is_movable/1_color.png,"No, the robot cannot execute PickUp(CoffeeMachine).
+
+The preconditions that prevent PickUp(CoffeeMachine) from being executed are:
+- The robot is holding 'x': False (meaning the robot is already holding the coffee machine).
+- The robot arm is empty: False.
+- The object 'x' is movable: False (the coffee machine is not movable).","True. The robot is;False;False
+
+The robot arm;False.
+
+In the image;True;True. The path between;True;True. The coffee machine"
+12,DishWasher,../dataset/pick_up/is_movable/3_color.png,"No, the robot cannot execute PickUp(DishWasher).
+
+The preconditions that prevent PickUp(DishWasher) from being executed are:
+
+- The robot is facing 'x': False
+- The robot arm is empty: False
+- The object 'x' is movable: False
+- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x","False;The predicate ""the robot;False;False
+
+The object in;True. The robot's;True. The path between;False;False"
+13,Fridge,../dataset/pick_up/is_movable/5_color.png,"No, the robot cannot execute PickUp(Fridge).
+
+The preconditions that prevent PickUp(Fridge) from being executed are:
+1. The robot is facing 'x': False
+2. The robot arm is empty: False
+3. The object 'x' is movable: False","False;True. The predicate "";False;False;True;True. The path between;True;False"
+14,Bread,../dataset/pick_up/is_nearby/1_color.png,"No, the robot cannot execute PickUp(Bread). The precondition that prevents PickUp(Bread) from being executed is: ""The robot arm is empty: False."" The robot's arm is not empty, which means it is already holding something else and cannot pick up the bread.","True
+
+The robot's;True;False;True. The bread on;True;True. The path between;True;True"
+15,Potato,../dataset/pick_up/is_nearby/5_color.png,"No, the robot cannot execute PickUp(Potato).
+
+The precondition that prevents PickUp(Potato) from being executed is:
+- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x': False.","True;True. The predicate "";True. 
+
+The robot;True;True;True. There are no;False;True. The potato is"
+16,Kettle,../dataset/pick_up/is_nearby/9_color.png,"No, the robot cannot execute PickUp(Kettle). The preconditions that prevent PickUp(Kettle) from being executed are:
+
+- The robot is not facing 'x': False
+- The robot is nearby object 'x': False
+- The path between the object 'x' and robot arm is not obstructed: False
+- The blue sphere (region of influence) around the robot arm","False;True. 
+
+The predicate;True. The robot's;True. The kettle appears;False;False;False;True. The kettle is"
+17,Bowl,../dataset/pick_up/is_path_obstructed/1_color.png,"No, the robot cannot execute PickUp(Bowl).
+
+The preconditions that prevent PickUp(Bowl) from being executed are:
+- The robot is facing 'x': False
+- The robot arm is empty: False","False;True. The robot is;False;True;True;True.
+
+The path between;True. The blue sphere;True"
+18,PaperTowelRoll,../dataset/pick_up/is_path_obstructed/5_color.png,"No, the robot cannot execute PickUp(PaperTowelRoll).
+
+The preconditions that prevent the action from being executed are:
+1. The robot is not facing 'x': False
+2. The robot arm is empty: False
+3. The path between the object 'x' and robot arm is not obstructed: False
+4. The blue sphere (region of influence) around the","False;The predicate ""the robot;False;True. The object ';True. The blue sphere;False;False;True. The paper towel"
+19,Book,../dataset/pick_up/is_path_obstructed/11_color.png,"No, the robot cannot execute PickUp(Book). 
+
+The preconditions that prevent the action from being executed are:
+1. The robot is not facing the book.
+2. The robot is already holding the book.
+3. The robot arm is not empty.
+4. The path between the book and the robot arm is obstructed.","False
+
+The book is;False
+
+The robot is;False;True. 
+
+The book;True. The blue sphere;False. The path between;True. The blue sphere;True"
+20,Bread,../dataset/pick_up/is_within_gripper_reach/3_color.png,"Yes, the robot can execute PickUp(Bread). All the preconditions for the PickUp(Bread) action are met:
+
+- The robot is facing the bread.
+- The robot is not holding the bread.
+- The robot arm is empty.
+- The bread is movable.
+- The robot is nearby the bread.
+- The path between the bread and robot arm is not obstructed.
+- The","True;True. 
+
+The robot;True. The robot arm;True. The bread is;True;True. The path between;True;True. The bread is"
+21,Bowl,../dataset/pick_up/is_within_gripper_reach/5_color.png,"No, the robot cannot execute PickUp(Bowl). The precondition that prevents the action is:
+
+- The robot arm is empty: False
+
+The robot arm is not empty as it is already holding an object (the blue sphere indicates the robot's gripper region, and it appears to be holding something).",True;True. The robot is;False;True;True. The blue sphere;True. The path between;True;True. The bowl is
+22,Lettuce,../dataset/pick_up/is_within_gripper_reach/7_color.png,"No, the robot cannot execute PickUp(Lettuce).
+
+The precondition that prevents the action from being executed is:
+- The robot is not holding 'x': False
+- The robot arm is empty: False
+
+This means the robot is already holding something in its gripper or hand, so it cannot pick up another object until it releases what it is currently holding.",True. The robot is;False;False;True;True;True. The path between;True;True. The lettuce is
