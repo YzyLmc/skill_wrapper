@@ -60,7 +60,7 @@ class FoundationModel():
             self.model = genai.GenerativeModel('gemini-pro-vision')
             # self.model = GenerativeModel(model_name="gemini-1.0-pro-vision-001")
 
-            genai.configure(api_key = 'AIzaSyDcllVAUVVmw-YiJKXOljWGBQ4C4r8v4_0')
+            genai.configure(api_key = 'AIzaSyDyAZk3kuE4HPDElUj7GmZBQnSj2E5nS2E')
 
             self.model_args = {
                 'temperature': 0.7,
@@ -112,9 +112,10 @@ class FoundationModel():
 
 
 
-    def run_openai_api(self, kwargs, max_iters = 100, engine = 'gpt-4o', with_vision=True):
+    def run_openai_api(self, kwargs, max_iters = 100, engine = 'gpt-4-turbo', with_vision=True):
 
         #gpt-4-turbo'
+        #gpt4-o
 
         def load_image(image_paths):
 
@@ -326,41 +327,47 @@ class MessagePrompt():
         
         self.num_predicates  = len(skill_predicates[skill])
     
-    def create_pickup_prompt(self, obj, mode, predicate_idx=None):
+    def create_pickup_prompt(self, obj, mode, predicate_idx=0):
         predicates = ["The robot is facing 'x'", "The robot is not holding 'x'", "The robot arm is empty", "The object 'x' is movable", "The robot is nearby object 'x'", "The path between the object 'x' and robot arm is not obstructed", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'", "The object 'x' is on a receptacle"]
         prompt = {
             'precondition': f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The preconditions for PickUp(x) are:\n- The robot is facing 'x'\n- The robot is not holding 'x'\n- The robot arm is empty\n- The object 'x' is movable\n- The robot is nearby object 'x'\n- The path between the object 'x' and robot arm is not obstructed\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n- The object 'x' is on a receptacle\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?",
             'predicate': [f"A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). One of the predicates that are required for PickUp(x) is {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to PickUp({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called PickUp on object 'x' denoted as PickUp(x). The evaluated preconditions for PickUp(x) are:{}",f"\n\nIn the image, the robot is attempting to PickUp({obj}). Given the precondition list, can the robot execute PickUp({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent PickUp({obj}) from being executed?"],
+            'skill': f"A robot has attempted to execute an action called PickUp on object 'x' denoted as PickUp(x). The effects resulting from successfully executing PickUp(x) are:\n-The robot did not  hold 'x' before but is holding 'x' after PickUp is executed\n-The object 'x' was on a receptacle before but 'x' is not on a receptacle after PickUp is executed\n-The robot arm was empty before but is not empty after PickUp is executed\n\nThe 2 images show the environment before and after the robot has attempted to PickUp({obj}). Given the list of effects for successfully executing PickUp({obj}), has the robot successfully executed PickUp({obj}) (answer Yes/No)? If not, state briefly what effects have not been satisfied preventing PickUp({obj}) from being executed?",
         }
 
         return prompt[mode], predicates
 
-    def create_putdown_prompt(self, obj, receptacle, mode, predicate_idx=None):
+    def create_putdown_prompt(self, obj, receptacle, mode, predicate_idx=0):
         predicates = ["The blue sphere (region of influence) around the robot arm is above the receptacle 'r'", "The receptacle 'r' is not closed", "The receptacle 'r' is not occupied with other objects", "The robot is facing receptacle 'r'", "The robot is holding object 'x'", "The object 'x' is not on receptacle 'r'"]
         prompt = {
             'precondition': f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The preconditions for PutDown(x,r) are:\n- The blue sphere (region of influence) around the robot arm is above the receptacle 'r'\n- The receptacle 'r' is not closed\n- The receptacle 'r' is not occupied with other objects\n- The robot is facing receptacle 'r'\n- The robot is holding object 'x'\n- The object 'x' is not on receptacle 'r'\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?",
             'predicate': [f"A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). One of the predicates that are required for PutDown(x,r) is {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called PutDown for object 'x' on receptacle 'r' denoted as PutDown(x,r). The evaluated preconditions for PutDown(x,r) are:{}",f"\n\nIn the image, the robot is attempting to PutDown({obj}, {receptacle}). Given the precondition list, can the robot execute PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what preconditions prevent PutDown({obj}, {receptacle}) from being executed?"],
+            'skill': f"A robot has attempted to execute an action called PutDown on object 'x' denoted as PutDown(x). The effects resulting from successfully executing PutDown(x) are:\n- The object 'x' was not on top of or inside of receptacle 'r' before but object 'x' is on top of or inside of receptacle 'r' after PutDown is executed\n- The robot held object 'x' before but is not holding 'x' after PutDown is executed\n-The object 'x' was not on a receptacle before but 'x' is on a receptacle after PutDown is executed\n-The robot arm was not empty before but is empty after PutDown is executed\n\nThe 2 images show the environment before and after the robot has attempted to PutDown({obj}, {receptacle}). Given the list of effects for successfully executing PutDown({obj}, {receptacle}), has the robot successfully executed PutDown({obj},{receptacle}) (answer Yes/No)? If not, state briefly what effects have not been satisfied preventing PutDown({obj},{receptacle}) from being executed?",
+
         }
         return prompt[mode], predicates
 
-    def create_turnon_prompt(self, obj, mode, predicate_idx=None):
+    def create_turnon_prompt(self, obj, mode, predicate_idx=0):
         predicates  = ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is not on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"]
 
         prompt = {
             'precondition': f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The preconditions for ToggleOn(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is not on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?",
-
             'predicate': [f"A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). One of the predicates that are required for ToggleOn(x) is that {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to ToggleOn({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The evaluated preconditions for ToggleOn(x) are:{}",f"\n\nIn the image, the robot is attempting to ToggleOn({obj}). Given the precondition list, can the robot execute ToggleOn({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOn({obj}) from being executed?"],
+            'skill': f"A robot has attemped to execute an action called ToggleOn for object 'x' denoted as ToggleOn(x). The effects resulting from successfully executing ToggleOn(x) are:\n- The object 'x' was not on before but object 'x' is on after ToggleOn is executed\n\nThe 2 images show the environment before and after the robot has attempted to ToggleOn({obj}). Given the list of effects for successfully executing ToggleOn({obj}), has the robot successfully executed ToggleOn({obj}) (answer Yes/No)? If not, state briefly what effects have not been satisfied preventing ToggleOn({obj}) from being executed?",
+
         }
 
         return prompt[mode], predicates
     
-    def create_turnoff_prompt(self, obj, mode, predicate_idx=None):
+    def create_turnoff_prompt(self, obj, mode, predicate_idx=0):
 
         predicates  = ["The robot is near object 'x'", "The robot is facing object 'x'", "The robot is not holding any object", "The object 'x' is togglable", "The object 'x' is on", "The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'"]
 
         prompt = {
             'precondition':f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The preconditions for ToggleOff(x) are:\n-The robot is near object 'x'\n- The robot is facing object 'x'\n- The robot is not holding any object\n- The object 'x' is togglable\n- The object 'x' is on\n- The blue sphere (region of influence) around the robot arm gripper overlaps with object 'x'\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?",
             'predicate': [f"A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). One of the predicates that are required for ToggleOff(x) is that {predicates[predicate_idx].lower()}\n\nIn the image, the robot is attempting to ToggleOff({obj}). The blue sphere represents the region of influence around the robot arm gripper. Does the predicate {predicates[predicate_idx].lower()} evaluate to True or False (answer True/False)?", "A robot is attempting to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The evaluated preconditions for ToggleOff(x) are:{}",f"\n\nIn the image, the robot is attempting to ToggleOff({obj}). Given the precondition list, can the robot execute ToggleOff({obj}) (answer Yes/No)? If not, state briefly what preconditions prevent ToggleOff({obj}) from being executed?"],
+            'skill':f"A robot has attempted to execute an action called ToggleOff for object 'x' denoted as ToggleOff(x). The effects resulting from successfully executing ToggleOff(x) are:\n-The object 'x' was on before but object 'x' is off after ToggleOff is executed\n\nThe 2 images show the environment before and after the robot has attempted to ToggleOff({obj}). Given the list of effects for successfully executing ToggleOff({obj}), has the robot successfully executed ToggleOff({obj}) (answer Yes/No)? If not, state briefly what effects have not been satisfied preventing ToggleOff({obj}) from being executed?",
+
         }
         return prompt[mode], predicates
 
@@ -369,6 +376,7 @@ class MessagePrompt():
 
         context_dict = {'precondition':'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
                         'predicate': 'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the predicates that form the action preconditions, you need to determine whether the given predicate evaluates to true or false',
+                        'skill':'You will be given visual observations of a robot in simulation attempting to perform certain actions. Given visual observations and descriptions about the action precondition or effects, you need to determine if the action can/has been successfully completed',
         }
 
         return context_dict[mode]
@@ -385,16 +393,71 @@ OpenFlamingo
 Trained Binary Classifier (for each task)
 '''
 
-def run_model_preconditions(dataframe, message_generator, model):
+def run_model_skill(dataframe, message_generator, model, skill):
+
     responses = []
 
     for index, row in dataframe.iterrows():
 
-        
+
+        if skill == 'putdown':
+
+            obj = row['arguments'].split(',')[0].split('(')[1].strip()
+            receptacle = row['arguments'].split(',')[1].split(')')[0].strip()
+
+            prompt, predicates = message_generator.create_putdown_prompt(obj, receptacle, mode='skill')
+        else:
+
+            obj = row['arguments']
+
+            prompt_generator_for_skill = {'pickup': message_generator.create_pickup_prompt, 'turnon': message_generator.create_turnon_prompt, 'turnoff': message_generator.create_turnoff_prompt}
+            prompt, predicates = prompt_generator_for_skill[skill](obj, mode='skill')
+            
+
+        if 'precondition' in prompt:
+            print('ERROR: PRECONDITION')
+            pdb.set_trace()
+        context = message_generator.create_prompt_content(mode='skill')
+
+        model_args = {
+            'image_paths': [row['image_before'], row['image_after']],
+            'context_prompt': context,
+            'prompt': prompt,
+        }
+
+        for k, v in model.model_args.items():
+            model_args[k] = v
+
+	    #pdb.set_trace()
+        response = model.run_model(model_args)
         
 
-        obj = row['argument']
-	    #receptacle = row['argument'].split(',')[1].split(')')[0].strip()
+        responses.append(response)
+    
+    return responses, None
+    
+
+
+
+def run_model_preconditions(dataframe, message_generator, model):
+    responses = []
+
+    for index, row in dataframe.iterrows():
+         
+        if skill == 'putdown':
+
+            obj = row['argument'].split(',')[0].split('(')[1].strip()
+            receptacle = row['argument'].split(',')[1].split(')')[0].strip()
+
+            prompt, predicates = message_generator.create_putdown_prompt(obj, receptacle, mode='predicate', predicate_idx = predicate_idx)
+        else:
+
+            obj = row['argument']
+
+            prompt_generator_for_skill = {'pickup': message_generator.create_pickup_prompt, 'turnon': message_generator.create_turnon_prompt, 'turnoff': message_generator.create_turnoff_prompt}
+            prompt, predicates = prompt_generator_for_skill[skill](obj, mode='predicate', predicate_idx = predicate_idx)
+            
+
 
         context = message_generator.create_prompt_content(mode='precondition')
         prompt, predicates = message_generator.create_turnoff_prompt(obj)
@@ -414,7 +477,7 @@ def run_model_preconditions(dataframe, message_generator, model):
 
         responses.append(response)
     
-    return responses
+    return responses, None
 
 def run_model_predicates(dataframe, message_generator, model, skill):
     responses = []
@@ -501,16 +564,17 @@ if __name__ == '__main__':
     model = FoundationModel('gemini')
     # model = OpensourceModels(model_type='instruct_BLIP')
 
-    message_generator = MessagePrompt('pickup')
+    message_generator = MessagePrompt('putdown')
 
-    dataframe = pd.read_csv('./pick_up_data.csv')
+    dataframe = pd.read_csv('./putdown_data_skill.csv')
 
     
-    responses, predicate_responses = run_model_predicates(dataframe, message_generator, model, 'pickup')
+    responses, predicate_responses = run_model_skill(dataframe, message_generator, model, 'putdown')
 
     pdb.set_trace()
     dataframe['responses'] = responses
-    dataframe['predicate_responses'] = predicate_responses
+    if predicate_responses is not None:
+        dataframe['predicate_responses'] = predicate_responses
     dataframe.to_csv('temp.csv')
 
     
