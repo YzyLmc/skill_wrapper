@@ -48,7 +48,7 @@ controller.reset(scene="FloorPlan212", fieldOfView=100)
 
 controller.step(
     action="SetHandSphereRadius",
-    radius=0.5
+    radius=0.05
 )
 
 # controller = Controller()
