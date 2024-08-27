@@ -6,6 +6,7 @@ import random
 
 from manipula_skills import *
 
+# evaluate an execution using foundation model. Expected acc to be ~ 70%
 def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
     'Get successfulness of the execution given images and the skill name'
     def construct_prompt(prompt, skill):
@@ -16,47 +17,66 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(model, pred, img, prompt_fpath='prompts/.txt'):
-    'Evaluate one predicate given one image'
-    def construct_prompt(prompt, pred):
-        while "[PRED]" in prompt:
-                prompt = prompt.replace("[PRED]", pred)
+def eval_pred(model, skill, pred, obj, loc, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+    '''
+    Evaluate one predicate given one image.
+    If skill or predicate takes variables they should contain [OBJ] or [LOC] in the input.
+    Empty string '' means no argument
+    '''
+    def construct_prompt(prompt, skill, pred, obj, loc):
+        while "[PRED]" in prompt or "[SKILL]" in prompt:
+            prompt = prompt.replace("[PRED]", pred)
+            prompt = prompt.replace("[SKILL]", skill)
+        while "[OBJ]" in prompt or "[LOC]" in prompt:
+            prompt = prompt.replace("[OBJ]", obj)
+            prompt = prompt.replace("[LOC]", loc)
         return prompt
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, pred)
-    return model.generate_multimodal(prompt, img)[0]
+    prompt = construct_prompt(prompt, skill, pred, obj, loc)
+    resp = model.generate_multimodal(prompt, img)[0]
+    return True if "True" in resp.split('\n')[-1] else False
 
-def eval_pred_set(model, pred_set, img):
+def eval_pred_set(model, skill, pred_set, obj, loc, img):
     '''
     Evaluate set of predicates
     pred_set::list(str)
     returns::Dict(str:bool)
     '''
-    return {pred: eval_pred(model, pred, img) for pred in pred_set}
+    return {pred: eval_pred(model, skill, pred, obj, loc, img) for pred in pred_set}
 
-# TODO: have to track predicates have been tried in the prompt
-def generate_pred(model, skill, pred_list, prompt_fpath='prompts/.txt'):
-    'generate_predicates based on existing predicates set'
-    def construct_prompt(prompt, skill, pred_list):
-        while "[SKILL]" in prompt or "[PREDICATE_LIST]" in prompt:
-                prompt = prompt.replace("[SKILL]", skill)
-                prompt = prompt.replace("[PREDICATE_LIST]", pred_list)
+# TODO: have to track predicates have been tried in the prompt?
+# Adding to precondition or effect are different prompts
+def generate_pred(model, skill, pred_dict, pred_type, prompt_fpath='prompts/predicate_refining'):
+    '''
+    generate_predicates based on existing predicates dictionary describing the same symbolic state
+    pred_dict:: Dict(pred_name: Bool)
+    type:: str:: 'precond' or 'eff' 
+    '''
+    def construct_prompt(prompt, skill, pred_dict):
+        while "[SKILL]" in prompt or "[PRED_DICT]" in prompt:
+            prompt = prompt.replace("[SKILL]", skill)
+            prompt = prompt.replace("[PRED_DICT]", str(pred_dict))
+        # convert the placeholders back to 'obj' and 'loc'
+        while "[OBJ]" in prompt or "[LOC]" in prompt:
+            prompt = prompt.replace("[OBJ]", "obj")
+            prompt = prompt.replace("[LOC]", "loc")
         return prompt
+    prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, skill, pred_list)
+    prompt = construct_prompt(prompt, skill, pred_dict)
     return model.generate(prompt)[0]
 
-# TODO: seperate tasks in terms of skill names:: dict(skill: list(dict('id':num, 's0':img, 's1':img, 'success': Bool)))
+# TODO: code for seperate tasks in terms of skill names:: dict(skill: list(dict('id':num, 's0':img, 's1':img, 'success': Bool)))
 def refine_pred(model, skill, tasks, pred_dict, precond, eff, max_t=3):
     '''
     Refine predicates of precondition and effect of one skill for precondition and effect
     tasks:: dict(id, dict('s0':img, 's1':img, 'success': Bool))
     '''
-    def mismatch_symbolic_state(pred_dict, tasks, type):
+    def mismatch_symbolic_state(pred_dict, tasks, pred_type):
         '''
         look for same symbolic states (same s1 or s2) in task dictionary
         pred_dict::{pred_name:{task: [Bool, Bool]}}
-        type::{'precond', 'eff'}
+        pred_type::{'precond', 'eff'}
         returns::list(id: dict('s0':img, 's1':img, 'success': Bool))
         '''
         def tasks_with_same_symbolic_states(task2state):
@@ -71,12 +91,12 @@ def refine_pred(model, skill, tasks, pred_dict, precond, eff, max_t=3):
             return duplicates
 
         task2state = {}
-        if type == "precond":
+        if pred_type == "precond":
             # return two same symbolic states BEFORE EXECUTION with different successfulness
             for task in tasks:
                 task2state[task] = {pred: pred_dict[task][0] for pred in pred_dict}
             dup_tasks = tasks_with_same_symbolic_states(task2state)
-        elif type == "eff":
+        elif pred_type == "eff":
             # return two same symbolic states TRANSITION (symbolic) with different successfulness
             for task in tasks:
                 task2state[task] = {pred: int(pred_dict[task][1]==True) - int(pred_dict[task][0]==True) for pred in pred_dict}
@@ -154,3 +174,25 @@ def task_proposing(skill, tasks):
     tasks::list(str):: previous tasks
     '''
     pass
+
+if __name__ == '__main__':
+    model = GPT4()
+    # # test predicate evaluation function
+    # pred = 'handEmpty()'
+    # skill = 'PickUp([OBJ])'
+    # obj = 'Book'
+    # loc = ''
+    # img = ['pickup_t2_s0_fail.jpg']
+    # response = eval_pred(model, skill, pred, obj, loc, img)
+    # print(response)
+
+    # # test predicate proposing for refining
+
+    # # mock symbolic state
+    # pred_dict = {'handEmpty()': True}
+    # skill = 'PickUp([OBJ])'
+    # pred_type = 'precond'
+    # response = generate_pred(model, skill, pred_dict, pred_type)
+    # print(response)
+
+    # test main refining function

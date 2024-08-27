@@ -4,6 +4,8 @@ from PIL import Image
 
 from ai2thor.controller import Controller
 
+from manipula_skills import *
+
 # test open action
 # def open_obj(obj_id):
 
@@ -17,7 +19,7 @@ controller = Controller(
                 scene = "FloorPlan203",
                 snapToGrid=False,
                 visibilityDistance=1.5,
-                gridSize=0.25,
+                gridSize=0.1,
                 renderDepthImage=True,
                 renderInstanceSegmentation=True,
                 renderObjectImage = True,
@@ -39,6 +41,7 @@ event = controller.step("MoveAhead")
 #     fixedDeltaTime=0.02
 # )
 
+pickupable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["pickupable"]]
 # find openable object
 openable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["openable"]]
 breakpoint()
@@ -50,7 +53,7 @@ drawer_id = [obj for obj in openable_objs if "Drawer" in obj][0]
 event = controller.step(
     action="GetInteractablePoses",
     objectId=drawer_id,
-    horizons=np.linspace(-30, 60, 30),
+    horizons=[np.linspace(-30, 60, 30)],
     standings=[True, False]
 )
 poses = event.metadata["actionReturn"]
