@@ -27,10 +27,20 @@ controller = Controller(
                 height= 720,
                 fieldOfView=60
             )
-controller.reset(scene="FloorPlan203", fieldOfView=100)
+event = controller.reset(scene="FloorPlan203", fieldOfView=100)
+
+for obj in [obj for obj in event.metadata["objects"] if 'Chair' in obj['objectId']]:
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Book" not in obj['name']]
+
+object = "Book"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'], 'y': obj['position']['y'], 'z': obj['position']['z']-0.2}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
 
 # controller = Controller()
-event = controller.step("MoveAhead")
+# event = controller.step("MoveAhead")
 # get event, for metadata
 # event = controller.step(
 #     action="MoveAgent",
@@ -44,6 +54,8 @@ event = controller.step("MoveAhead")
 pickupable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["pickupable"]]
 # find openable object
 openable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["openable"]]
+receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj['receptacle']]
+
 breakpoint()
 
 # use drawer as target

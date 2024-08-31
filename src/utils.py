@@ -107,7 +107,7 @@ class GPT4:
         complete = False
         ntries = 0
         msg = prompt2msg(query_prompt)
-        breakpoint()
+        # breakpoint()
         while not complete and ntries < 15:
             # try:
                 raw_responses = client.chat.completions.create(model=self.engine,
@@ -138,7 +138,7 @@ class GPT4:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {api_key}"
         }
-        breakpoint()
+        # breakpoint()
         txts = prompt2msg(query_prompt, vision=True)
         payload = {
             "model": "gpt-4-turbo",

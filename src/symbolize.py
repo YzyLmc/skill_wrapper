@@ -128,14 +128,15 @@ def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
     #     return []
         
 # TODO: code for seperate tasks in terms of skill names:: dict(skill: list(dict('id':num, 's0':img, 's1':img, 'success': Bool)))
-def refine_pred(model, skill, tasks, pred_dict, precond, eff, max_t=3):
+def refine_pred(model, skill, skill2tasks, pred_dict, precond, eff, max_t=3):
     '''
     Refine predicates of precondition and effect of one skill for precondition and effect
-    tasks:: dict(id, dict('s0':img_path, 's1':img_path, 'success': Bool))
+    pred_dict::{pred_name:{task: [Bool, Bool]}}
+    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
 
     # keep tracking truth value of predicates before and after a skill execution
-    # {pred_name:{task: [Bool, Bool]}}
+    # {pred_name:{task: [Bool, Bool]}} Does it need skill name as keys?
     if not pred_dict:
         pred_dict = {}
     if not precond:
@@ -145,37 +146,47 @@ def refine_pred(model, skill, tasks, pred_dict, precond, eff, max_t=3):
     
     # check precondition first
     t = 0
-    mismatch_tasks = mismatch_symbolic_state(pred_dict, tasks, 'pred')
+    mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'precond')
     new_p_added = False
+    breakpoint()
     while mismatch_tasks and t < max_t:
-        new_p = generate_pred(model, skill, list(pred_dict.keys()))
-        new_p_mismatch = {idx: [eval_pred(model, new_p, task['s0']), eval_pred(model, new_p, task['s0'])] for idx, task in mismatch_tasks.items()}
-        if new_p_mismatch[list(mismatch_tasks.keys())[0]][0] != new_p_mismatch[list(mismatch_tasks.keys())[1]][0]:
-            precond[new_p] = True if list(mismatch_tasks.keys())[0]['success'] == new_p_mismatch[list(mismatch_tasks.keys())[0]][0] else False
+        new_p = generate_pred(model, skill, list(pred_dict.keys()), 'precond')
+        print('new predicate', new_p)
+        new_p_mismatch = {idx: [eval_pred(model, skill, new_p, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
+        print('new predicate truth value', new_p_mismatch)
+        breakpoint()
+        if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
+            precond[new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
             new_p_added = True
+            break
         t += 1
     if new_p_added:
-        pred_dict[new_p] = {idx: [eval_pred(model, new_p, task['s0']), eval_pred(model, new_p, task['s0'])] for idx, task in tasks.items()}
+        pred_dict[new_p] = {idx: [eval_pred(model, skill, new_p, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, task['obj'], task['loc'], task['s1'])] for idx, task in skill2tasks[skill].items()}
         new_p_added = False
 
     # check effect
     t = 0
-    mismatch_tasks = mismatch_symbolic_state(pred_dict, tasks, 'eff')
+    mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'eff')
+    breakpoint()
     while mismatch_tasks and t < max_t:
-        new_p = generate_pred(model, skill, list(pred_dict.keys()))
-        new_p_mismatch = {idx: [eval_pred(model, new_p, task['s0']), eval_pred(model, new_p, task['s0'])] for idx, task in mismatch_tasks.items()}
+        new_p = generate_pred(model, skill, list(pred_dict.keys()), 'eff')
+        print('new predicate', new_p)
+        new_p_mismatch = {idx: [eval_pred(model, skill, new_p, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
+        print('new predicate truth value', new_p_mismatch)
         # first index for task number, second index for before and after
-        s_1_1 = new_p_mismatch[list(mismatch_tasks.keys())[0]][0]
-        s_1_2 = new_p_mismatch[list(mismatch_tasks.keys())[0]][1]
-        s_2_1 = new_p_mismatch[list(mismatch_tasks.keys())[1]][0]
-        s_2_2 = new_p_mismatch[list(mismatch_tasks.keys())[1]][1]
-        if not (int(s_1_2==True) - int(s_1_1==True) != int(s_2_2==True) - int(s_2_1==True)):
-            success_task = list(mismatch_tasks.values())[0] if list(mismatch_tasks.values())[0]['success'] == True else list(mismatch_tasks.values())[1]
+        s_1_1 = new_p_mismatch[mismatch_tasks[skill][0]][0]
+        s_1_2 = new_p_mismatch[mismatch_tasks[skill][0]][1]
+        s_2_1 = new_p_mismatch[mismatch_tasks[skill][1]][0]
+        s_2_2 = new_p_mismatch[mismatch_tasks[skill][1]][1]
+        # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
+        if (int(s_1_2==True) - int(s_1_1==True) != int(s_2_2==True) - int(s_2_1==True)):
+            success_task = mismatch_tasks[skill][0] if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == True else mismatch_tasks[skill][1]
             eff[new_p] = int(new_p_mismatch[success_task][1]==True) - int(new_p_mismatch[success_task][0]==True)
             new_p_added = True
+            break
         t += 1
     if new_p_added:
-        pred_dict[new_p] = {idx: [eval_pred(model, new_p, task['s0']), eval_pred(model, new_p, task['s0'])] for idx, task in tasks.items()}
+        pred_dict[new_p] = {idx: [eval_pred(model, skill, new_p, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, task['obj'], task['loc'], task['s1'])] for idx, task in skill2tasks[skill].items()}
         new_p_added = False
             
     return precond, eff, pred_dict
@@ -229,27 +240,35 @@ if __name__ == '__main__':
         "At(loc)": {
             "PickUp_0": [True, True],
             "PickUp_1": [False, False],
-            "PickUp_2": [True, True]
+            "PickUp_2": [True, True],
+            "PickUp_3": [True, True]
         },
         "IsFreeHand()":{
             "PickUp_0": [True, False],
-            "PickUp_1": [False, False],
-            "PickUp_2": [True, True]
+            "PickUp_1": [True, True],
+            "PickUp_2": [True, True],
+            "PickUp_3": [True, False]
         }
     }
     mock_skill2tasks = {
         "PickUp": {
-            "PickUp_0": {"s0": "test", "s1":"test", "obj":"test", "loc":"test", "success": True},
-            "PickUp_1": {"s0": "test", "s1":"test", "obj":"test", "loc":"test", "success": False},
-            "PickUp_2": {"s0": "test", "s1":"test", "obj":"test", "loc":"test", "success": False}
+            "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
+            "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+            "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+            "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
         }
     }
     pred_type = 'precond'
     mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
     print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
+    pred_type = 'eff'
+    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
+
     # test main refining function
-    skill = 'PickUp([OBJ])'
+    skill = 'PickUp'
     precond = {}
     eff = {}
-    new_pred = refine_pred(model, skill, mock_skill2tasks, mock_pred_dict, precond, eff)
+    precond, eff, pred_dict = refine_pred(model, skill, mock_skill2tasks, mock_pred_dict, precond, eff)
+    print(precond, eff, pred_dict)
