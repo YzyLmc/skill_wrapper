@@ -1,5 +1,6 @@
 '''wrapped skills for manipulaThor agent desgined for the adaptation pipeline, both high-level and low-level'''
 import random
+from copy import deepcopy
 import numpy as np
 
 # Base movement
@@ -54,6 +55,9 @@ def GoTo(object_or_location, controller, metadata):
 
     # obj_names = [obj['objectId'] for obj in metadata["objects"]]
     obj = [obj for obj in metadata["objects"] if object_or_location in obj['objectId']][0]
+    avail_positions = controller.step(
+        action="GetReachablePositions"
+    ).metadata["actionReturn"]
     event = controller.step(
         action="GetInteractablePoses",
         objectId=obj['objectId'],
@@ -61,10 +65,19 @@ def GoTo(object_or_location, controller, metadata):
         standings=[True]
     )
     poses = event.metadata["actionReturn"]
+    # breakpoint() 
+    poses = [p for p in poses if {'x':p['x'], 'y':p['y'], 'z':p['z']} in avail_positions]
     poses = sorted(poses, key=lambda p:dist_pose(p, obj['position']))
+    # poses = sorted(avail_positions, key=lambda p:dist_pose(p, obj['position']))
     # pose = random.choice(poses[:10])
-    pose = poses[0]
-    event = controller.step("TeleportFull", **pose)
+    for i in range(len(poses)):
+        pose = poses[i]
+        # assert {'x':pose['x'], 'y':pose['y'], 'z':pose['z']} in avail_positions
+        event = controller.step("TeleportFull", **pose)
+        if event.metadata["lastActionSuccess"]:
+            break
+    # event = controller.step("Teleport", **pose)
+    controller.step('LookDown')
     controller.step('Done')
     return event
 
@@ -126,22 +139,29 @@ def MoveGripperForward(controller):
 def MoveGripperBackward(controller):
     event = controller.step(
         action='MoveArm',
-        position=dict(x=0, y=0, z=0.5),
+        position=dict(x=0, y=0, z=-0.5),
         coordinateSpace='wrist',
         speed=1,
         returnToStart=False
     )
     return event
 
+# TODO： hover above the obj to avoid collision
 def PickUp(object, location, controller, metadata):
     '''
     object: str : name of the object
     '''
+    # event = controller.step('MoveArmBase', y = 0.5)
     # obj_names = [obj['objectId'] for obj in metadata["objects"]]
+    controller.step(action="SetHandSphereRadius", radius=0.04)
     obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
+    position = deepcopy(obj["position"])
+    if "Book" in object:
+        position = {'x': position['x']+0.1, 'y': position['y'] + 0.05, 'z': position['z']-0.2}
+    # controller.step(action="SetHandSphereRadius", radius=0.25)
     event = controller.step(
         "MoveArm",
-        position=obj["position"],
+        position=position,
         coordinateSpace="world",
         returnToStart=False
     )
@@ -156,6 +176,15 @@ def PickUp(object, location, controller, metadata):
         speed=1,
         returnToStart=True
     )
+    event = controller.step(
+        action='MoveArm',
+        position=dict(x=0, y=0, z=-0.25),
+        coordinateSpace='wrist',
+        speed=1,
+        returnToStart=True
+    )
+    # event = controller.step('MoveArmBase', y = 0.5)
+    # controller.step(action="SetHandSphereRadius", radius=0.04)
     controller.step('Done')
     
     return event

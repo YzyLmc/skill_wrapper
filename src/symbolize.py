@@ -17,16 +17,17 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(model, skill, pred, obj, loc, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+def eval_pred(model, skill, pred, sem, obj, loc, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
     '''
     Evaluate one predicate given one image.
     If skill or predicate takes variables they should contain [OBJ] or [LOC] in the input.
     Empty string '' means no argument
     '''
     def construct_prompt(prompt, skill, pred, obj, loc):
-        while "[PRED]" in prompt or "[SKILL]" in prompt:
+        while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in  prompt:
             prompt = prompt.replace("[PRED]", pred)
             prompt = prompt.replace("[SKILL]", skill)
+            prompt = prompt.replace("[SEMANTIC]", sem)
         while "[OBJ]" in prompt or "[LOC]" in prompt:
             prompt = prompt.replace("[OBJ]", obj)
             prompt = prompt.replace("[LOC]", loc)
@@ -34,28 +35,30 @@ def eval_pred(model, skill, pred, obj, loc, img, prompt_fpath='prompts/evaluate_
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred, obj, loc)
     resp = model.generate_multimodal(prompt, img)[0]
+    breakpoint()
     return True if "True" in resp.split('\n')[-1] else False
 
-def eval_pred_set(model, skill, pred_set, obj, loc, img):
+def eval_pred_set(model, skill, pred2sem, obj, loc, img):
     '''
     Evaluate set of predicates
     pred_set::list(str)
     returns::Dict(str:bool)
     '''
-    return {pred: eval_pred(model, skill, pred, obj, loc, img) for pred in pred_set}
+    return {pred: eval_pred(model, skill, pred, sem, obj, loc, img) for pred, sem in pred2sem.items()}
 
 # TODO: have to track predicates have been tried in the prompt?
 # Adding to precondition or effect are different prompts
-def generate_pred(model, skill, pred_dict, pred_type, prompt_fpath='prompts/predicate_refining'):
+def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
     '''
     generate_predicates based on existing predicates dictionary describing the same symbolic state
     pred_dict:: Dict(pred_name: Bool)
     type:: str:: 'precond' or 'eff' 
     '''
     def construct_prompt(prompt, skill, pred_dict):
-        while "[SKILL]" in prompt or "[PRED_DICT]" in prompt:
+        while "[SKILL]" in prompt or "[PRED_DICT]" in prompt or "[TRIED_PRED]" in prompt:
             prompt = prompt.replace("[SKILL]", skill)
             prompt = prompt.replace("[PRED_DICT]", str(pred_dict))
+            prompt = prompt.replace("[TRIED_PRED]", str(tried_pred))
         # convert the placeholders back to 'obj' and 'loc'
         while "[OBJ]" in prompt or "[LOC]" in prompt:
             prompt = prompt.replace("[OBJ]", "obj")
@@ -64,7 +67,10 @@ def generate_pred(model, skill, pred_dict, pred_type, prompt_fpath='prompts/pred
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred_dict)
-    return model.generate(prompt)[0]
+    # response consists of predicate and its semantic
+    resp = model.generate(prompt)[0]
+    pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
+    return [pred, sem]
 
 def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
     '''
@@ -213,16 +219,17 @@ def task_proposing(skill, tasks):
 
 if __name__ == '__main__':
     model = GPT4()
-    # # test predicate evaluation function
-    # pred = 'handEmpty()'
-    # skill = 'PickUp([OBJ])'
-    # obj = 'Book'
-    # loc = ''
-    # img = ['pickup_t2_s0_fail.jpg']
-    # response = eval_pred(model, skill, pred, obj, loc, img)
-    # print(response)
+    # test predicate evaluation function
+    pred = 'handEmpty()'
+    skill = 'PickUp([OBJ], [LOC])'
+    sem = 'Return true if the hand of the robot is empty, and false if the hand is not empty.'
+    obj = 'Book'
+    loc = 'Table'
+    img = ['pickup_t2_s0_fail.jpg']
+    response = eval_pred(model, skill, pred, sem, obj, loc, img)
+    print(response)
 
-    # # test predicate proposing for refining
+    # test predicate proposing for refining
 
     # # mock symbolic state
     # pred_dict = {'handEmpty()': True}
@@ -236,39 +243,39 @@ if __name__ == '__main__':
     # skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     # return: dict(skill: list(id: dict('s0':img, 's1':img, 'success': Bool)))
 
-    mock_pred_dict = {
-        "At(loc)": {
-            "PickUp_0": [True, True],
-            "PickUp_1": [False, False],
-            "PickUp_2": [True, True],
-            "PickUp_3": [True, True]
-        },
-        "IsFreeHand()":{
-            "PickUp_0": [True, False],
-            "PickUp_1": [True, True],
-            "PickUp_2": [True, True],
-            "PickUp_3": [True, False]
-        }
-    }
-    mock_skill2tasks = {
-        "PickUp": {
-            "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
-            "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-            "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-            "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
-        }
-    }
-    pred_type = 'precond'
-    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
+    # mock_pred_dict = {
+    #     "At(loc)": {
+    #         "PickUp_0": [True, True],
+    #         "PickUp_1": [False, False],
+    #         "PickUp_2": [True, True],
+    #         "PickUp_3": [True, True]
+    #     },
+    #     "IsFreeHand()":{
+    #         "PickUp_0": [True, False],
+    #         "PickUp_1": [True, True],
+    #         "PickUp_2": [True, True],
+    #         "PickUp_3": [True, False]
+    #     }
+    # }
+    # mock_skill2tasks = {
+    #     "PickUp": {
+    #         "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
+    #         "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+    #         "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+    #         "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
+    #     }
+    # }
+    # pred_type = 'precond'
+    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
-    pred_type = 'eff'
-    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
+    # pred_type = 'eff'
+    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
 
-    # test main refining function
-    skill = 'PickUp'
-    precond = {}
-    eff = {}
-    precond, eff, pred_dict = refine_pred(model, skill, mock_skill2tasks, mock_pred_dict, precond, eff)
-    print(precond, eff, pred_dict)
+    # # test main refining function
+    # skill = 'PickUp'
+    # precond = {}
+    # eff = {}
+    # precond, eff, pred_dict = refine_pred(model, skill, mock_skill2tasks, mock_pred_dict, precond, eff)
+    # print(precond, eff, pred_dict)
