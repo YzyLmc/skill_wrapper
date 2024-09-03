@@ -160,7 +160,7 @@ class TaskProposing():
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
     '''
-    def compute_entropy_for_task(self, skill_sequence, max_executable):
+    def compute_entropy_for_task(self, skill_sequence, executable_sequence):
 
         new_skill_pair_count = copy.deepcopy(self.attempted_skill_pair_count)
 
@@ -168,12 +168,13 @@ class TaskProposing():
 
         while p2 < len(skill_sequence):
 
-            skill1_idx = self.skill_to_index[skill_sequence[p1]]
-            skill2_idx = self.skill_to_index[skill_sequence[p2]]
+            if executable_sequence[p2] is True:
+                skill1_idx = self.skill_to_index[skill_sequence[p1]]
+                skill2_idx = self.skill_to_index[skill_sequence[p2]]
 
-            new_skill_pair_count[skill1_idx, skill2_idx] += 1
+                new_skill_pair_count[skill1_idx, skill2_idx] += 1
 
-            p1 = p2 
+                p1 = p2 
             p2 += 1
 
 
@@ -200,9 +201,9 @@ class TaskProposing():
         for task in task_dictionary.keys():
 
             skill_sequence = task_dictionary[task]['abstract']
-            max_executable = task_dictionary[task]['max_executable']
+            executable_sequence = task_dictionary[task]['executable_sequence']
 
-            entropy, counts = self.compute_entropy_for_task(skill_sequence, max_executable)
+            entropy, counts = self.compute_entropy_for_task(skill_sequence, executable_sequence)
 
             task_entropy_gains.append(entropy - curr_shannon_entropy) #entropy gain is maximum of difference
             task_skill_counts.append(counts)
@@ -256,6 +257,7 @@ class TaskProposing():
         #list of predicates for each step
         predicate_sequence = []
         max_executable = 0
+        executable_sequence = []
 
         abstract_executable = True
         executable = True
@@ -312,18 +314,28 @@ class TaskProposing():
             
             
             for pre in abstract_preconditions:
+
+                match = re.match(r"(\w+)\((.*)\)", pre)
+                pred_name = match.group(1)
                 
-                if len(arguments) == 1:
-                    pre = pre.replace('x',arguments[0])
-                if len(arguments) == 2:
-                    pre = pre.replace('(x,r)', f'({arguments[0]},{arguments[1]})')
+                
+                if '(x)' in pre:
+                    pre = pre.replace('x', arguments[0])
+                
+                elif '(r)' in pre:
+                    pre = pre.replace('(r)', f'({arguments[0]})')
+                
                 if (pre in current_predicates and current_predicates[pre] == 0):
                     executable = False
                     break
+
+
                 
+               
                 current_predicates[pre] = 1
             
             
+            executable_sequence.append(executable)
             if not executable:
                 executable = True
             else:
@@ -334,25 +346,32 @@ class TaskProposing():
 
                     match = re.match(r"(\w+)\((.*)\)", eff)
                     pred_name = match.group(1)
+                    
 
-                    if len(arguments) == 1:
-                        eff = eff.replace('x',arguments[0])
-                    if len(arguments) == 2:
-                        eff = eff.replace('r', arguments[1])
+                    if'(x)' in eff:
                         eff = eff.replace('x', arguments[0])
+                    elif '(r)' in eff:
+                        eff = eff.replace('(r)', f'({arguments[1]})')
+                    
 
+                    
                     current_predicates[eff] = 1
 
 
                 for eff in abstract_effects_neg:
 
-    
+                    match = re.match(r"(\w+)\((.*)\)", eff)
+                    pred_name = match.group(1)
+                   
 
-                    if len(arguments) == 1:
-                        eff = eff.replace('x',arguments[0])
-                    if len(arguments) == 2:
-                        eff = eff.replace('r', arguments[1])
+                    if '(x)' in eff:
                         eff = eff.replace('x', arguments[0])
+                    elif '(r)' in eff:
+                        eff = eff.replace('(r)', f'({arguments[0]})')
+                  
+                    
+
+                    
 
                     current_predicates[eff] = 0
             
@@ -362,8 +381,8 @@ class TaskProposing():
             predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
 
-
-        return predicate_sequence, max_executable
+        pdb.set_trace()
+        return predicate_sequence, max_executable, executable_sequence
 
     def compute_task_chainability(self, predicate_sequence, max_executable):
 
@@ -422,10 +441,11 @@ class TaskProposing():
             skill_sequence = task_dictionary[task]['grounded']
             abstract_skill_sequence = task_dictionary[task]['abstract']
 
-            predicate_sequence, max_executable = self.generate_incremental_predicate_for_task(skill_sequence, abstract_skill_sequence, initial_observation)
+            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, abstract_skill_sequence, initial_observation)
 
             #update the task dictionary with maximum number of steps that can be executed
             task_dictionary[task]['max_executable'] = max_executable
+            task_dictionary[task]['executable_sequence'] = executable_sequence
 
 
             #compute and aggregate the chainability and sufficience prob per task
@@ -518,7 +538,7 @@ class TaskProposing():
         #find the task with the maximum combined score + set the current skill count to that task's skill count + set the current task execution matrix counts
         self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
         self.attempted_skill_pair_count = task_skill_counts[max_score_idx]
-        pdb.set_trace()
+        # pdb.set_trace()
         return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]['grounded']
 
 
@@ -613,7 +633,7 @@ class TaskProposing():
                 task_dictionary[line] = {'grounded':[], 'abstract':[]}
                 curr_task = line
         
-        pdb.set_trace()
+        # pdb.set_trace()
         return task_dictionary
                 
 
@@ -655,27 +675,27 @@ class TaskProposing():
 
 
 if __name__ == '__main__':
-    pdb.set_trace()
-
-    # grounded_skill_dictionary = {
-    #     'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': ['is_gripper_empty()','is_nearby(x)'], 'effects_positive':['is_holding(x)'], 'effects_negative': ['is_gripper_empty()']},
-    #     'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': ['is_nearby(r)', 'is_holding(x)'], 'effects_positive':['is_gripper_empty()'], 'effects_negative': ['is_holding(x)']},
-    #     'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':['is_nearby(x)'], 'effects_negative':[]}
-    # }
+    # pdb.set_trace()
 
     grounded_skill_dictionary = {
-        'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
-        'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
-        'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
+        'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': ['is_gripper_empty()','is_nearby(x)'], 'effects_positive':['is_holding(x)'], 'effects_negative': ['is_gripper_empty()']},
+        'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': ['is_nearby(r)', 'is_holding(x)'], 'effects_positive':['is_gripper_empty()'], 'effects_negative': ['is_holding(x)']},
+        'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':['is_nearby(x)'], 'effects_negative':[]}
     }
 
-    grounded_predicate_dictionary = {}
-
-    # grounded_predicate_dictionary = {
-    #     'is_gripper_empty()': "the robot's single gripper is empty with no objects held",
-    #     'is_nearby(x)': "the robot can interact with object or receptacle 'x' using only it's single gripper without needing to move the body closer to 'x'",
-    #     'is_holding(x)': "the robot is holding object 'x' specifically in it's gripper"
+    # grounded_skill_dictionary = {
+    #     'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
+    #     'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
+    #     'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     # }
+
+    # grounded_predicate_dictionary = {}
+
+    grounded_predicate_dictionary = {
+        'is_gripper_empty()': "the robot's single gripper is empty with no objects held",
+        'is_nearby(x)': "the robot can interact with object or receptacle 'x' using only it's single gripper without needing to move the body closer to 'x'",
+        'is_holding(x)': "the robot is holding object 'x' specifically in it's gripper"
+    }
 
 
     new_skill_pair_count = np.zeros((3,3))
