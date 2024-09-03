@@ -65,6 +65,9 @@ class TaskProposing():
         #global frequency count for all pairs of skills 
         self.skill_to_index = {x: i for i,x in enumerate(grounded_skill_dictionary.keys())}
         self.attempted_skill_pair_count = np.zeros((len(grounded_skill_dictionary.keys()), len(grounded_skill_dictionary.keys())))
+
+
+
         self.curr_shannnon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
@@ -120,7 +123,7 @@ class TaskProposing():
             skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()]) + '\npreconditions: [' + ', '.join(preconds) + ']\neffects: {' + ', '.join(effects_pos) + ', '.join(effects_neg) + '}'
             skill_prompts.append(skill_prompt)
         
-        pdb.set_trace()
+        # pdb.set_trace()
         least_explored_skills = self.get_least_explored_skills()
 
         prompt_context = "A robot with a single gripper is attempting to learn the preconditions and effects for a finite set of skills by performing tasks in an environment" 
@@ -152,6 +155,8 @@ class TaskProposing():
     def update_replay_buffer(self, new_replay_buffer):
         if new_replay_buffer is not None:
             self.replay_buffer = new_replay_buffer
+    def update_skill_pair_count(self, new_skill_pair_count):
+        self.attempted_skill_pair_count = new_skill_pair_count
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
     '''
@@ -161,7 +166,7 @@ class TaskProposing():
 
         p1 = 0; p2 = min(1, len(skill_sequence))
 
-        while p2 < len(skill_sequence) and p2 <= max_executable:
+        while p2 < len(skill_sequence):
 
             skill1_idx = self.skill_to_index[skill_sequence[p1]]
             skill2_idx = self.skill_to_index[skill_sequence[p2]]
@@ -181,7 +186,8 @@ class TaskProposing():
     
     def compute_shannon_entropy(self, task_dictionary):
 
-        normalized_skill_pair_prob =  self.attempted_skill_pair_count / np.sum(self.attempted_skill_pair_count)
+        normalized_skill_pair_prob =  self.attempted_skill_pair_count / np.sum(self.attempted_skill_pair_count) if np.sum(self.attempted_skill_pair_count) > 0 else  self.attempted_skill_pair_count 
+        # pdb.set_trace()
         log_skill_pair_prob = np.where(normalized_skill_pair_prob > 0 , np.log(normalized_skill_pair_prob), 0)
 
         curr_shannon_entropy = np.sum(-1 * normalized_skill_pair_prob * log_skill_pair_prob)
@@ -193,15 +199,15 @@ class TaskProposing():
         #measure entropy gain for each task
         for task in task_dictionary.keys():
 
-            skill_sequence = task_dictionary[task][0]
-            max_executable = task_dictionary[task][1]
+            skill_sequence = task_dictionary[task]['abstract']
+            max_executable = task_dictionary[task]['max_executable']
 
             entropy, counts = self.compute_entropy_for_task(skill_sequence, max_executable)
 
-            task_entropy_gains.append(entropy - curr_shannnon_entropy) #entropy gain is maximum of difference
+            task_entropy_gains.append(entropy - curr_shannon_entropy) #entropy gain is maximum of difference
             task_skill_counts.append(counts)
         
-        
+        # pdb.set_trace()
         return np.array(task_entropy_gains), task_skill_counts
 
     def get_least_explored_skills(self, k=5):
@@ -234,7 +240,8 @@ class TaskProposing():
     '''
     def generate_incremental_predicate_for_task(self, skill_sequence, abstract_skill_sequence, initial_observation):
 
-
+        print('GENERATING INCRIMENTAL PREDICATES')
+        # pdb.set_trace()
         '''
         Sufficiency: relies on abstract state changes to be abstract with respect to the object
         Chainabilty: relies on the non-abstract state changes to be abstract
@@ -254,8 +261,10 @@ class TaskProposing():
         executable = True
 
         #TODO: maybe instead setup initial set of calls to VLM to estimate all the predicates first -- using inital_observation
-        abstract_current_predicates = {} #NOTE: set current predicate for initial value for now
-
+        #NOTE: ensure order of evaluated predicates matches the predicate list
+        #NOTE: talk to Ziyi about is_open() vs is_holding() predicate: what can be True for multiple inputs at the same time?
+        abstract_current_predicates = {'is_gripper_empty()': 1, 'is_holding()': 0, 'is_nearby()': 1} #NOTE: set current predicate for initial value for now
+        current_predicates = {}
         
         #iterate through the skill sequence and add/change predicate labels until something is not executable
         for i, skill in enumerate(skill_sequence):
@@ -265,8 +274,7 @@ class TaskProposing():
 
             #extract arguments for skill in case of chainability
             match = re.match(r"(\w+)\((.*)\)", skill)
-            arguments = match.group(2).split(",")
-            
+            arguments = match.group(2).split(",")            
 
             abstract_preconditions = self.skill_dictionary[abstract_skill]['preconditions']
             abstract_effects_pos  = self.skill_dictionary[abstract_skill]['effects_positive']
@@ -275,6 +283,8 @@ class TaskProposing():
             
             #turn predicates true assuming skill can be executed
             for pre in abstract_preconditions:
+                
+                pre = pre.split('(')[0] + '()'
 
                 if pre in abstract_current_predicates and abstract_current_predicates[pre] == 0:
                     abstract_executable = False
@@ -290,9 +300,13 @@ class TaskProposing():
                 #turn predicates positive or negative based on effects
                 for eff in abstract_effects_pos:
 
+                    eff = eff.split('(')[0] + '()'
+
                     abstract_current_predicates[eff] = 1
 
                 for eff in abstract_effects_neg:
+
+                    eff = eff.split('(')[0] + '()'
                     abstract_current_predicates[eff] = 0
 
             
@@ -302,12 +316,13 @@ class TaskProposing():
                 if len(arguments) == 1:
                     pre = pre.replace('x',arguments[0])
                 if len(arguments) == 2:
-                    pre = pre.replace('r', arguments[1])
-                    pre = pre.replace('x', arguments[0])
-
-                if pre in current_predicates and current_predicates[pre] == 0:
+                    pre = pre.replace('(x,r)', f'({arguments[0]},{arguments[1]})')
+                if (pre in current_predicates and current_predicates[pre] == 0):
                     executable = False
                     break
+                
+                current_predicates[pre] = 1
+            
             
             if not executable:
                 executable = True
@@ -315,7 +330,10 @@ class TaskProposing():
                 max_executable += 1
 
                 #turn predicates positive or negative based on effects
-                for eff in effects_pos:
+                for eff in abstract_effects_pos:
+
+                    match = re.match(r"(\w+)\((.*)\)", eff)
+                    pred_name = match.group(1)
 
                     if len(arguments) == 1:
                         eff = eff.replace('x',arguments[0])
@@ -325,7 +343,10 @@ class TaskProposing():
 
                     current_predicates[eff] = 1
 
-                for eff in effects_neg:
+
+                for eff in abstract_effects_neg:
+
+    
 
                     if len(arguments) == 1:
                         eff = eff.replace('x',arguments[0])
@@ -335,12 +356,14 @@ class TaskProposing():
 
                     current_predicates[eff] = 0
             
+
+            # pdb.set_trace()
             
-            predicate_sequence.append(np.array(abstract_current_predicates))
+            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
 
 
-        return predicate_sequence, executable_sequence
+        return predicate_sequence, max_executable
 
     def compute_task_chainability(self, predicate_sequence, max_executable):
 
@@ -399,22 +422,22 @@ class TaskProposing():
             skill_sequence = task_dictionary[task]['grounded']
             abstract_skill_sequence = task_dictionary[task]['abstract']
 
-            predicate_sequence, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, abstract_skill_sequence, initial_observation)
+            predicate_sequence, max_executable = self.generate_incremental_predicate_for_task(skill_sequence, abstract_skill_sequence, initial_observation)
 
             #update the task dictionary with maximum number of steps that can be executed
-            task_dictionary[task].append(executable_sequence)
+            task_dictionary[task]['max_executable'] = max_executable
 
 
             #compute and aggregate the chainability and sufficience prob per task
-            chainability = self.compute_task_chainability(predicate_sequence, executable_sequence)
-            sufficience_logprob = self.compute_task_sufficience_probability(predicate_sequence, executable_sequence)
+            chainability = self.compute_task_chainability(predicate_sequence, max_executable)
+            sufficience_logprob = self.compute_task_sufficience_probability(predicate_sequence, max_executable)
 
 
             task_chainabilities.append(chainability)
             task_sufficience_logprobs.append(sufficience_logprob)
         
-
-        return np.array(task_chainabilities), np.array(task_sufficience_probabilities)
+        
+        return np.array(task_chainabilities), np.array(task_sufficience_logprobs)
 
 
     '''
@@ -422,6 +445,7 @@ class TaskProposing():
     '''
     def generate_scores_and_choose_task(self, task_dictionary, curr_observation_path):
         
+        pdb.set_trace()
         #run the 3 scoring functions
         task_chainabilities, task_sufficience_logprobs = self.compute_chainability_and_sufficience(task_dictionary, curr_observation_path)
         task_entropy_gains, task_skill_counts = self.compute_shannon_entropy(task_dictionary)
@@ -437,17 +461,30 @@ class TaskProposing():
 
         curr_idx = 1
 
-        for (eg_new, suf_new, chain1_new) in zip(task_entropy_gains[1:], task_sufficience_logprobs[1:], task_chainabilities[1:]):
+        for (eg_new, suf_new, chain_new) in zip(task_entropy_gains[1:], task_sufficience_logprobs[1:], task_chainabilities[1:]):
 
+            domination = False
 
-            for k, (eg2, suf2, chain2) in pareto_front_set.items():
+            for k in list(pareto_front_set.keys()):
+
+                (eg2, suf2, chain2) = pareto_front_set[k]
                 
-                #if the new score combo dominates something from the pareto-front set, remove the example from pareto-front set 
+                #if the new score combo dominates something from the pareto-front set, remove the original example from pareto-front set 
                 if (eg_new >= eg2) and (suf_new >= suf2) and (chain_new >= chain2) and (eg_new > eg2 or suf_new > suf2 or chain_new > chain2):
 
-
-                    pareto_front_set[k] = None
+                    domination = True
+                    del pareto_front_set[k]
                     pareto_front_set[curr_idx] = (eg_new, suf_new, chain_new)
+                
+                #if pareto set already dominates new example then skip
+                elif (eg_new <= eg2) and (suf_new <= suf2) and (chain_new <= chain2):
+                    domination = True
+                    continue 
+                
+            
+            #if some variables dominated then new example is part of pareto set 
+            if not domination:
+                pareto_front_set[curr_idx] = (eg_new, suf_new, chain_new)
 
 
             curr_idx += 1
@@ -465,9 +502,13 @@ class TaskProposing():
             if v is None:
                 continue
             
-            (chain, suff, entr) = v
+            (entr, suff, chain) = v
 
-            combined_score = entr_alpha * ((entr - min_entropy_gain)/(max_entropy_gain - min_entropy_gain)) + suff_alpha * ((suff - min_sufficiency) / (max_sufficiency - min_sufficiency)) + chain_alpha * ( (chain - min_chainability) / (max_chainability - min_chainability) )
+            entropy_score = (entr - min_entropy_gain)/(max_entropy_gain - min_entropy_gain) if (max_entropy_gain - min_entropy_gain) > 0 else 0
+            sufficience_score = (suff - min_sufficiency) / (max_sufficiency - min_sufficiency) if (max_sufficiency - min_sufficiency) > 0 else 0
+            chainability_score = (chain - min_chainability) / (max_chainability - min_chainability)  if (max_chainability - min_chainability) > 0 else 0
+
+            combined_score = entr_alpha * (entropy_score) + suff_alpha * (sufficience_score) + chain_alpha * (chainability_score)
 
             if combined_score > max_score:
                 max_score = combined_score
@@ -475,10 +516,10 @@ class TaskProposing():
 
 
         #find the task with the maximum combined score + set the current skill count to that task's skill count + set the current task execution matrix counts
-        self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]])
+        self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
         self.attempted_skill_pair_count = task_skill_counts[max_score_idx]
-
-        return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]
+        pdb.set_trace()
+        return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]['grounded']
 
 
 
@@ -551,9 +592,9 @@ class TaskProposing():
                 query_skill_embedding = self.embedding_model.encode(skill_name, convert_to_tensor=True, device=self.device)
                 cos_scores = st_utils.pytorch_cos_sim(query_skill_embedding.to(self.device), self.all_skill_embeddings.to(self.device))[0]
                 cos_scores = cos_scores.detach().cpu().numpy()
-                closest_grounded_skill = np.argsort(-cos_scores)[0]
-                closest_grounded_skill = list(self.skill_dictionary.keys())[closest_grounded_skill].split('(')[0]
-                closest_grounded_skill_abstract = list(self.skill_dictionary.keys())[closest_grounded_skill]
+                closest_skill_idx = np.argsort(-cos_scores)[0]
+                closest_grounded_skill = list(self.skill_dictionary.keys())[closest_skill_idx].split('(')[0]
+                closest_grounded_skill_abstract = list(self.skill_dictionary.keys())[closest_skill_idx]
 
                 #get the closest similarity argument embedding
                 for i, arg in enumerate(arguments):
@@ -617,13 +658,13 @@ if __name__ == '__main__':
     pdb.set_trace()
 
     # grounded_skill_dictionary = {
-    #     'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': ['is_gripper_empty()','is_nearby(x)', 'is_holding(x)'], 'effects_positive':['is_holding(x)'], 'effects_negative': ['is_gripper_empty()']},
+    #     'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': ['is_gripper_empty()','is_nearby(x)'], 'effects_positive':['is_holding(x)'], 'effects_negative': ['is_gripper_empty()']},
     #     'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': ['is_nearby(r)', 'is_holding(x)'], 'effects_positive':['is_gripper_empty()'], 'effects_negative': ['is_holding(x)']},
     #     'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':['is_nearby(x)'], 'effects_negative':[]}
     # }
 
     grounded_skill_dictionary = {
-        'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
+        'pick_up(x)':{'arguments': {'x': "the object to be picked up"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
         'put_down(x,r)': {'arguments': {'x': "the object to be dropped", 'r': "the receptacle onto which object 'x' is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
         'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     }
@@ -636,6 +677,14 @@ if __name__ == '__main__':
     #     'is_holding(x)': "the robot is holding object 'x' specifically in it's gripper"
     # }
 
+
+    new_skill_pair_count = np.zeros((3,3))
+    new_skill_pair_count[0,1] += 1
+    new_skill_pair_count[1,2] += 1
+    new_skill_pair_count[2,0]+= 1
+    new_skill_pair_count[0,2] += 1
+    new_skill_pair_count[2,1] += 1
+
     objects_in_scene = ['Apple', 'Bread', 'Fridge', 'Egg', 'Cabinet1', 'Cabinet2', 'Cabinet3', 'CounterTop', 'Newspaper', 'PaperTowerRoll', 'Toaster', 'Faucet', 'LightSwitch', 'Mug', 'Kettle', 'Statue', 'Bowl', 'Bin', 'Lettuce', 'Tomato', 'Potato', 'Microwave']
 
     replay_buffer = {'image_before':[], 'image_after':[], 'skill':['pick_up(Apple)','put_down(Apple,CounterTop)','walk_to(Fridge)','pick_up(Potato)','walk_to(Toaster)','put_down(Potato,Toaster)'], 'predicate_eval':[[0,1,0],[0,0,0],[1,0,0],[1,1,0],[0,0,0],[0,0,1]]}
@@ -644,5 +693,6 @@ if __name__ == '__main__':
 
 
     task_proposing = TaskProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=20, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene)
+    task_proposing.update_skill_pair_count(new_skill_pair_count)
 
     chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(None, None, None, None, curr_observation_path)
