@@ -12,6 +12,18 @@ from manipula_skills import *
 def get_obj(obj_id, obj_list):
     return [obj for obj in  event.metadata["objects"] if obj["objectId"] == obj_id]
 
+def capture_obs(controller, file_prefix):
+    counter = 1
+    while True:
+        screenshot_path = f"{file_prefix}_{counter}.png"
+        if not os.path.exists(screenshot_path):
+            break
+        counter += 1
+    event = controller.step('Pass')
+    im = Image.fromarray(event.frame)
+    im.save(screenshot_path)
+    print(f"Screenshot saved to {screenshot_path}")
+
 # init ai2thor controller
 controller = Controller(
     massThreshold = 1,
@@ -33,23 +45,31 @@ for obj in [obj for obj in event.metadata["objects"] if 'Chair' in obj['objectId
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
 poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Book" not in obj['name']]
-
 object = "Book"
 obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
 poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'], 'y': obj['position']['y'], 'z': obj['position']['z']-0.2}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-# controller = Controller()
-# event = controller.step("MoveAhead")
-# get event, for metadata
-# event = controller.step(
-#     action="MoveAgent",
-#     ahead=0.25,
-#     right=0.25,
-#     returnToStart=True,
-#     speed=1,
-#     fixedDeltaTime=0.02
-# )
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "RemoteControl" not in obj['name']]
+object = "RemoteControl"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] + 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Bowl" not in obj['name']]
+object = "Bowl"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Vase" not in obj['name']]
+object = "Vase"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'], 'y': obj['position']['y'], 'z': obj['position']['z'] + 0.2}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
+# sofa position
+{'name': 'agent', 'position': {'x': -0.4249999523162842, 'y': 0.9070531129837036, 'z': 3.083493709564209}, 'rotation': {'x': -0.0, 'y': 270.0, 'z': 0.0}, 'cameraHorizon': 30.00000762939453, 'isStanding': True, 'inHighFrictionArea': False}
 
 pickupable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["pickupable"]]
 # find openable object

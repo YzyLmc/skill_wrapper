@@ -88,6 +88,7 @@ receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj[
 
 if __name__ == "__main__":
     task = "GoTo(Book)\nPickUp(Book, Table)\nGoTo(Sofa)\nDropAt(Book, Sofa)"
+    task = "GoTo(DiningTable)\nPickUp(RemoteControl, DiningTable)"
     generated_code = convert_task_to_code(task)
     print(generated_code)
     exec(generated_code)
