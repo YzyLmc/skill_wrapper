@@ -176,6 +176,8 @@ def PickUp(object, location, controller, metadata):
     '''
     # event = controller.step('MoveArmBase', y = 0.5)
     # obj_names = [obj['objectId'] for obj in metadata["objects"]]
+    if event.metadata['arm']['heldObjects']:
+        return controller.step('Pass')
     if location == 'Sofa':
         event = controller.step('MoveArmBase', y = 0.2)
     elif location == 'DiningTable':
@@ -211,8 +213,9 @@ def PickUp(object, location, controller, metadata):
         returnToStart=False
     )
     # event = controller.step('MoveArmBase', y = 0.5)
-    # controller.step(action="SetHandSphereRadius", radius=0.04)
-    controller.step('Done')
+    event = controller.step('Pass')
+    if not any(object in o for o in event.metadata['arm']['heldObjects']):
+        controller.step(action="SetHandSphereRadius", radius=0.15)
     
     return event
 

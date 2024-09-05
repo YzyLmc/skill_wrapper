@@ -67,7 +67,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred_dict)
-    # breakpoint()
+    breakpoint()
     # response consists of predicate and its semantic
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
@@ -261,53 +261,54 @@ if __name__ == '__main__':
 
     # mock symbolic state
     # pred_dict = {'handEmpty()': True}
+    pred_dict = {'is_held([OBJ])': True}
     # pred_dict = {}
-    # skill = 'PickUp([OBJ], [LOC])'
-    # pred_type = 'eff'
+    skill = 'PickUp([OBJ], [LOC])'
+    pred_type = 'eff'
     # pred_type = 'precond'
-    # response = generate_pred(model, skill, pred_dict, pred_type)
-    # print(response)
-    # breakpoint()
+    response = generate_pred(model, skill, pred_dict, pred_type)
+    print(response)
+    breakpoint()
 
     # test mismatch state
     # pred_dict::{pred_name:{task: [Bool, Bool]}}
     # skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     # return: dict(skill: list(id: dict('s0':img, 's1':img, 'success': Bool)))
 
-    mock_pred_dict = {
-        "At(loc)": {'task': {
-            "PickUp_0": [True, True],
-            "PickUp_1": [False, False],
-            "PickUp_2": [True, True],
-            "PickUp_3": [True, True]
-        },
-        'semantic': 'test semantic'
-        },
-        "IsFreeHand()":{'task':{
-            "PickUp_0": [True, False],
-            "PickUp_1": [True, True],
-            "PickUp_2": [True, True],
-            "PickUp_3": [True, False]
-        },
-        'sem': 'test semantic'
-    }
-    }
+    # mock_pred_dict = {
+    #     "At(loc)": {'task': {
+    #         "PickUp_0": [True, True],
+    #         "PickUp_1": [False, False],
+    #         "PickUp_2": [True, True],
+    #         "PickUp_3": [True, True]
+    #     },
+    #     'semantic': 'test semantic'
+    #     },
+    #     "IsFreeHand()":{'task':{
+    #         "PickUp_0": [True, False],
+    #         "PickUp_1": [True, True],
+    #         "PickUp_2": [True, True],
+    #         "PickUp_3": [True, False]
+    #     },
+    #     'sem': 'test semantic'
+    # }
+    # }
     # mock_pred_dict = {}
-    mock_skill2tasks = {
-        "PickUp": {
-            "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
-            "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-            "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-            "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
-        }
-    }
-    pred_type = 'precond'
-    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
+    # mock_skill2tasks = {
+    #     "PickUp": {
+    #         "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
+    #         "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+    #         "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+    #         "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
+    #     }
+    # }
+    # pred_type = 'precond'
+    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
-    pred_type = 'eff'
-    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
+    # pred_type = 'eff'
+    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
 
     # # test main refining function
     # skill = 'PickUp'
