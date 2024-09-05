@@ -67,6 +67,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred_dict)
+    # breakpoint()
     # response consists of predicate and its semantic
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
@@ -75,8 +76,8 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
 
 def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
     '''
-    look for same symbolic states (same s1 or s2) in task dictionary
-    pred_dict::{pred_name:{task: [Bool, Bool]}}
+    look for same symbolic states (same s1 or s2 - s1) in task dictionary
+    pred_dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     pred_type::{'precond', 'eff'}
     returns::dict(skill, list(id: dict('s0':img, 's1':img, 'success': Bool)))
@@ -97,41 +98,46 @@ def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
     for pred in pred_dict.keys():
         for skill, tasks in skill2tasks.items():
             for id, task in tasks.items():
-                if id not in pred_dict[pred]:
-                    pred_dict[pred][id] = [
-                        eval_pred(model, skill, pred, task['obj'], task['loc'], task['s0']), \
-                        eval_pred(model, skill, pred, task['obj'], task['loc'], task['s1'])
-                    ]
-
-    # if no predicates are in the set yet, make pseudo labels for all tasks
-    # since the init state and the goal state are all the same for all tasks
-    # if not pred_dict:
-        
-    
-    
+                if id not in pred_dict[pred]['task']:
+                    pred_dict[pred]['task'][id] = [
+                        eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['s0']), \
+                        eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['s1'])
+                    ]    
+    # look for duplicated tasks
     dup_tasks = {}
     if pred_type == "precond":
-        # return two same symbolic states BEFORE EXECUTION with different successfulness
+        # return two same symbolic states BEFORE EXECUTION
         for skill, tasks in skill2tasks.items():
             task2state = {}
             for id, task in tasks.items():
-                task2state[id] = {pred: pred_dict[pred][id][0] for pred in pred_dict}
+                task2state[id] = {pred: pred_dict[pred]['task'][id][0] for pred in pred_dict}
             dup_tasks[skill] = tasks_with_same_symbolic_states(task2state)
     elif pred_type == "eff":
-        # return two same symbolic states TRANSITION (symbolic) with different successfulness
+        # return two same symbolic states TRANSITION (symbolic)
+        # success_task = mismatch_tasks[skill][0] if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == True else mismatch_tasks[skill][1]
+        # state_change_success = int(new_p_mismatch[success_task][1]==True) - int(new_p_mismatch[success_task][0]==True)
         for skill, tasks in skill2tasks.items():
             task2state = {}
             for id, task in tasks.items():
-                task2state[id] = {pred: int(pred_dict[pred][id][1]==True) - int(pred_dict[pred][id][0]==True) for pred in pred_dict}
+                task2state[id] = {pred: int(pred_dict[pred]['task'][id][1]==True) - int(pred_dict[pred]['task'][id][0]==True) for pred in pred_dict}
             dup_tasks[skill] = tasks_with_same_symbolic_states(task2state)
-    try:
-        mismatch_pairs = {}
-        for skill, pairs in dup_tasks.items():
-            if pairs:
-                mismatch_pairs[skill] = [list(pairs.keys())[0], random.choice(list(pairs.values())[0])]
-        return mismatch_pairs
-    except:
-        return {}
+
+    # breakpoint()
+    # find the ones that jas different successfuness
+    # try:
+    mismatch_pairs = {}
+    for skill, pairs in dup_tasks.items():
+        if pairs:
+            # for effect we have to make sure successful execution will have state changes
+            tasks = {p: skill2tasks[skill][p] for p in list(pairs.values())[0]}
+            tasks[list(pairs.keys())[0]] = skill2tasks[skill][list(pairs.keys())[0]]
+            success_tasks = {id: t for id, t in tasks.items() if t['success']}
+            failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
+            if len(success_tasks) > 0 and len(failed_tasks) > 0:
+                mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
+    return mismatch_pairs
+    # except:
+    #     return {}
     # if dup_tasks:
     #     t1 = random.choice(list(dup_tasks.keys()))
     #     t2 = random.choice(dup_tasks[t1])
@@ -143,7 +149,7 @@ def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
 def refine_pred(model, skill, skill2tasks, pred_dict, precond, eff, max_t=3):
     '''
     Refine predicates of precondition and effect of one skill for precondition and effect
-    pred_dict::{pred_name:{task: [Bool, Bool]}}
+    pred_dict::{pred_name:{task{id: [Bool, Bool]}, sem:str}}
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
 
@@ -175,8 +181,10 @@ def refine_pred(model, skill, skill2tasks, pred_dict, precond, eff, max_t=3):
         else:
             tried_pred_precond.append(new_p)
         t += 1
-    if new_p_added:
-        pred_dict[new_p] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s1'])] for idx, task in skill2tasks[skill].items()}
+    if new_p_added and new_p not in pred_dict:
+        pred_dict[new_p] = {}
+        pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
+        pred_dict[new_p]['semantic'] = sem
         new_p_added = False
 
     # check effect
@@ -204,8 +212,10 @@ def refine_pred(model, skill, skill2tasks, pred_dict, precond, eff, max_t=3):
         else:
             tried_pred_eff.append(new_p)
         t += 1
-    if new_p_added:
-        pred_dict[new_p] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s1'])] for idx, task in skill2tasks[skill].items()}
+    if new_p_added and new_p not in pred_dict:
+        pred_dict[new_p] = {}
+        pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
+        pred_dict[new_p]['semantic'] = sem
         new_p_added = False
             
     return precond, eff, pred_dict, tried_pred_precond, tried_pred_precond
@@ -231,15 +241,18 @@ def task_proposing(skill, tasks):
     pass
 
 if __name__ == '__main__':
-    model = GPT4()
+    model = GPT4(engine='gpt-4o-2024-08-06')
     # test predicate evaluation function
-    # pred = 'handEmpty()'
-    # pred = 'IsObjectReachable([OBJ])'
-    # skill = 'PickUp([OBJ])'
+    # # pred = 'handEmpty()'
+    # pred = 'IsObjectReachable([OBJ], [LOC])'
+    # # pred = 'is_held([OBJ])'
+    # skill = 'PickUp([OBJ], [LOC])'
     # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
-    # obj = 'Boots'
+    # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
+    # obj = 'KeyChain'
     # loc = 'DiningTable'
-    # img = ['Before_PickUp_2.png']
+    # img = ['Before_PickUp_2.jpg']
+    # # img = ['test1.jpg']
     # response = eval_pred(model, skill, pred, sem, obj, loc, img)
     # print(response)
     # breakpoint()
@@ -249,46 +262,52 @@ if __name__ == '__main__':
     # mock symbolic state
     # pred_dict = {'handEmpty()': True}
     # pred_dict = {}
-    # skill = 'PickUp([OBJ])'
+    # skill = 'PickUp([OBJ], [LOC])'
+    # pred_type = 'eff'
     # pred_type = 'precond'
     # response = generate_pred(model, skill, pred_dict, pred_type)
     # print(response)
+    # breakpoint()
 
     # test mismatch state
     # pred_dict::{pred_name:{task: [Bool, Bool]}}
     # skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     # return: dict(skill: list(id: dict('s0':img, 's1':img, 'success': Bool)))
 
-    # mock_pred_dict = {
-    #     "At(loc)": {
-    #         "PickUp_0": [True, True],
-    #         "PickUp_1": [False, False],
-    #         "PickUp_2": [True, True],
-    #         "PickUp_3": [True, True]
-    #     },
-    #     "IsFreeHand()":{
-    #         "PickUp_0": [True, False],
-    #         "PickUp_1": [True, True],
-    #         "PickUp_2": [True, True],
-    #         "PickUp_3": [True, False]
-    #     }
-    # }
+    mock_pred_dict = {
+        "At(loc)": {'task': {
+            "PickUp_0": [True, True],
+            "PickUp_1": [False, False],
+            "PickUp_2": [True, True],
+            "PickUp_3": [True, True]
+        },
+        'semantic': 'test semantic'
+        },
+        "IsFreeHand()":{'task':{
+            "PickUp_0": [True, False],
+            "PickUp_1": [True, True],
+            "PickUp_2": [True, True],
+            "PickUp_3": [True, False]
+        },
+        'sem': 'test semantic'
+    }
+    }
     # mock_pred_dict = {}
-    # mock_skill2tasks = {
-    #     "PickUp": {
-    #         "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
-    #         "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-    #         "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
-    #         "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
-    #     }
-    # }
-    # pred_type = 'precond'
-    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
+    mock_skill2tasks = {
+        "PickUp": {
+            "PickUp_0": {"s0": ["pickup_t0_s0_success.jpg"], "s1":["pickup_t0_s1_success.jpg"], "obj":"test", "loc":"test", "success": True},
+            "PickUp_1": {"s0": ["pickup_t1_s0_fail.jpg"], "s1":["pickup_t1_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+            "PickUp_2": {"s0": ["pickup_t2_s0_fail.jpg"], "s1":["pickup_t2_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False},
+            "PickUp_3": {"s0": ["pickup_t3_s0_fail.jpg"], "s1":["pickup_t3_s1_fail.jpg"], "obj":"test", "loc":"test", "success": False}
+        }
+    }
+    pred_type = 'precond'
+    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
-    # pred_type = 'eff'
-    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
-    # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
+    pred_type = 'eff'
+    mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
 
     # # test main refining function
     # skill = 'PickUp'
@@ -302,8 +321,8 @@ if __name__ == '__main__':
 
     skill2tasks = {
         "PickUp([OBJ], [LOC])": {
-            "PickUp_0": {"s0": ["Before_PickUp_1.png"], "s1":["After_PickUp_1.png"], "obj":"Book", "loc":"DiningTable", "success": True},
-            "PickUp_1": {"s0": ["Before_PickUp_2.png"], "s1":["After_PickUp_3.png"], "obj":"KeyChain", "loc":"DiningTable", "success": False}
+            "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "success": True},
+            "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "success": False}
         }
     }
 
@@ -320,7 +339,3 @@ if __name__ == '__main__':
     eff = {}
     precond, eff, pred_dict, tried_pred_precond, tried_pred_eff = refine_pred(model, skill, skill2tasks, pred_dict, precond, eff)
     print(precond, eff, pred_dict)
-
-
-    
-

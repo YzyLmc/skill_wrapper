@@ -67,9 +67,14 @@ def save_to_file(data, fpth, mode=None):
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
 
+# def encode_image(image_path):
+#   with open(image_path, "rb") as image_file:
+#     return base64.b64encode(image_file.read()).decode('utf-8')
+
 def encode_image(image_path):
-  with open(image_path, "rb") as image_file:
-    return base64.b64encode(image_file.read()).decode('utf-8')
+    with open(image_path, "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
+    return encoded_image
 
 def prompt2msg(query_prompt, vision=False):
     """
@@ -141,7 +146,7 @@ class GPT4:
         # breakpoint()
         txts = prompt2msg(query_prompt, vision=True)
         payload = {
-            "model": "gpt-4-turbo",
+            "model": self.engine,
             "messages": [],
             "max_tokens": max_tokens}
         msg = {"role": "user", "content": []}

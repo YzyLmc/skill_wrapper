@@ -23,7 +23,7 @@ from manipula_skills import *
 def capture_obs(controller, file_prefix):
     counter = 1
     while True:
-        screenshot_path = f"{file_prefix}_{counter}.png"
+        screenshot_path = f"{file_prefix}_{counter}.jpg"
         if not os.path.exists(screenshot_path):
             break
         counter += 1
@@ -45,9 +45,11 @@ controller = Controller(
                 renderObjectImage = True,
                 width= 1280,
                 height= 720,
-                fieldOfView=60
+                fieldOfView=90
             )
 event = controller.reset(scene="FloorPlan203", fieldOfView=100)
+controller.step(action="SetHandSphereRadius", radius=0.15)
+controller.step('LookDown')
 
 # remove chairs and place objects to easier places
 for obj in [obj for obj in event.metadata["objects"] if 'Chair' in obj['objectId']]:
@@ -88,7 +90,7 @@ receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj[
 
 if __name__ == "__main__":
     task = "GoTo(Book)\nPickUp(Book, Table)\nGoTo(Sofa)\nDropAt(Book, Sofa)"
-    task = "GoTo(DiningTable)\nPickUp(RemoteControl, DiningTable)"
+    # task = "GoTo(DiningTable)\nPickUp(RemoteControl, DiningTable)"
     generated_code = convert_task_to_code(task)
     print(generated_code)
     exec(generated_code)
