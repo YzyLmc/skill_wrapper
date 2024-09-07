@@ -22,8 +22,11 @@ from manipula_skills import *
 
 def capture_obs(controller, file_prefix):
     counter = 1
+    directory = f"tasks/exps/{file_prefix.split('_')[-1]}/"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
     while True:
-        screenshot_path = f"{file_prefix}_{counter}.jpg"
+        screenshot_path = directory + f"{file_prefix}_{counter}.jpg"
         if not os.path.exists(screenshot_path):
             break
         counter += 1
@@ -51,19 +54,46 @@ event = controller.reset(scene="FloorPlan203", fieldOfView=100)
 controller.step(action="SetHandSphereRadius", radius=0.15)
 controller.step('LookDown')
 
-# remove chairs and place objects to easier places
 for obj in [obj for obj in event.metadata["objects"] if 'Chair' in obj['objectId']]:
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Book" not in obj['name']]
+for obj in [obj for obj in event.metadata["objects"] if 'Pencil' in obj['objectId']]:
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
+for obj in [obj for obj in event.metadata["objects"] if 'Plate' in obj['objectId']]:
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
+for obj in [obj for obj in event.metadata["objects"] if 'CellPhone' in obj['objectId']]:
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
+for obj in [obj for obj in event.metadata["objects"] if 'RemoteControl' in obj['objectId']]:
+    remote = deepcopy(obj)
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Book" not in obj['name']]
 object = "Book"
 obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
-poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'], 'y': obj['position']['y'], 'z': obj['position']['z']-0.2}})
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x']-0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.2}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-pickupable_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj["pickupable"]]
-receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj['receptacle']]
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "TissueBox" not in obj['name']]
+replace_with = 'TissueBox'# replace remotecontrol
+obj_replace_with = [obj for obj in event.metadata["objects"] if replace_with in obj['objectId']][0]
+obj = remote
+poses.append({'objectName':obj_replace_with['name'], "position":{'x': obj['position']['x'] + 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.4}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Bowl" not in obj['name']]
+object = "Bowl"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Vase" not in obj['name']]
+object = "Vase"
+obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
 '''
     commands = task.splitlines()
     formatted_commands = []
@@ -71,8 +101,8 @@ receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj[
     for command in commands:
         formatted_commands.append(f'capture_obs(controller, "Before_{command.split("(")[0]}")')
         if command.startswith("GoTo"):
-            object_name = command[5:-1]  # Extract object name
-            formatted_command = f'event = GoTo("{object_name}", controller, event.metadata)'
+            args = command[5:-1].split(", ")  # Extract arguments
+            formatted_command = f'event = GoTo("{args[0]}", "{args[1]}", controller, event.metadata)'
         elif command.startswith("PickUp"):
             args = command[7:-1].split(", ")  # Extract arguments
             formatted_command = f'event = PickUp("{args[0]}", "{args[1]}", controller, event.metadata)'
@@ -89,8 +119,10 @@ receptacle_objs = [obj['objectId'] for obj in  event.metadata["objects"] if obj[
     return template + formatted_code
 
 if __name__ == "__main__":
-    task = "GoTo(Book)\nPickUp(Book, Table)\nGoTo(Sofa)\nDropAt(Book, Sofa)"
-    # task = "GoTo(DiningTable)\nPickUp(RemoteControl, DiningTable)"
+    task = "GoTo(Sofa, Book)\nPickUp(Book, Table)\nGoTo(Table, Sofa)\nDropAt(Book, Sofa)"
+    # task = "GoTo(Sofa, DiningTable)\nPickUp(RemoteControl, DiningTable)"
+    # task 1
+    # ['GoTo(Sofa,Sofa)', 'PickUp(RemoteControl,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(RemoteControl,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(RemoteControl,DiningTable)', 'DropAt(RemoteControl,Sofa)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     exec(generated_code)
