@@ -130,10 +130,10 @@ event = controller.step('SetObjectPoses',objectPoses = poses)
     return template + formatted_code
 
 if __name__ == "__main__":
-    task = "GoTo(Sofa, Book)\nPickUp(Book, DiningTable)\nGoTo(DiningTable, Sofa)\nDropAt(Book, Sofa)"
+    # task = "GoTo(Sofa, Book)\nPickUp(Book, DiningTable)\nGoTo(DiningTable, Sofa)\nDropAt(Book, Sofa)"
     # task = "GoTo(Sofa, DiningTable)\nPickUp(RemoteControl, DiningTable)"
     # task 1
-    # ['GoTo(Sofa,Sofa)', 'PickUp(RemoteControl,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(RemoteControl,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(RemoteControl,DiningTable)', 'DropAt(RemoteControl,Sofa)']
+    task = ['GoTo(Sofa,Sofa)', 'PickUp(RemoteControl,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(RemoteControl,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(RemoteControl,DiningTable)', 'DropAt(RemoteControl,Sofa)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     exec(generated_code)

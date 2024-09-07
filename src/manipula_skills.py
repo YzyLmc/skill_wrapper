@@ -59,7 +59,7 @@ def GoTo(object_or_location_1, object_or_location_2, controller, metadata):
     
     start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
     event = controller.step('Pass')
-    success = dist_pose(event.metadata['agent']['position'], start['position']) < 2
+    success = dist_pose(event.metadata['agent']['position'], start['position']) < 1 # cannot start at a place far away
     if not success:
         return success, event
 
