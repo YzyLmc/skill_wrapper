@@ -220,42 +220,58 @@ def refine_pred(model, skill, skill2tasks, pred_dict, precond, eff, max_t=3):
             
     return precond, eff, pred_dict, tried_pred_precond, tried_pred_precond
 
-### task proposing part below
-
-def scoring_chain(task, operators):
-    'returns the maximum steps that can be executed from the begining of a task'
-    pass
-
-def top_k_combo(coverage_table, k):
-    'calculate top k skill combination with highest information gain'
-    pass
-
-def update_coverage(coverage_table, task):
-    'update the coverage table with the task just been executed'
-    pass
-
-def task_proposing(skill, tasks):
+def cross_assignment():
     '''
-    tasks::list(str):: previous tasks
+    Assign precondtions of all skills to effect of each skill
+    skill2operator: dict(dict())
     '''
     pass
+
+def merge_predicates(model, skill2operator, pred_dict):
+    '''
+    merge predicates based on their semantic meaning
+    skill2operator: dict(dict())
+    pred_dict:
+    '''
+    pass
+
+# ### task proposing part below
+
+# def scoring_chain(task, operators):
+#     'returns the maximum steps that can be executed from the begining of a task'
+#     pass
+
+# def top_k_combo(coverage_table, k):
+#     'calculate top k skill combination with highest information gain'
+#     pass
+
+# def update_coverage(coverage_table, task):
+#     'update the coverage table with the task just been executed'
+#     pass
+
+# def task_proposing(skill, tasks):
+#     '''
+#     tasks::list(str):: previous tasks
+#     '''
+#     pass
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
     # test predicate evaluation function
-    # # pred = 'handEmpty()'
+    # pred = 'handEmpty()'
     # pred = 'IsObjectReachable([OBJ], [LOC])'
-    # # pred = 'is_held([OBJ])'
-    # skill = 'PickUp([OBJ], [LOC])'
+    pred = 'is_held([OBJ])'
+    skill = 'PickUp([OBJ], [LOC])'
     # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
-    # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
+    sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
     # obj = 'KeyChain'
-    # loc = 'DiningTable'
+    obj = 'Book'
+    loc = 'DiningTable'
     # img = ['Before_PickUp_2.jpg']
-    # # img = ['test1.jpg']
-    # response = eval_pred(model, skill, pred, sem, obj, loc, img)
-    # print(response)
-    # breakpoint()
+    img = ['test_new.jpg']
+    response = eval_pred(model, skill, pred, sem, obj, loc, img)
+    print(response)
+    breakpoint()
 
     # test predicate proposing for refining
 
@@ -324,6 +340,9 @@ if __name__ == '__main__':
         "PickUp([OBJ], [LOC])": {
             "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "success": True},
             "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "success": False}
+        },
+        "GoTo([LOC_1], [LOC])":{
+
         }
     }
 

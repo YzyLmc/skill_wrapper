@@ -22,7 +22,7 @@ from manipula_skills import *
 
 def capture_obs(controller, file_prefix):
     counter = 1
-    directory = f"tasks/exps/{file_prefix.split('_')[-1]}/"
+    directory = f"tasks/exps/{file_prefix.split('_')[1]}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
     while True:
@@ -34,6 +34,7 @@ def capture_obs(controller, file_prefix):
     im = Image.fromarray(event.frame)
     im.save(screenshot_path)
     print(f"Screenshot saved to {screenshot_path}")
+    return screenshot_path
 
 # init ai2thor controller
 controller = Controller(
@@ -52,7 +53,14 @@ controller = Controller(
             )
 event = controller.reset(scene="FloorPlan203", fieldOfView=100)
 controller.step(action="SetHandSphereRadius", radius=0.15)
-controller.step('LookDown')
+sofa_pose = {'name': 'agent', 'position': {'x': -0.1749999225139618, 'y': 0.9070531129837036, 'z': 3.083493709564209}, 'rotation': {'x': -0.0, 'y': 270.0, 'z': 0.0}, 'cameraHorizon': 30.00001525878906, 'isStanding': True, 'inHighFrictionArea': False}
+controller.step(
+            action = 'Teleport',
+            position = sofa_pose['position'],
+            rotation = sofa_pose['rotation'],
+            horizon = int(sofa_pose['cameraHorizon']),
+            standing = sofa_pose['isStanding']
+        )
 
 for obj in [obj for obj in event.metadata["objects"] if 'Chair' in obj['objectId']]:
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
@@ -99,27 +107,30 @@ event = controller.step('SetObjectPoses',objectPoses = poses)
     formatted_commands = []
     
     for command in commands:
-        formatted_commands.append(f'capture_obs(controller, "Before_{command.split("(")[0]}")')
         if command.startswith("GoTo"):
             args = command[5:-1].split(", ")  # Extract arguments
-            formatted_command = f'event = GoTo("{args[0]}", "{args[1]}", controller, event.metadata)'
+            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            formatted_command = f'suc, event = GoTo("{args[0]}", "{args[1]}", controller, event.metadata)'
         elif command.startswith("PickUp"):
             args = command[7:-1].split(", ")  # Extract arguments
-            formatted_command = f'event = PickUp("{args[0]}", "{args[1]}", controller, event.metadata)'
+            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            formatted_command = f'suc, event = PickUp("{args[0]}", "{args[1]}", controller, event.metadata)'
         elif command.startswith("DropAt"):
             args = command[7:-1].split(", ")  # Extract arguments
-            formatted_command = f'event = DropAt("{args[0]}", "{args[1]}", controller, event.metadata)'
+            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            formatted_command = f'suc, event = DropAt("{args[0]}", "{args[1]}", controller, event.metadata)'
         else:
             continue  # Skip any unrecognized commands
         formatted_commands.append(formatted_command)
 
-        formatted_commands.append(f'capture_obs(controller, "After_{command.split("(")[0]}")')
+        formatted_commands.append(f'capture_obs(controller, f"After_{command.split("(")[0]}_{"{suc}"}")')
+        formatted_commands.append(f'os.rename(screenshot_path, screenshot_path.replace(f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}", f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}_{"{suc}"}"))')
 
     formatted_code = "\n".join(formatted_commands)
     return template + formatted_code
 
 if __name__ == "__main__":
-    task = "GoTo(Sofa, Book)\nPickUp(Book, Table)\nGoTo(Table, Sofa)\nDropAt(Book, Sofa)"
+    task = "GoTo(Sofa, Book)\nPickUp(Book, DiningTable)\nGoTo(DiningTable, Sofa)\nDropAt(Book, Sofa)"
     # task = "GoTo(Sofa, DiningTable)\nPickUp(RemoteControl, DiningTable)"
     # task 1
     # ['GoTo(Sofa,Sofa)', 'PickUp(RemoteControl,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(RemoteControl,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(RemoteControl,DiningTable)', 'DropAt(RemoteControl,Sofa)']

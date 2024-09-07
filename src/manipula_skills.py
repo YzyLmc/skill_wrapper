@@ -57,6 +57,12 @@ def GoTo(object_or_location_1, object_or_location_2, controller, metadata):
         p2 = np.array([x2, y2, z2])
         return np.sqrt(np.sum((p1-p2)**2, axis=0))
     
+    start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
+    event = controller.step('Pass')
+    success = dist_pose(event.metadata['agent']['position'], start['position']) < 2
+    if not success:
+        return success, event
+
     obj = [obj for obj in metadata["objects"] if object_or_location_2 in obj['objectId']][0]
     try:
         receptacle = obj['parentReceptacles'][0]
