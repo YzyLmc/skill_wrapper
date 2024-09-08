@@ -48,7 +48,7 @@ def TurnRight(controller):
         degrees=30
     )
 
-def GoTo(object_or_location_1, object_or_location_2, controller, metadata):
+def GoTo(object_or_location_1, object_or_location_2, controller, event):
     '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
     def dist_pose(obj1, obj2):
         x1, y1, z1 = obj1["x"], obj1["y"], obj1["z"]
@@ -57,9 +57,10 @@ def GoTo(object_or_location_1, object_or_location_2, controller, metadata):
         p2 = np.array([x2, y2, z2])
         return np.sqrt(np.sum((p1-p2)**2, axis=0))
     
+    metadata = event.metadata
     start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
     event = controller.step('Pass')
-    success = dist_pose(event.metadata['agent']['position'], start['position']) < 1 # cannot start at a place far away
+    success = dist_pose(event.metadata['agent']['position'], start['position']) < 2 # cannot start at a place far away
     if not success:
         return success, event
 
@@ -186,177 +187,189 @@ def MoveGripperBackward(controller):
     return event
 
 
-def PickUp(object, location, controller, metadata):
+def PickUp(object, location, controller, event):
     '''
     object: str : name of the object
     '''
-    # event = controller.step('MoveArmBase', y = 0.5)
-    # obj_names = [obj['objectId'] for obj in metadata["objects"]]
-    for _ in range(2):
-        obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
-        try:
-            receptacle = obj['parentReceptacles'][0]
-        except:
-            receptacle = ''
-        print('receptacle', receptacle)
-        # sofa is low so set standing to false
-        if 'Sofa' in receptacle:
-            agent_pose = metadata['agent']
-            # sofa_pose = {'name': 'agent', 'position': agent_pose['position'], 'rotation': agent_pose['rotation'], 'cameraHorizon': , 'isStanding': True, 'inHighFrictionArea': False}
-            controller.step(
-                action = 'Teleport',
-                position = agent_pose['position'],
-                rotation = agent_pose['rotation'],
-                horizon = int(agent_pose['cameraHorizon']),
-                standing = False
-            )
-            event = controller.step('MoveArmBase', y = 0.2)
-        elif location == 'DiningTable':
-            # event = controller.step('MoveArmBase', y = 0.5)
-            standing = True
-        else:
-            standing = True
-
-        controller.step(action="SetHandSphereRadius", radius=0.1)
-        obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
-        position = deepcopy(obj["position"])
-        # if "Book" in object:
-        #     position = {'x': position['x']+0.1, 'y': position['y'] + 0.05, 'z': position['z']-0.2}
-
-        event = controller.step(
-            "MoveArm",
-            position=position,
-            coordinateSpace="world",
-            returnToStart=False
-        )
-        if "Book" in object:
-            event = controller.step(
-                action='MoveArm',
-                position=dict(x=0.1, y=0, z=-0.2),
-                coordinateSpace='wrist',
-                speed=1,
-                returnToStart=False
-            )
-
-        elif "Vase" in object:
-            event = controller.step(
-                action='MoveArm',
-                position=dict(x=0, y=0, z=-0.05),
-                coordinateSpace='wrist',
-                speed=1,
-                returnToStart=False
-            )
-
-        elif "TissueBox" in object:
-            event = controller.step(
-                action='MoveArm',
-                position=dict(x=0, y=0, z=-0.15),
-                coordinateSpace='wrist',
-                speed=1,
-                returnToStart=False
-            )
-
-        event = controller.step(
-            action="PickupObject",
-            objectIdCandidates=[obj['objectId']],
-        )
-        agent_pose = event.metadata['agent']
-        while not agent_pose['isStanding']:
-            event = controller.step(
-                action = 'Teleport',
-                position = agent_pose['position'],
-                rotation = agent_pose['rotation'],
-                horizon = int(agent_pose['cameraHorizon']),
+    # add try so will do nothing for unchainable tasks
+    try:
+        for _ in range(2):
+            metadata = event.metadata
+            if metadata['arm']['heldObjects']:
+                return False, event
+            obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
+            try:
+                receptacle = obj['parentReceptacles'][0]
+            except:
+                receptacle = ''
+            print('receptacle', receptacle)
+            # sofa is low so set standing to false
+            if 'Sofa' in receptacle:
+                agent_pose = metadata['agent']
+                # sofa_pose = {'name': 'agent', 'position': agent_pose['position'], 'rotation': agent_pose['rotation'], 'cameraHorizon': , 'isStanding': True, 'inHighFrictionArea': False}
+                controller.step(
+                    action = 'Teleport',
+                    position = agent_pose['position'],
+                    rotation = agent_pose['rotation'],
+                    horizon = int(agent_pose['cameraHorizon']),
+                    standing = False
+                )
+                event = controller.step('MoveArmBase', y = 0.2)
+            elif location == 'DiningTable':
+                # event = controller.step('MoveArmBase', y = 0.5)
                 standing = True
+            else:
+                standing = True
+
+            controller.step(action="SetHandSphereRadius", radius=0.1)
+            obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
+            position = deepcopy(obj["position"])
+            # if "Book" in object:
+            #     position = {'x': position['x']+0.1, 'y': position['y'] + 0.05, 'z': position['z']-0.2}
+
+            event = controller.step(
+                "MoveArm",
+                position=position,
+                coordinateSpace="world",
+                returnToStart=False
+            )
+            if "Book" in object:
+                event = controller.step(
+                    action='MoveArm',
+                    position=dict(x=0.1, y=0, z=-0.2),
+                    coordinateSpace='wrist',
+                    speed=1,
+                    returnToStart=False
+                )
+
+            elif "Vase" in object:
+                event = controller.step(
+                    action='MoveArm',
+                    position=dict(x=0, y=0, z=-0.05),
+                    coordinateSpace='wrist',
+                    speed=1,
+                    returnToStart=False
+                )
+
+            elif "TissueBox" in object:
+                event = controller.step(
+                    action='MoveArm',
+                    position=dict(x=0, y=0, z=-0.15),
+                    coordinateSpace='wrist',
+                    speed=1,
+                    returnToStart=False
+                )
+
+            event = controller.step(
+                action="PickupObject",
+                objectIdCandidates=[obj['objectId']],
             )
             agent_pose = event.metadata['agent']
-        event = controller.step(
-            action='MoveArm',
-            position=dict(x=0, y=0.5, z=0),
-            coordinateSpace='wrist',
-            speed=1,
-            returnToStart=False
-        )
-        event = controller.step(
-            action='MoveArm',
-            position=dict(x=0, y=0, z=-0.25),
-            coordinateSpace='wrist',
-            speed=1,
-            returnToStart=False
-        )
-        controller.step(action='MoveArmBase',y=0.5)
-        event = controller.step(
-            action="MoveArm",
-            position=dict(x=-0.25, y=0.45, z=0.1),
-            coordinateSpace="armBase",
-            restrictMovement=False,
-            speed=1,        
-            returnToStart=True,        
-            # fixedDeltaTime=0.02    
+            while not agent_pose['isStanding']:
+                event = controller.step(
+                    action = 'Teleport',
+                    position = agent_pose['position'],
+                    rotation = agent_pose['rotation'],
+                    horizon = int(agent_pose['cameraHorizon']),
+                    standing = True
+                )
+                agent_pose = event.metadata['agent']
+            event = controller.step(
+                action='MoveArm',
+                position=dict(x=0, y=0.5, z=0),
+                coordinateSpace='wrist',
+                speed=1,
+                returnToStart=False
             )
-        event = controller.step('Done')
+            event = controller.step(
+                action='MoveArm',
+                position=dict(x=0, y=0, z=-0.25),
+                coordinateSpace='wrist',
+                speed=1,
+                returnToStart=False
+            )
+            controller.step(action='MoveArmBase',y=0.5)
+            event = controller.step(
+                action="MoveArm",
+                position=dict(x=-0.25, y=0.45, z=0.1),
+                coordinateSpace="armBase",
+                restrictMovement=False,
+                speed=1,        
+                returnToStart=True,        
+                # fixedDeltaTime=0.02    
+                )
+            event = controller.step('Done')
 
-    success = True if obj["objectId"] in event.metadata['arm']['heldObjects'] else False
-    return success, event
+        success = True if obj["objectId"] in event.metadata['arm']['heldObjects'] else False
+        return success, event
+    except:
+        return False, event
 
-def DropAt(object, location, controller, metadata):
+def DropAt(object, location, controller, event):
     '''
     location: str : name of the object to drop. Named location for LLM to reason
     '''
-    # obj_names = [obj['objectId'] for obj in metadata["objects"]]
-    loc = [obj for obj in metadata["objects"] if location in obj['objectId']][0]
-    loc_pos = loc['position']
-    # hover_pos = dict(x=loc_pos['x'], y=loc_pos['y']+2, z=loc_pos['z'])
-    # event = controller.step(
-    #     "MoveArm",
-    #     position=hover_pos,
-    #     coordinateSpace="world",
-    #     returnToStart=False
-    # )
-    # event = controller.step(
-    #     "MoveArm",
-    #     position=dict(x=0,y=-0.5,z=0),
-    #     coordinateSpace="wrist",
-    #     returnToStart=False
-    # )
-    if "DiningTable" in location:
-        event = controller.step(
-            "MoveArm",
-            position=dict(x=-0.2,y=0,z=0.45),
+    try:
+        metadata = event.metadata
+        if not metadata['arm']['heldObjects']:
+            return False, event
+        if object not in metadata['arm']['heldObjects'][0]:
+            return False, event
+        loc = [obj for obj in metadata["objects"] if location in obj['objectId']][0]
+        loc_pos = loc['position']
+        # hover_pos = dict(x=loc_pos['x'], y=loc_pos['y']+2, z=loc_pos['z'])
+        # event = controller.step(
+        #     "MoveArm",
+        #     position=hover_pos,
+        #     coordinateSpace="world",
+        #     returnToStart=False
+        # )
+        # event = controller.step(
+        #     "MoveArm",
+        #     position=dict(x=0,y=-0.5,z=0),
+        #     coordinateSpace="wrist",
+        #     returnToStart=False
+        # )
+        if "DiningTable" in location:
+            event = controller.step(
+                "MoveArm",
+                position=dict(x=-0.2,y=0,z=0.45),
+                coordinateSpace="armBase",
+                returnToStart=False
+            )
+        elif "Sofa" in location:
+            event = controller.step(
+                "MoveArm",
+                position=dict(x=0,y=-0.5,z=0.4),
+                coordinateSpace="armBase",
+                returnToStart=False
+            )
+        event = controller.step(action="ReleaseObject")
+        # make sure the thing is dropped
+        controller.step(
+            action="MoveArm",
+            position=dict(x=0, y=0, z=0.4),
             coordinateSpace="armBase",
-            returnToStart=False
+            restrictMovement=False,
+            speed=1,
+            returnToStart=True,
+            fixedDeltaTime=0.02
         )
-    elif "Sofa" in location:
-        event = controller.step(
-            "MoveArm",
-            position=dict(x=0,y=-0.5,z=0.4),
-            coordinateSpace="armBase",
-            returnToStart=False
-        )
-    event = controller.step(action="ReleaseObject")
-    # make sure the thing is dropped
-    controller.step(
-        action="MoveArm",
-        position=dict(x=0, y=0, z=0.4),
-        coordinateSpace="armBase",
-        restrictMovement=False,
-        speed=1,
-        returnToStart=True,
-        fixedDeltaTime=0.02
-    )
-    # MoveGripperBackward(controller)
-    event = controller.step(action="SetHandSphereRadius", radius=0.15)
-    for i in range(10):
-        controller.step(    
-            action="AdvancePhysicsStep",    
-            timeStep=0.05)
-    event = No_op(controller)
-    obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
-    # print('obj')
-    receptacle = obj['parentReceptacles'][0]
-    # print(receptacle)
-    success = True if location in receptacle else False
-    return success, event
+        # MoveGripperBackward(controller)
+        event = controller.step(action="SetHandSphereRadius", radius=0.15)
+        for i in range(10):
+            controller.step(    
+                action="AdvancePhysicsStep",    
+                timeStep=0.05)
+        event = No_op(controller)
+        obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+        # print('obj')
+        receptacle = obj['parentReceptacles'][0]
+        # print(receptacle)
+        success = True if location in receptacle else False
+        return success, event
+    except:
+        return False, event
 
 # not for the workshop. Too tricky to implement
 def Open(controller):
