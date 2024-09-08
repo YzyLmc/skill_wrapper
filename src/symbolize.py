@@ -3,6 +3,7 @@ from utils import GPT4, load_from_file
 from collections import defaultdict
 import inspect
 import random
+import itertools
 
 from manipula_skills import *
 
@@ -232,20 +233,84 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
             
     return skill2operators, pred_dict, skill2triedpred
 
-def cross_assignment(skill2operator):
-    '''
-    Assign precondtions of all skills to effect of each skill
-    skill2operator: dict(dict())
-    '''
-    pass
-
-def merge_predicates(model, skill2operator, pred_dict):
+def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/predicate_unify.txt'):
     '''
     merge predicates based on their semantic meaning
-    skill2operator: dict(dict())
-    pred_dict:
+    skill2operator: {skill_name:{precond:{str:Bool}, eff:{str:int}}}
+    pred_dict: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
-    pass
+    def construct_prompt(prompt, skill2operator):
+        for skill_name, operator in skill2operator.items():
+            pred_ls = list(operator['precond'].keys()) + list(operator['eff'].keys())
+            prompt += "\nSkill: " + skill_name
+            prompt += "\nPredicates:\n" + "\n".join([f"- {pred}:{pred_dict[pred]['semantic']}" for pred in pred_ls])
+            prompt += "\n"
+        while "[OBJ]" in prompt or "[LOC]" in prompt or "[LOC_1]" in prompt or "[LOC_2]" in prompt:
+            prompt = prompt.replace("[OBJ]", "obj")
+            prompt = prompt.replace("[LOC]", "loc")
+            prompt = prompt.replace("[LOC_1]", "from")
+            prompt = prompt.replace("[LOC_2]", "to")
+        prompt += "\nEquivalent Predicates:"
+        return prompt
+    prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, skill2operator)
+
+    response = model.generate(prompt)[0].split("Equivalent Predicates:")[0]
+    equal_preds = response.split("\n\n")
+    equal_preds = [pred.replace("-","").replace(" ","").split('|') for pred in equal_preds]
+
+    unified_skill2operator = {}
+    for skill, operator in skill2operator.items():
+        unified_skill2operator[skill] = {}
+        for pred_type, preds in operator.items():
+            if not pred_type in unified_skill2operator[skill]:
+                unified_skill2operator[skill][pred_type] = {}
+            for pred in preds:
+                dup = False
+                for equal_pred in equal_preds:
+                    equal_pred = [ p.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(from', '([LOC_1]').replace('to)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for p in equal_pred]
+                    # _equal_pred = [p[:-10] for p in equal_pred] # remove [positive] and [negative] flag
+                    pred_flagged = [p for p in equal_pred if pred in p]
+                    # print(pred, equal_pred, pred_flagged)
+                    if pred_flagged:
+                        # check if the replaced predicate has same or opposite semantic
+                        print(pred_flagged, pred)
+                        if pred_type == 'precond':
+                            unified_skill2operator[skill][pred_type][equal_pred[0][:-10]] = True if ('[positive]' in pred_flagged[0] and '[positive]' in equal_pred[0]) or ('[negative]' in pred_flagged[0] and '[negative]' in equal_pred[0]) else False
+                        elif pred_type == 'eff':
+                            unified_skill2operator[skill][pred_type][equal_pred[0][:-10]] = skill2operator[skill][pred_type][pred] if ('[positive]' in pred_flagged[0] and '[positive]' in equal_pred[0]) or ('[negative]' in pred_flagged[0] and '[negative]' in equal_pred[0]) else -skill2operator[skill][pred_type][pred]
+                        dup = True
+                if not dup:
+                    unified_skill2operator[skill][pred_type][pred] = skill2operator[skill][pred_type][pred]
+    return unified_skill2operator, equal_preds
+
+def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.8):
+    '''
+    Assign precondtions of all skills to effect of each skill
+    There should be a threshold for cross assignment, either if higher than it or lower than -1*threshold will be added
+    skill2operator:: {skill_name:{precond:{str:Bool}, eff:{str:int}}}
+    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
+    pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
+    '''
+    all_precond = [list(skill2operator[skill]['precond'].keys()) for skill in skill2operator]
+    all_precond = itertools.chain.from_iterable(all_precond)
+
+    for skill in skill2operator:
+        tasks = list(skill2tasks[skill].keys())
+        for pred in all_precond:
+            # breakpoint()
+            # accuracy here means the portion of state change from true to false
+            # print(pred, tasks)
+            state_pair_all = [pred_dict[pred]['task'][t] for t in tasks]
+            acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
+            acc = sum(acc_ls)/len(acc_ls)
+            if acc > threshold:
+                print(pred)
+                skill2operator[skill]['eff'][pred] = 1
+            elif acc < - threshold:
+                skill2operator[skill]['eff'][pred] = -1
+    return skill2operator
+
 
 # ### task proposing part below
 
@@ -293,16 +358,16 @@ if __name__ == '__main__':
     # test predicate proposing for refining
 
     # mock symbolic state
-    # pred_dict = {'handEmpty()': True}
-    pred_dict = {'is_held([OBJ])': True}
-    # pred_dict = {}
-    # skill = 'PickUp([OBJ], [LOC])'
-    skill = 'GoTo([LOC_1], [LOC_2])'
-    pred_type = 'eff'
-    # pred_type = 'precond'
-    response = generate_pred(model, skill, pred_dict, pred_type)
-    print(response)
-    breakpoint()
+    # # pred_dict = {'handEmpty()': True}
+    # pred_dict = {'is_held([OBJ])': True}
+    # # pred_dict = {}
+    # # skill = 'PickUp([OBJ], [LOC])'
+    # skill = 'GoTo([LOC_1], [LOC_2])'
+    # pred_type = 'eff'
+    # # pred_type = 'precond'
+    # response = generate_pred(model, skill, pred_dict, pred_type)
+    # print(response)
+    # breakpoint()
 
     # test mismatch state
     # pred_dict::{pred_name:{task: [Bool, Bool]}}
@@ -352,28 +417,79 @@ if __name__ == '__main__':
     # print(precond, eff, pred_dict)
 
     # test with real images and tasks
-    pred_dict = {}
+    # pred_dict = {}
 
+    # skill2tasks = {
+    #     "PickUp([OBJ], [LOC])": {
+    #         "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True},
+    #         "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": False}
+    #     },
+    #     "GoTo([LOC_1], [LOC_2])":{
+
+    #     }
+    # }
+
+    # pred_type = 'precond'
+    # mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
+
+    # pred_type = 'eff'
+    # mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
+
+    # skill = 'PickUp([OBJ], [LOC])'
+    # precond = {}
+    # eff = {}
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2tasks, pred_dict, precond, eff)
+    # print(skill2operators, pred_dict)
+
+    # test merge perdicate
+    # pred_dict = {
+    #             'At([LOC])': {'semantic': "return true if robot is at the location, else return false"}, 
+    #             'IsObjectAtLocation([OBJ], [LOC])': {'semantic': "return true if the object is at the lcoation, otherwise return false"}, 
+    #             "IsHandFree()": {'semantic': "return true if the robot hand is available now, and return false if it's not available."}, 
+    #             'isHeld([OBJ])': {'semantic': "return true if the object is held by the robot, otherwise return false."}, 
+    #             'IsHolding([OBJ])': {'semantic': "if the robot is holding the object, return true, otherwaise return false."}, 
+    #             'IsAtLocation([LOC])': {'semantic': "if robot is at the location, return true, else return false."}, 
+    #             'handIsOccupied()': {'semantic':"if the robot hand is occupied then return true, if it's free return false."}
+    #             }
+
+    # # Target operator              
+    # skill2operator = {'PickUp([OBJ], [LOC])': {'precond':{'IsHandFree()':True, 'IsAtLocation([LOC])':True, 'IsObjectAtLocation([OBJ], [LOC])':True}, 'eff':{'isHeld([OBJ])':1, 'handIsOccupied()':1}},
+    #                    'DropAt([OBJ], [LOC])': {'precond':{'IsHolding([OBJ])':True, 'IsAtLocation([LOC])':True}, 'eff':{'handIsOccupied()':-1}},
+    #                    'GoTo([LOC_1], [LOC_2])': {'precond':{'At([LOC])':True}, 'eff':{'At([LOC])':-1, 'At([LOC])':1}}}
+    
+    # unified_skill2operator, equal_preds = merge_predicates(model, skill2operator, pred_dict)
+    # print(unified_skill2operator)
+    # print(equal_preds)
+
+    # test cross assignment
+    pred_dict = {
+                    'At([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]}, 'semantic': "return true if robot is at the location, else return false"}, 
+                    'IsObjectAtLocation([OBJ], [LOC])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is at the lcoation, otherwise return false"}, 
+                    "IsHandFree()": {'task':{"PickUp_0":[True, False], "PickUp_1":[True, False]},'semantic': "return true if the robot hand is available now, and return false if it's not available."}, 
+                    'isHeld([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is held by the robot, otherwise return false."}, 
+                    'IsHolding([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "if the robot is holding the object, return true, otherwaise return false."}, 
+                    'IsAtLocation([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]},'semantic': "if robot is at the location, return true, else return false."}, 
+                    'handIsOccupied()': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic':"if the robot hand is occupied then return true, if it's free return false."}
+                    }
+    
+    skill2operator = {'PickUp([OBJ], [LOC])': {'precond':{'IsHandFree()':True, 'IsAtLocation([LOC])':True, 'IsObjectAtLocation([OBJ], [LOC])':True}, 'eff':{'isHeld([OBJ])':1}},
+                       'DropAt([OBJ], [LOC])': {'precond':{'IsHolding([OBJ])':True, 'IsAtLocation([LOC])':True}, 'eff':{'handIsOccupied()':-1}},
+                       'GoTo([LOC_1], [LOC_2])': {'precond':{'At([LOC])':True}, 'eff':{'At([LOC])':-1, 'At([LOC])':1}}}
+    
     skill2tasks = {
         "PickUp([OBJ], [LOC])": {
             "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True},
             "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": False}
         },
         "GoTo([LOC_1], [LOC_2])":{
-
+            "GoTo_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
+        },
+        "DropAt([OBJ], [LOC])":{
+            "DropAt_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
         }
     }
 
-    pred_type = 'precond'
-    mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
-
-    pred_type = 'eff'
-    mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
-    print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
-
-    skill = 'PickUp([OBJ], [LOC])'
-    precond = {}
-    eff = {}
-    skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2tasks, pred_dict, precond, eff)
-    print(skill2operators, pred_dict)
+    skill2operator = cross_assignment(skill2operator, skill2tasks, pred_dict)
+    print(skill2operator)

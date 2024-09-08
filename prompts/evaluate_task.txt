@@ -1,0 +1,1 @@
+Your task is to predict if the skill `[SKILL]` is executed successfully based on the two images, the first before execution and the second after execution. Answer only with Success and Fail.
