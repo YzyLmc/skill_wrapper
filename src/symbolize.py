@@ -238,12 +238,17 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     if not pred_dict:
         pred_dict = {}
 
-    if not skill2operators[skill]:
+    if not skill2operators:
+        skill2operators = {}
+    if not skill in skill2operators:
+        skill2operators[skill] = {}
         skill2operators[skill]['precond'] = {}
         skill2operators[skill]['eff'] = {}
+
     if not skill2triedpred:
-        skill2triedpred[skill] = {}
+        skill2triedpred = {}
     if not skill2triedpred[skill]:
+        skill2triedpred[skill] = {}
         skill2triedpred[skill]['precond'] = []
         skill2triedpred[skill]['eff'] = []
     
