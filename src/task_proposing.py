@@ -407,7 +407,7 @@ class TaskProposing():
 
 
         def compute_density_estimation(pred, h):
-            
+            return 0.1
             buffer_predicates = np.array(self.replay_buffer['predicate_eval'])
             hamming_distance = np.sum((buffer_predicates - pred)!=0, axis=1)
             hamming_distance = hamming_distance.reshape(-1,1)
@@ -698,7 +698,9 @@ if __name__ == '__main__':
     }
 
     # grounded_predicate_dictionary = {}
-    grounded_predicate_dictionary = {'is_at_location([OBJ], [LOC])': 'The object `obj` is currently located at the location `loc`.'}
+    grounded_predicate_dictionary = {'is_at_location([OBJ], [LOC])': 'The object `obj` is currently located at the location `loc`.',
+                                     'is_holding([OBJ])': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.',
+                                     'is_at([OBJ], [LOC])': 'The object `obj` is located at the location `loc` after the execution of the skill.'}
     # grounded_predicate_dictionary = {
     #     'is_gripper_empty()': "the robot's single gripper is empty with no objects held",
     #     'is_nearby(x)': "the robot can interact with object or receptacle 'x' using only it's single gripper without needing to move the body closer to 'x'",
@@ -715,18 +717,18 @@ if __name__ == '__main__':
 
     # objects_in_scene = ['Apple', 'Bread', 'Fridge', 'Egg', 'Cabinet1', 'Cabinet2', 'Cabinet3', 'CounterTop', 'Newspaper', 'PaperTowerRoll', 'Toaster', 'Faucet', 'LightSwitch', 'Mug', 'Kettle', 'Statue', 'Bowl', 'Bin', 'Lettuce', 'Tomato', 'Potato', 'Microwave']
 
-    objects_in_scene = ['Book', 'Vase', 'RemoteControl', 'Bowl', 'DiningTable', 'Sofa']
+    objects_in_scene = ['Book', 'Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa']
     env_description = 'Book, Vase, and Bowl are on the DiningTable, and RemoteConrtol is onthe sofa. Robot is at the DiningTable initially.'
 
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['pick_up(Apple)','put_down(Apple,CounterTop)','walk_to(Fridge)','pick_up(Potato)','walk_to(Toaster)','put_down(Potato,Toaster)'], 'predicate_eval':[[0,1,0],[0,0,0],[1,0,0],[1,1,0],[0,0,0],[0,0,1]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa, Book)','PickUp(Book,DiningTable)','GoTo(Book, Sofa)','DropAt(Book, Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[[], [], [], [],[],[]]}
-    replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
+    replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)'], 'predicate_eval':[[],[],[],[], []]}
     curr_observation_path = []
 
 
     task_proposing = TaskProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=20, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
     # task_proposing.update_skill_pair_count(new_skill_pair_count)
 
-    chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(None, None, None, None, curr_observation_path)
+    chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
     print(chosen_task, chosen_skill_sequence)

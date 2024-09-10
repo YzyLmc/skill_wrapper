@@ -57,6 +57,9 @@ def GoTo(object_or_location_1, object_or_location_2, controller, event):
         p2 = np.array([x2, y2, z2])
         return np.sqrt(np.sum((p1-p2)**2, axis=0))
     
+    if object_or_location_1 == object_or_location_2: # cannot go to same place
+        return False, event
+    
     metadata = event.metadata
     start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
     event = controller.step('Pass')

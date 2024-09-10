@@ -18,28 +18,101 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
     '''
     Evaluate one predicate given one image.
     If skill or predicate takes variables they should contain [OBJ] [LOC_1]or [LOC_2] in the input.
+    GoTo(loc_1, loc_2) will be evaluated differently since the arguments are different. 
     Empty string '' means no argument
     '''
     def construct_prompt(prompt, skill, pred, obj, loc):
-        while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in  prompt:
+        if 'GoTo' not in skill: # pickup or dropat
+            if '[LOC_1]' in pred or '[LOC_2]' in pred: # convert goto pred to pickup and dropat
+                if not ('[LOC_1]' in pred and '[LOC_2]' in pred):
+                    # e.g., At([LOC_1]),  At([LOC_2])
+                    pred = pred.replace('[LOC_1]', loc)
+                    pred = pred.replace('[LOC_2]', loc)
+                else: # both [LOC_1] and [LOC_2] are in the prompt
+                    # e.g. clearPath([LOC_1], [LOC_2]), N/A
+                    # always return one value so if 50% success and 50% fail this pred will not be added to precond or eff
+                    return None
+                
+            else: # pickup and dropat pred, or not argument
+                while "[OBJ]" in pred or "[LOC]" in pred:
+                    pred = pred.replace("[OBJ]", obj)
+                    pred = pred.replace("[LOC]", loc)
+
+            while "[LOC]" in skill or "[OBJ]" in skill:
+                skill = skill.replace("[LOC]", loc)
+                skill = skill.replace("[OBJ]", obj)
+        else:
+            assert 'GoTo' in skill
+            if ('[LOC_1]' in pred or '[LOC_2]' in pred): # GoTo pred
+                # e.g., At([LOC_1]),  At([LOC_2])
+                # e.g. clearPath([LOC_1], [LOC_2])
+                pred = pred.replace('[LOC_1]', loc_1)
+                pred = pred.replace('[LOC_2]', loc_2)
+            else: # pickup and drop at on goto
+                # first determine the type of the arguments are loc or obj
+                # goto might have 2 obj, 1 obj 1 loc, or 2 loc
+                # pred might have 0 arg, 1 obj, 1 loc, 1 obj and 1 loc
+                goto_obj_num = len([obj for obj in obj_ls if obj in [loc_1, loc_2]])
+                goto_loc_num = len([obj for obj in loc_ls if obj in [loc_1, loc_2]])
+                pred_obj_num = 1 if '[OBJ]' in pred else 0
+                pred_loc_num = 1 if '[LOC]' in pred else 0
+                if pred_obj_num + pred_loc_num == 0:
+                    pass
+                elif pred_obj_num == 1 and pred_loc_num == 0:
+                    if (goto_obj_num == 2 and goto_loc_num == 0):
+                        if loc_2 in obj_ls:
+                            while "[OBJ]" in pred:
+                                pred = pred.replace("[OBJ]", loc_2)
+                        else:
+                            return None
+                    elif goto_obj_num == 0 and goto_loc_num== 2:
+                        return None
+                    elif goto_obj_num == 1 and goto_loc_num == 1:
+                        obj = loc_1 if loc_1 in obj_ls else loc_2
+                        while "[OBJ]" in pred:
+                            pred = pred.replace("[OBJ]", obj)
+                elif pred_obj_num == 0 and pred_loc_num == 1:
+                    if goto_obj_num == 2 and goto_loc_num == 0:
+                        return None
+                    elif goto_obj_num == 0 and goto_loc_num== 2:
+                        if loc_2 in loc_ls:
+                            while "[LOC]" in pred:
+                                pred = pred.replace("[LOC]", loc_2)
+                        else:
+                            return None
+                    elif goto_obj_num == 1 and goto_loc_num == 1:
+                        loc = loc_1 if loc_1 in loc_ls else loc_2
+                        while "[LOC]" in pred:
+                            pred = pred.replace("[LOC]", loc)
+                elif pred_obj_num == 1 and pred_loc_num == 1:
+                    if (goto_obj_num == 2 and goto_loc_num == 0) or (goto_obj_num == 0 and goto_loc_num== 0):
+                        return None
+                    elif goto_obj_num == 1 and goto_loc_num == 1:
+                        obj = loc_1 if loc_1 in obj_ls else loc_2
+                        loc = loc_1 if loc_1 in loc_ls else loc_2
+                        while "[LOC]" in pred or '[OBJ]' in pred:
+                            # breakpoint()
+                            pred = pred.replace("[OBJ]", obj)
+                            pred = pred.replace("[LOC]", loc)
+            while "[LOC_1]" in skill or "[LOC_2]" in skill:
+                skill = skill.replace("[LOC_1]", loc_1)
+                skill = skill.replace("[LOC_2]", loc_2)
+        while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in prompt:
             prompt = prompt.replace("[PRED]", pred)
             prompt = prompt.replace("[SKILL]", skill)
             prompt = prompt.replace("[SEMANTIC]", sem)
-        while "[OBJ]" in prompt or "[LOC]" in prompt or "[LOC_1]" in prompt or "[LOC_2]" in prompt:
-            prompt = prompt.replace("[OBJ]", obj)
-            prompt = prompt.replace("[LOC]", loc)
-            prompt = prompt.replace("[LOC_1]", loc_1)
-            prompt = prompt.replace("[LOC_2]", loc_2)
         return prompt
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred, obj, loc)
-    resp = model.generate_multimodal(prompt, img)[0]
-    # breakpoint()
-    return True if "True" in resp.split('\n')[-1] else False
+    if prompt:
+        resp = model.generate_multimodal(prompt, img)[0]
+        return True if "True" in resp.split('\n')[-1] else False
+    else:
+        return False
 
 def eval_pred_set(model, skill, pred2sem, obj, loc,loc_1, loc_2, img):
     '''
@@ -66,17 +139,17 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
         while "[OBJ]" in prompt or "[LOC]" in prompt or "[LOC_1]" in prompt or "[LOC_2]" in prompt:
             prompt = prompt.replace("[OBJ]", "obj")
             prompt = prompt.replace("[LOC]", "loc")
-            prompt = prompt.replace("[LOC_1]", "from")
-            prompt = prompt.replace("[LOC_2]", "to")
+            prompt = prompt.replace("[LOC_1]", "init")
+            prompt = prompt.replace("[LOC_2]", "goal")
         return prompt
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred_dict)
-    breakpoint()
+    # breakpoint()
     # response consists of predicate and its semantic
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
-    pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(from', '([LOC_1]').replace('to)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
+    pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
     return pred, sem
 
 def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
@@ -140,7 +213,7 @@ def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
             failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
             if len(success_tasks) > 0 and len(failed_tasks) > 0:
                 mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
-    return mismatch_pairs
+    return pred_dict, mismatch_pairs
     # except:
     #     return {}
     # if dup_tasks:
@@ -151,7 +224,7 @@ def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
     #     return []
         
 # TODO: code for seperate tasks in terms of skill names:: dict(skill: list(dict('id':num, 's0':img, 's1':img, 'success': Bool)))
-def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=None, max_t=3):
+def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred={}, max_t=3):
     '''
     Refine predicates of precondition and effect of one skill for precondition and effect
     pred_dict::{pred_name:{task{id: [Bool, Bool]}, sem:str}}
@@ -165,24 +238,23 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     if not pred_dict:
         pred_dict = {}
 
-    if not skill2operators[skill]['precond']:
+    if not skill2operators[skill]:
         skill2operators[skill]['precond'] = {}
-    if not skill2operators[skill]['eff']:
         skill2operators[skill]['eff'] = {}
-
-    if not skill2triedpred[skill]['precond']:
+    if not skill2triedpred:
+        skill2triedpred[skill] = {}
+    if not skill2triedpred[skill]:
         skill2triedpred[skill]['precond'] = []
-    if not skill2triedpred[skill]['eff']:
         skill2triedpred[skill]['eff'] = []
     
     # check precondition first
     t = 0
-    mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'precond')
+    pred_dict, mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'precond')
     new_p_added = False
-    breakpoint()
+    # breakpoint()
 
-    while mismatch_tasks and t < max_t:
-        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
+    while skill in mismatch_tasks and t < max_t:
+        new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['precond'].keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
         print('new predicate', new_p, sem)
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
         print('new predicate truth value', new_p_mismatch)
@@ -195,18 +267,20 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
             skill2triedpred[skill]['precond'].append(new_p)
         t += 1
     if new_p_added and new_p not in pred_dict:
-        pred_dict[new_p] = {}
-        pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
+        pred_dict[new_p] = {'task': {}}
+        for skill in skill2tasks:
+            for idx, task in skill2tasks[skill].items():
+                pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
         pred_dict[new_p]['semantic'] = sem
         new_p_added = False
 
+    # breakpoint()
     # check effect
     t = 0
-    mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'eff')
-    tried_pred_eff = []
-    breakpoint()
-    while mismatch_tasks and t < max_t:
-        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
+    pred_dict, mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'eff')
+    # breakpoint()
+    while skill in mismatch_tasks and t < max_t:
+        new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         print('new predicate', new_p, sem)
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
         print('new predicate truth value', new_p_mismatch)
@@ -226,8 +300,10 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
             skill2triedpred[skill]['eff'].append(new_p)
         t += 1
     if new_p_added and new_p not in pred_dict:
-        pred_dict[new_p] = {}
-        pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
+        pred_dict[new_p] = {'task': {}}
+        for skill in skill2tasks:
+            for idx, task in skill2tasks[skill].items():
+                    pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx]}
         pred_dict[new_p]['semantic'] = sem
         new_p_added = False
             
@@ -248,8 +324,8 @@ def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/pre
         while "[OBJ]" in prompt or "[LOC]" in prompt or "[LOC_1]" in prompt or "[LOC_2]" in prompt:
             prompt = prompt.replace("[OBJ]", "obj")
             prompt = prompt.replace("[LOC]", "loc")
-            prompt = prompt.replace("[LOC_1]", "from")
-            prompt = prompt.replace("[LOC_2]", "to")
+            prompt = prompt.replace("[LOC_1]", "init")
+            prompt = prompt.replace("[LOC_2]", "goal")
         prompt += "\nEquivalent Predicates:"
         return prompt
     prompt = load_from_file(prompt_fpath)
@@ -268,13 +344,13 @@ def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/pre
             for pred in preds:
                 dup = False
                 for equal_pred in equal_preds:
-                    equal_pred = [ p.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(from', '([LOC_1]').replace('to)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for p in equal_pred]
+                    equal_pred = [ p.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for p in equal_pred]
                     # _equal_pred = [p[:-10] for p in equal_pred] # remove [positive] and [negative] flag
                     pred_flagged = [p for p in equal_pred if pred in p]
                     # print(pred, equal_pred, pred_flagged)
                     if pred_flagged:
                         # check if the replaced predicate has same or opposite semantic
-                        print(pred_flagged, pred)
+                        # print(pred_flagged, pred)
                         if pred_type == 'precond':
                             unified_skill2operator[skill][pred_type][equal_pred[0][:-10]] = True if ('[positive]' in pred_flagged[0] and '[positive]' in equal_pred[0]) or ('[negative]' in pred_flagged[0] and '[negative]' in equal_pred[0]) else False
                         elif pred_type == 'eff':
@@ -292,18 +368,21 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.8):
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
-    all_precond = [list(skill2operator[skill]['precond'].keys()) for skill in skill2operator]
-    all_precond = itertools.chain.from_iterable(all_precond)
+    all_precond = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
+    all_precond = list(itertools.chain(*all_precond))
 
     for skill in skill2operator:
-        tasks = list(skill2tasks[skill].keys())
+        tasks = skill2tasks[skill]
+        # skill2operator[skill]['eff'] = {}
+        print(skill)
         for pred in all_precond:
-            # breakpoint()
+            # if skill == 'DropAt([OBJ], [LOC])':
+            #     breakpoint()
             # accuracy here means the portion of state change from true to false
-            # print(pred, tasks)
-            state_pair_all = [pred_dict[pred]['task'][t] for t in tasks]
+            state_pair_all = [pred_dict[pred]['task'][id] for id, t in tasks.items() if t['success']]
             acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
             acc = sum(acc_ls)/len(acc_ls)
+            print(skill, pred, acc, state_pair_all)
             if acc > threshold:
                 print(pred)
                 skill2operator[skill]['eff'][pred] = 1
@@ -338,22 +417,26 @@ if __name__ == '__main__':
     # pred = 'handEmpty()'
     # pred = 'IsObjectReachable([OBJ], [LOC])'
     # pred = 'is_held([OBJ])'
-    # pred = 'at([LOC_2])'
-    # # skill = 'PickUp([OBJ], [LOC])'
+    # pred = 'isPathClear([LOC_1], [LOC_2])'
+    # pred = 'At([LOC_1])'
+    # pred = 'at([LOC])'
+    pred = 'at([OBJ])'
+    skill = 'PickUp([OBJ], [LOC])'
     # skill = 'GoTo([LOC_1], [LOC_2])'
-    # # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
-    # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
-    # sem = "return true if the agent is near the location else false."
-    # # obj = 'KeyChain'
-    # obj = 'Book'
-    # loc = 'DiningTable'
-    # loc_1 = 'Sofa'
-    # loc_2 = 'Book'
-    # img = ['Before_PickUp_2.jpg']
-    # # img = ['test_new.jpg']
-    # response = eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img)
-    # print(response)
-    # breakpoint()
+    # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
+    # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
+    sem = "return true if the agent is near the location else false."
+    # obj = 'KeyChain'
+    obj = 'Book'
+    loc = 'DiningTable'
+    loc_1 = 'Sofa'
+    loc_2 = 'DiningTable'
+    loc_2 = 'Book'
+    img = ['Before_PickUp_2.jpg']
+    # img = ['test_new.jpg']
+    response = eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img)
+    print(response)
+    breakpoint()
 
     # test predicate proposing for refining
 
@@ -402,11 +485,11 @@ if __name__ == '__main__':
     #     }
     # }
     # pred_type = 'precond'
-    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
     # pred_type = 'eff'
-    # mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
 
     # # test main refining function
@@ -428,15 +511,20 @@ if __name__ == '__main__':
 
     #     }
     # }
+    # skill2tasks = {
+    #     'PickUp(obj, loc)': {'PickUp_TissueBox_Sofa_True_1': {'s0': 'Before_PickUp_TissueBox_Sofa_True_1.jpg', 's1': 'After_PickUp_TissueBox_Sofa_True_1.jpg', 'success': True}, 'PickUp_Book_DiningTable_False_1': {'s0': 'Before_PickUp_Book_DiningTable_False_1.jpg', 's1': 'After_PickUp_Book_DiningTable_False_1.jpg', 'success': False}}, 
+    #     'DropAt(obj, loc)': {'DropAt_TissueBox_Sofa_False_1': {'s0': 'Before_DropAt_TissueBox_Sofa_False_1.jpg', 's1': 'After_DropAt_TissueBox_Sofa_False_1.jpg', 'success': False}, 'DropAt_Book_DiningTable_False_1': {'s0': 'Before_DropAt_Book_DiningTable_False_1.jpg', 's1': 'After_DropAt_Book_DiningTable_False_1.jpg', 'success': False}, 'DropAt_TissueBox_DiningTable_True_1': {'s0': 'Before_DropAt_TissueBox_DiningTable_True_1.jpg', 's1': 'After_DropAt_TissueBox_DiningTable_True_1.jpg', 'success': True}}, 
+    #     'GoTo(init, goal)': {'GoTo_Sofa_Sofa_True_1': {'s0': 'Before_GoTo_Sofa_Sofa_True_1.jpg', 's1': 'After_GoTo_Sofa_Sofa_True_1.jpg', 'success': True}, 'GoTo_Sofa_DiningTable_True_1': {'s0': 'Before_GoTo_Sofa_DiningTable_True_1.jpg', 's1': 'After_GoTo_Sofa_DiningTable_True_1.jpg', 'success': True}}
+    #                }
 
     # pred_type = 'precond'
-    # mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
-
+    # breakpoint()
     # pred_type = 'eff'
-    # mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
-
+    # breakpoint()
     # skill = 'PickUp([OBJ], [LOC])'
     # precond = {}
     # eff = {}
@@ -463,33 +551,139 @@ if __name__ == '__main__':
     # print(unified_skill2operator)
     # print(equal_preds)
 
-    # test cross assignment
-    pred_dict = {
-                    'At([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]}, 'semantic': "return true if robot is at the location, else return false"}, 
-                    'IsObjectAtLocation([OBJ], [LOC])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is at the lcoation, otherwise return false"}, 
-                    "IsHandFree()": {'task':{"PickUp_0":[True, False], "PickUp_1":[True, False]},'semantic': "return true if the robot hand is available now, and return false if it's not available."}, 
-                    'isHeld([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is held by the robot, otherwise return false."}, 
-                    'IsHolding([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "if the robot is holding the object, return true, otherwaise return false."}, 
-                    'IsAtLocation([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]},'semantic': "if robot is at the location, return true, else return false."}, 
-                    'handIsOccupied()': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic':"if the robot hand is occupied then return true, if it's free return false."}
-                    }
+    # # test cross assignment
+    # pred_dict = {
+    #                 'At([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]}, 'semantic': "return true if robot is at the location, else return false"}, 
+    #                 'IsObjectAtLocation([OBJ], [LOC])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is at the lcoation, otherwise return false"}, 
+    #                 "IsHandFree()": {'task':{"PickUp_0":[True, False], "PickUp_1":[True, False]},'semantic': "return true if the robot hand is available now, and return false if it's not available."}, 
+    #                 'isHeld([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "return true if the object is held by the robot, otherwise return false."}, 
+    #                 'IsHolding([OBJ])': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic': "if the robot is holding the object, return true, otherwaise return false."}, 
+    #                 'IsAtLocation([LOC])': {'task':{"PickUp_0":[True, True],"PickUp_1":[True, True]},'semantic': "if robot is at the location, return true, else return false."}, 
+    #                 'handIsOccupied()': {'task':{"PickUp_0":[False, True],"PickUp_1":[False, True]},'semantic':"if the robot hand is occupied then return true, if it's free return false."}
+    #                 }
     
-    skill2operator = {'PickUp([OBJ], [LOC])': {'precond':{'IsHandFree()':True, 'IsAtLocation([LOC])':True, 'IsObjectAtLocation([OBJ], [LOC])':True}, 'eff':{'isHeld([OBJ])':1}},
-                       'DropAt([OBJ], [LOC])': {'precond':{'IsHolding([OBJ])':True, 'IsAtLocation([LOC])':True}, 'eff':{'handIsOccupied()':-1}},
-                       'GoTo([LOC_1], [LOC_2])': {'precond':{'At([LOC])':True}, 'eff':{'At([LOC])':-1, 'At([LOC])':1}}}
+    # skill2operator = {'PickUp([OBJ], [LOC])': {'precond':{'IsHandFree()':True, 'IsAtLocation([LOC])':True, 'IsObjectAtLocation([OBJ], [LOC])':True}, 'eff':{'isHeld([OBJ])':1}},
+    #                    'DropAt([OBJ], [LOC])': {'precond':{'IsHolding([OBJ])':True, 'IsAtLocation([LOC])':True}, 'eff':{'handIsOccupied()':-1}},
+    #                    'GoTo([LOC_1], [LOC_2])': {'precond':{'At([LOC])':True}, 'eff':{'At([LOC])':-1, 'At([LOC])':1}}}
     
-    skill2tasks = {
-        "PickUp([OBJ], [LOC])": {
-            "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True},
-            "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": False}
-        },
-        "GoTo([LOC_1], [LOC_2])":{
-            "GoTo_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
-        },
-        "DropAt([OBJ], [LOC])":{
-            "DropAt_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
-        }
-    }
+    # skill2tasks = {
+    #     "PickUp([OBJ], [LOC])": {
+    #         "PickUp_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True},
+    #         "PickUp_1": {"s0": ["Before_PickUp_1.jpg"], "s1":["After_PickUp_1.jpg"], "obj":"KeyChain", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": False}
+    #     },
+    #     "GoTo([LOC_1], [LOC_2])":{
+    #         "GoTo_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
+    #     },
+    #     "DropAt([OBJ], [LOC])":{
+    #         "DropAt_0": {"s0": ["Before_PickUp_2.jpg"], "s1":["After_PickUp_2.jpg"], "obj":"Book", "loc":"DiningTable", "loc_1":"", "loc_2":"", "success": True}
+    #     }
+    # }
 
-    skill2operator = cross_assignment(skill2operator, skill2tasks, pred_dict)
-    print(skill2operator)
+    # skill2operator = cross_assignment(skill2operator, skill2tasks, pred_dict)
+    # print(skill2operator)
+
+    # real test
+    pred_dict = {}
+
+    skill2tasks = {'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Book_DiningTable_False_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Book_DiningTable_False_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Book_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Book', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}, 'DropAt([OBJ], [LOC])': {'DropAt_TissueBox_Sofa_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_TissueBox_Sofa_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_TissueBox_Sofa_False_1.jpg'], 'success': False, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'DropAt_Book_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Book_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Book_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Book', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_TissueBox_DiningTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_TissueBox_DiningTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_TissueBox_DiningTable_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_Sofa_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}}}
+    skill2operators = {
+        'PickUp([OBJ], [LOC])':{},
+        'DropAt([OBJ], [LOC])':{},
+        'GoTo([LOC_1], [LOC_2])':{}
+    }
+    pred_type = 'precond'
+    pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # print(mismatch_states) {'PickUp([OBJ], [LOC])': ['PickUp_TissueBox_Sofa_True_1', 'PickUp_Book_DiningTable_False_1'], 'DropAt([OBJ], [LOC])': ['DropAt_TissueBox_DiningTable_True_1', 'DropAt_TissueBox_Sofa_False_1']}
+    # breakpoint()
+    pred_type = 'eff'
+    pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # print(mismatch_states) # {'PickUp([OBJ], [LOC])': ['PickUp_TissueBox_Sofa_True_1', 'PickUp_Book_DiningTable_False_1'], 'DropAt([OBJ], [LOC])': ['DropAt_TissueBox_DiningTable_True_1', 'DropAt_Book_DiningTable_False_1']}
+    # breakpoint()
+    skill = 'PickUp([OBJ], [LOC])'
+    precond = {}
+    eff = {}
+    
+    # R1
+    # pickup
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {}, 'GoTo([LOC_1], [LOC_2])': {}}
+    pred_dict = {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}}
+
+    # dropat
+    skill = 'DropAt([OBJ], [LOC])'
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {}}
+    pred_dict =  {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}, 'is_holding([OBJ])': {'task': {'DropAt_TissueBox_Sofa_False_1': [True, False], 'DropAt_Book_DiningTable_False_1': [False, False], 'DropAt_TissueBox_DiningTable_True_1': [True, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'GoTo_Sofa_Sofa_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False]}, 'semantic': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.'}, 'is_at([OBJ], [LOC])': {'task': {'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is located at the location `loc` after the execution of the skill.'}}
+
+    # goto will have no change because all tasks succeeded
+    # but pred_dict is updated
+    skill = 'GoTo([LOC_1], [LOC_2])'
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 
+    pred_dict = {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}, 
+                 'is_holding([OBJ])': {'task': {'DropAt_TissueBox_Sofa_False_1': [True, False], 'DropAt_Book_DiningTable_False_1': [False, False], 'DropAt_TissueBox_DiningTable_True_1': [True, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'GoTo_Sofa_Sofa_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False]}, 'semantic': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.'}, 
+                 'is_at([OBJ], [LOC])': {'task': {'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True], 'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is located at the location `loc` after the execution of the skill.'}}
+    
+
+    # R2
+    # new skill2tasks
+    skill2tasks = {'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Book_DiningTable_False_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Book_DiningTable_False_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Book_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Book', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_TissueBox_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_DiningTable_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}, 'DropAt([OBJ], [LOC])': {'DropAt_TissueBox_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_TissueBox_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_TissueBox_DiningTable_False_1.jpg'], 'success': False, 'obj': 'TissueBox', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_Sofa_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_Sofa_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_Sofa_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'DropAt_TissueBox_Sofa_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_TissueBox_Sofa_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_TissueBox_Sofa_False_1.jpg'], 'success': False, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'DropAt_Book_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Book_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Book_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Book', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_TissueBox_DiningTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_TissueBox_DiningTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_TissueBox_DiningTable_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Book_Sofa_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Book_Sofa_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Book_Sofa_False_1.jpg'], 'success': False, 'obj': 'Book', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}, 'GoTo_Sofa_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}}}
+
+    # pickup
+    skill = 'PickUp([OBJ], [LOC])'
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+    pred_dict = {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [True, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}, 
+                 'is_holding([OBJ])': {'task': {'DropAt_TissueBox_Sofa_False_1': [True, False], 'DropAt_Book_DiningTable_False_1': [False, False], 'DropAt_TissueBox_DiningTable_True_1': [True, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'GoTo_Sofa_Sofa_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [False, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [False, False], 'GoTo_DiningTable_Sofa_True_1': [False, False]}, 'semantic': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.'}, 
+                 'is_at([OBJ], [LOC])': {'task': {'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True], 'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [False, True]}, 'semantic': 'The object `obj` is located at the location `loc` after the execution of the skill.'}, 
+                 'is_within_reach([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [True, True]}, 'semantic': "The object is within the robot's reachable distance at the specified location."}}
+
+    # dropat
+    skill = 'DropAt([OBJ], [LOC])'
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 
+
+    pred_dict = {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [True, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}, 'is_holding([OBJ])': {'task': {'DropAt_TissueBox_Sofa_False_1': [True, False], 'DropAt_Book_DiningTable_False_1': [False, False], 'DropAt_TissueBox_DiningTable_True_1': [True, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'GoTo_Sofa_Sofa_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [False, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [False, False], 'GoTo_DiningTable_Sofa_True_1': [False, False]}, 'semantic': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.'}, 'is_at([OBJ], [LOC])': {'task': {'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True], 'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [False, False], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [False, True]}, 'semantic': 'The object `obj` is located at the location `loc` after the execution of the skill.'}, 'is_within_reach([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'PickUp_TissueBox_DiningTable_True_1': [True, False], 'DropAt_TissueBox_DiningTable_False_1': [False, False], 'DropAt_Bowl_Sofa_True_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True], 'DropAt_Book_Sofa_False_1': [True, True], 'GoTo_DiningTable_Sofa_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [True, True]}, 'semantic': "The object is within the robot's reachable distance at the specified location."}}
+
+    # goto will have no change because all tasks succeeded
+    # but pred_dict is updated
+    skill = 'GoTo([LOC_1], [LOC_2])'
+    skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    print(skill2operators, '\n\n', pred_dict)
+
+    breakpoint()
+
+    # merge before
+    # unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+    # print(unified_skill2operator, '\n\n', equal_preds)
+
+    # unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+
+    # # reassign
+    skill2operators = cross_assignment(skill2operators, skill2tasks, pred_dict, threshold=0.5)
+    print(skill2operators)
+    # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 
+    #                    'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 
+    #                    'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
+                       'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
+                       'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {'is_at([OBJ], [LOC])': 1}}}
+    breakpoint()
+
+    # # merge after
+    unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+    print(unified_skill2operator, '\n\n', equal_preds)
+
+    unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
+                              'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
+                              'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 

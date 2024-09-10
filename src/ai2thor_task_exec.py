@@ -27,7 +27,9 @@ def capture_obs(controller, file_prefix):
         os.makedirs(directory)
     while True:
         screenshot_path = directory + f"{file_prefix}_{counter}.jpg"
-        if not os.path.exists(screenshot_path):
+        screenshot_path_suc = directory + f"{file_prefix}_True_{counter}.jpg"
+        screenshot_path_fail = directory + f"{file_prefix}_False_{counter}.jpg"
+        if not os.path.exists(screenshot_path) or not os.path.exists(screenshot_path_suc) or not os.path.exists(screenshot_path_fail):
             break
         counter += 1
     event = controller.step('Pass')
@@ -133,8 +135,10 @@ event = controller.step('SetObjectPoses',objectPoses = poses)
 if __name__ == "__main__":
     # task = "GoTo(Sofa, Book)\nPickUp(Book, DiningTable)\nGoTo(DiningTable, Sofa)\nDropAt(Book, Sofa)"
     # task = "GoTo(Sofa, DiningTable)\nPickUp(RemoteControl, DiningTable)"
+
     # task 1
-    task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
+    # task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
+    task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     exec(generated_code)
