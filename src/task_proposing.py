@@ -383,7 +383,7 @@ class TaskProposing():
             predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
 
-        pdb.set_trace()
+        # pdb.set_trace()
         return predicate_sequence, max_executable, executable_sequence
 
     def compute_task_chainability(self, predicate_sequence, max_executable):
@@ -467,7 +467,7 @@ class TaskProposing():
     '''
     def generate_scores_and_choose_task(self, task_dictionary, curr_observation_path):
         
-        pdb.set_trace()
+        # pdb.set_trace()
         #run the 3 scoring functions
         task_chainabilities, task_sufficience_logprobs = self.compute_chainability_and_sufficience(task_dictionary, curr_observation_path)
         task_entropy_gains, task_skill_counts = self.compute_shannon_entropy(task_dictionary)
@@ -685,11 +685,11 @@ if __name__ == '__main__':
     #     'walk_to(x)': {'arguments': {'x': "the location for the robot to walk to"}, 'preconditions': [], 'effects_positive':['is_nearby(x)'], 'effects_negative':[]}
     # }
 
-    # grounded_skill_dictionary = {
-    #     'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
-    #     'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
-    #     'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
-    # }
+    grounded_skill_dictionary = {
+        'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
+        'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
+        'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
+    }
 
     grounded_skill_dictionary = {
         'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': ['is_at_location(obj, loc)']},

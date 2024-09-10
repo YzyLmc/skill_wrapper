@@ -21,6 +21,7 @@ from ai2thor.controller import Controller
 from manipula_skills import *
 
 def capture_obs(controller, file_prefix):
+    from PIL import Image
     counter = 1
     directory = f"tasks/exps/{file_prefix.split('_')[1]}/"
     if not os.path.exists(directory):
@@ -80,28 +81,28 @@ for obj in [obj for obj in event.metadata["objects"] if 'RemoteControl' in obj['
     remote = deepcopy(obj)
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Book" not in obj['name']]
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Book" in obj['name']]
 object = "Book"
-obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+obj = [obj for obj in event.metadata["objects"] if "Book" in obj['objectId']][0]
 poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x']-0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.2}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "TissueBox" not in obj['name']]
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "TissueBox" in obj['name']]
 replace_with = 'TissueBox'# replace remotecontrol
-obj_replace_with = [obj for obj in event.metadata["objects"] if replace_with in obj['objectId']][0]
+obj_replace_with = [obj for obj in event.metadata["objects"] if 'TissueBox' in obj['objectId']][0]
 obj = remote
 poses.append({'objectName':obj_replace_with['name'], "position":{'x': obj['position']['x'] + 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.4}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Bowl" not in obj['name']]
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Bowl" in obj['name']]
 object = "Bowl"
-obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+obj = [obj for obj in event.metadata["objects"] if "Bowl" in obj['objectId']][0]
 poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Vase" not in obj['name']]
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Vase" in obj['name']]
 object = "Vase"
-obj = [obj for obj in event.metadata["objects"] if object in obj['objectId']][0]
+obj = [obj for obj in event.metadata["objects"] if "Vase" in obj['objectId']][0]
 poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 '''
@@ -139,6 +140,8 @@ if __name__ == "__main__":
     # task 1
     # task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
     task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
+    task = ['PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,Sofa)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
+    breakpoint()
     exec(generated_code)

@@ -152,7 +152,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
     return pred, sem
 
-def mismatch_symbolic_state(pred_dict, skill2tasks, pred_type):
+def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
     '''
     look for same symbolic states (same s1 or s2 - s1) in task dictionary
     pred_dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
@@ -249,7 +249,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     
     # check precondition first
     t = 0
-    pred_dict, mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'precond')
+    pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
     new_p_added = False
     # breakpoint()
 
@@ -277,7 +277,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     # breakpoint()
     # check effect
     t = 0
-    pred_dict, mismatch_tasks = mismatch_symbolic_state(pred_dict, skill2tasks, 'eff')
+    pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
     # breakpoint()
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
@@ -485,11 +485,11 @@ if __name__ == '__main__':
     #     }
     # }
     # pred_type = 'precond'
-    # pred_dict, mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(model, mock_pred_dict, mock_skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
 
     # pred_type = 'eff'
-    # pred_dict, mismatch_states = mismatch_symbolic_state(mock_pred_dict, mock_skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(model, mock_pred_dict, mock_skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
 
     # # test main refining function
@@ -518,11 +518,11 @@ if __name__ == '__main__':
     #                }
 
     # pred_type = 'precond'
-    # pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': {'PickUp_0': ['PickUp_2']}}
     # breakpoint()
     # pred_type = 'eff'
-    # pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    # pred_dict, mismatch_states = mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp': ['PickUp_0', 'PickUp_3']}
     # breakpoint()
     # skill = 'PickUp([OBJ], [LOC])'
@@ -592,11 +592,11 @@ if __name__ == '__main__':
         'GoTo([LOC_1], [LOC_2])':{}
     }
     pred_type = 'precond'
-    pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    pred_dict, mismatch_states = mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) {'PickUp([OBJ], [LOC])': ['PickUp_TissueBox_Sofa_True_1', 'PickUp_Book_DiningTable_False_1'], 'DropAt([OBJ], [LOC])': ['DropAt_TissueBox_DiningTable_True_1', 'DropAt_TissueBox_Sofa_False_1']}
     # breakpoint()
     pred_type = 'eff'
-    pred_dict, mismatch_states = mismatch_symbolic_state(pred_dict, skill2tasks, pred_type)
+    pred_dict, mismatch_states = mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type)
     # print(mismatch_states) # {'PickUp([OBJ], [LOC])': ['PickUp_TissueBox_Sofa_True_1', 'PickUp_Book_DiningTable_False_1'], 'DropAt([OBJ], [LOC])': ['DropAt_TissueBox_DiningTable_True_1', 'DropAt_Book_DiningTable_False_1']}
     # breakpoint()
     skill = 'PickUp([OBJ], [LOC])'
@@ -616,7 +616,7 @@ if __name__ == '__main__':
     # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
     # print(skill2operators, '\n\n', pred_dict)
 
-    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {}}
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 'GoTo([LOC_1], [LOC_2])': {'precond':{},'eff':{}}}
     pred_dict =  {'is_at_location([OBJ], [LOC])': {'task': {'PickUp_TissueBox_Sofa_True_1': [True, False], 'PickUp_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [True, True], 'GoTo_Sofa_Sofa_True_1': [True, True], 'GoTo_Sofa_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is currently located at the location `loc`.'}, 'is_holding([OBJ])': {'task': {'DropAt_TissueBox_Sofa_False_1': [True, False], 'DropAt_Book_DiningTable_False_1': [False, False], 'DropAt_TissueBox_DiningTable_True_1': [True, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Book_DiningTable_False_1': [False, False], 'GoTo_Sofa_Sofa_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False]}, 'semantic': 'The robot is currently holding the object `obj` before attempting to drop it at the location `loc`.'}, 'is_at([OBJ], [LOC])': {'task': {'DropAt_TissueBox_Sofa_False_1': [False, False], 'DropAt_Book_DiningTable_False_1': [True, True], 'DropAt_TissueBox_DiningTable_True_1': [False, True]}, 'semantic': 'The object `obj` is located at the location `loc` after the execution of the skill.'}}
 
     # goto will have no change because all tasks succeeded
