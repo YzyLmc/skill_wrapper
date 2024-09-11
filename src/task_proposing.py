@@ -69,7 +69,7 @@ class TaskProposing():
 
 
 
-        self.curr_shannnon_entropy = 0.0
+        self.curr_shannon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
         self.task_generation_args = {
@@ -434,9 +434,10 @@ class TaskProposing():
 
 
         def compute_density_estimation(pred, h):
+            # pdb.set_trace()
             
             buffer_predicates = np.array(self.replay_buffer['predicate_eval'])
-            hamming_distance = np.sum((buffer_predicates - pred)!=0, axis=1)
+            hamming_distance = np.sum((buffer_predicates - pred)!=0, axis=1 if len(pred.shape)>1 else 0)
             hamming_distance = hamming_distance.reshape(-1,1)
 
             kde = np.exp(-1*hamming_distance/h)
@@ -720,21 +721,28 @@ if __name__ == '__main__':
     #     'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     # }
 
+    # grounded_skill_dictionary = {
+    #     'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': ['is_at_location(obj, loc)', 'is_graspable(obj)', 'is_gripper_free()', 'is_at(loc)'],  'effects_positive':['is_holding(obj)'], 'effects_negative': ['is_gripper_free()', 'is_at_location(obj, loc)', 'is_at(all)']},
+    #     'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': ['is_holding(obj)', 'is_at(loc)'], 'effects_positive':['is_at_location(obj, loc)', 'is_gripper_free()'], 'effects_negative': ['is_holding(obj)', 'is_at(all)']},
+    #     'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': ['is_at(init)'], 'effects_positive':['is_at(goal)'], 'effects_negative':['is_at(init)']}
+    # }
+
     grounded_skill_dictionary = {
-        'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': ['is_at_location(obj, loc)', 'is_graspable(obj)', 'is_gripper_free()', 'is_at(loc)'],  'effects_positive':['is_holding(obj)'], 'effects_negative': ['is_gripper_free()', 'is_at_location(obj, loc)', 'is_at(all)']},
-        'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': ['is_holding(obj)', 'is_at(loc)'], 'effects_positive':['is_at_location(obj, loc)', 'is_gripper_free()'], 'effects_negative': ['is_holding(obj)', 'is_at(all)']},
-        'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': ['is_at(init)'], 'effects_positive':['is_at(goal)'], 'effects_negative':['is_at(init)']}
+        'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
+        'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
+        'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     }
 
-    # grounded_predicate_dictionary = {}
-    grounded_predicate_dictionary = {
-        'is_at(loc)': 'The robot is currently at locations `loc`',
-        'is_at_location(obj, loc)': 'The object `obj` is currently located at the location `loc`.',
-        'is_gripper_free()': 'The gripper of the robot has no objects within it',
-        'is_holding(obj)': 'The object `obj` is currently within the robot gripper',
-        'is_graspable(obj)': 'The object `obj` can be picked up by the robot'
+
+    grounded_predicate_dictionary = {}
+    # grounded_predicate_dictionary = {
+    #     'is_at(loc)': 'The robot is currently at locations `loc`',
+    #     'is_at_location(obj, loc)': 'The object `obj` is currently located at the location `loc`.',
+    #     'is_gripper_free()': 'The gripper of the robot has no objects within it',
+    #     'is_holding(obj)': 'The object `obj` is currently within the robot gripper',
+    #     'is_graspable(obj)': 'The object `obj` can be picked up by the robot'
     
-    }
+    # }
     # grounded_predicate_dictionary = {
     #     'is_gripper_empty()': "the robot's single gripper is empty with no objects held",
     #     'is_nearby(x)': "the robot can interact with object or receptacle 'x' using only it's single gripper without needing to move the body closer to 'x'",
@@ -758,7 +766,9 @@ if __name__ == '__main__':
 
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['pick_up(Apple)','put_down(Apple,CounterTop)','walk_to(Fridge)','pick_up(Potato)','walk_to(Toaster)','put_down(Potato,Toaster)'], 'predicate_eval':[[0,1,0],[0,0,0],[1,0,0],[1,1,0],[0,0,0],[0,0,1]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa, Book)','PickUp(Book,DiningTable)','GoTo(Book, Sofa)','DropAt(Book, Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
-    replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]}
+    # replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1],[1,1,1,1,1]]}
+    replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[]}
+
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
     curr_observation_path = []
 
@@ -780,3 +790,4 @@ if __name__ == '__main__':
 
     chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(None, None, None, None, curr_observation_path)
     print(chosen_task, chosen_skill_sequence)
+    pdb.set_trace()
