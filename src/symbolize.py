@@ -176,7 +176,7 @@ def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
         return duplicates
     
     # evaluate new task first
-    
+    print('evaluating from mismatch_symbolic_state')
     for pred in pred_dict.keys():
         for skill, tasks in skill2tasks.items():
             for id, task in tasks.items():
@@ -185,6 +185,7 @@ def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
                         eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s0']), \
                         eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s1'])
                     ]    
+    print('Done evaluation from mismatch_symbolic_state')
     # look for duplicated tasks
     dup_tasks = {}
     if pred_type == "precond":
@@ -260,14 +261,13 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
     new_p_added = False
-    breakpoint()
+    # breakpoint()
 
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['precond'].keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
         print('new predicate', new_p, sem)
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
         print('new predicate truth value', new_p_mismatch)
-        # breakpoint()
         if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
             skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
             print(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
@@ -276,11 +276,15 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                 pred_dict[new_p] = {'task': {}}
                 for s in skill2tasks:
                     for idx, task in skill2tasks[s].items():
-                        pred_dict[new_p]['task'] = {idx: [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[s].items()}
+                         if idx not in new_p_mismatch:
+                                pred_dict[new_p]['task'][idx] = [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])]
+                for new_p_id in new_p_mismatch:
+                    pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
+            print(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
-            t = 0
+            skill2triedpred[skill]['precond'] = []
         else:
             skill2triedpred[skill]['precond'].append(new_p)
         t += 1
@@ -290,7 +294,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     # check effect
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-    breakpoint()
+    # breakpoint()
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         print('new predicate', new_p, sem)
@@ -312,11 +316,15 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                 pred_dict[new_p] = {'task': {}}
                 for s in skill2tasks:
                     for idx, task in skill2tasks[s].items():
-                            pred_dict[new_p]['task'] = {idx: [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx]}
+                        if idx not in new_p_mismatch:
+                            pred_dict[new_p]['task'][idx] = [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])]
+                for new_p_id in new_p_mismatch:
+                    pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
+            print(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-            t = 0
+            skill2triedpred[skill]['eff'] = []
         else:
             skill2triedpred[skill]['eff'].append(new_p)
         t += 1

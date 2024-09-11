@@ -258,6 +258,15 @@ def PickUp(object, location, controller, event):
                     returnToStart=False
                 )
 
+            elif "Bowl" in object:
+                event = controller.step(
+                    action='MoveArm',
+                    position=dict(x=0.05, y=0, z=-0.1),
+                    coordinateSpace='wrist',
+                    speed=1,
+                    returnToStart=False
+                )
+
             event = controller.step(
                 action="PickupObject",
                 objectIdCandidates=[obj['objectId']],
@@ -354,7 +363,7 @@ def DropAt(object, location, controller, event):
             fixedDeltaTime=0.02
         )
         # MoveGripperBackward(controller)
-        event = controller.step(action="SetHandSphereRadius", radius=0.15)
+        event = controller.step(action="SetHandSphereRadius", radius=0.04)
         for i in range(10):
             controller.step(    
                 action="AdvancePhysicsStep",    

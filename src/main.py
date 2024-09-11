@@ -97,7 +97,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
 
     # imgs will be stored at tasks/exps
     skill2tasks = update_tasks(list(skill2tasks.keys()))
-    breakpoint()
+
     for skill in skill2operators:
         skill2triedpred = {} # reset tried_predicate buffer after each skill
         skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
@@ -132,7 +132,7 @@ def main():
             grounded_skill_dictionary = {
                 'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
                 'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
-                'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'to': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
+                'GoTo(init, goal)': {'arguments': {'init': "the object name or location for the robot to start from", 'to': "the object name or location for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
             }
             
             # init skill to operators
@@ -154,7 +154,7 @@ def main():
         # init task proposing system
         replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[]}
         objects_in_scene = ['Book', 'Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa']
-        env_description = 'Book, Vase, and Bowl are on the DiningTable, and Tissue is on the sofa. Robot is at the Sofa initially. Sofa and DiningTable is large so you might not be able to pick up object from it even you are nearby.'
+        env_description = 'Book, Vase, and Bowl are on the DiningTable, and Tissue is on the Sofa. Robot is at the Sofa initially. Book, Vase, TissueBox, and Bowl are objects, and Sofa and DiningTable are locations. Sofa and DiningTable are large so even if you are nearby them you might not be able to pick up certain object from them.'
         task_proposing = TaskProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=8*args.num_iter, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
         
         counter = 1
@@ -191,6 +191,7 @@ def main():
             merged_skill2operators = merge_predicates(model, assigned_skill2operators, pred_dict)
             log_data[i]['merged_skill2operators'] = merged_skill2operators
             save_to_file(log_data, log_save_path)
+            print('Final operators this round:\n', merged_skill2operators[0])
             print(f"result has been saved to {log_save_path}")
 
             if args.step_by_step:
@@ -206,7 +207,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", "chatgpt-4o-latest"], default="gpt-4o-2024-08-06")
     parser.add_argument("--num_iter", type=int, default=5, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
-    parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
+    parser.add_argument("--max_retry_time", type=int, default=5, help="maximum time to generate predicate to distinguish two states.")
     parser.add_argument("--no_log", action='store_true')
     parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
