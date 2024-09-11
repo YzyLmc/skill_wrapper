@@ -108,6 +108,7 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
         return prompt
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred, obj, loc)
+    print(f'Evaluating predicate {pred} on skill {skill} with arguments {obj} {loc} {loc_1} {loc_2}')
     if prompt:
         resp = model.generate_multimodal(prompt, img)[0]
         return True if "True" in resp.split('\n')[-1] else False
@@ -151,6 +152,9 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
     return pred, sem
+
+# def evaluate_all_tasks(pred_dict, skill2tasks):
+#     'Evaluate all tasks that hasn't been evaluated '
 
 def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
     '''
@@ -247,7 +251,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
 
     if not skill2triedpred:
         skill2triedpred = {}
-    if not skill2triedpred[skill]:
+    if not skill in skill2triedpred:
         skill2triedpred[skill] = {}
         skill2triedpred[skill]['precond'] = []
         skill2triedpred[skill]['eff'] = []
@@ -256,7 +260,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
     new_p_added = False
-    # breakpoint()
+    breakpoint()
 
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['precond'].keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
@@ -266,24 +270,27 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
         # breakpoint()
         if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
             skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
+            print(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
             new_p_added = True
-            break
+            if new_p_added and new_p not in pred_dict:
+                pred_dict[new_p] = {'task': {}}
+                for s in skill2tasks:
+                    for idx, task in skill2tasks[s].items():
+                        pred_dict[new_p]['task'] = {idx: [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[s].items()}
+                pred_dict[new_p]['semantic'] = sem
+            new_p_added = False
+            pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
+            t = 0
         else:
             skill2triedpred[skill]['precond'].append(new_p)
         t += 1
-    if new_p_added and new_p not in pred_dict:
-        pred_dict[new_p] = {'task': {}}
-        for skill in skill2tasks:
-            for idx, task in skill2tasks[skill].items():
-                pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx] for idx, task in skill2tasks[skill].items()}
-        pred_dict[new_p]['semantic'] = sem
-        new_p_added = False
+    
 
     # breakpoint()
     # check effect
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-    # breakpoint()
+    breakpoint()
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         print('new predicate', new_p, sem)
@@ -299,18 +306,21 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
         # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
         if (int(s_1_2==True) - int(s_1_1==True) != int(s_2_2==True) - int(s_2_1==True)) and state_change_success != 0:
             skill2operators[skill]['eff'][new_p] = state_change_success
+            print(f"Predicate {new_p} added to effect with truth value {skill2operators[skill]['eff'][new_p]}")
             new_p_added = True
-            break
+            if new_p_added and new_p not in pred_dict:
+                pred_dict[new_p] = {'task': {}}
+                for s in skill2tasks:
+                    for idx, task in skill2tasks[s].items():
+                            pred_dict[new_p]['task'] = {idx: [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx]}
+                pred_dict[new_p]['semantic'] = sem
+            new_p_added = False
+            pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
+            t = 0
         else:
             skill2triedpred[skill]['eff'].append(new_p)
         t += 1
-    if new_p_added and new_p not in pred_dict:
-        pred_dict[new_p] = {'task': {}}
-        for skill in skill2tasks:
-            for idx, task in skill2tasks[skill].items():
-                    pred_dict[new_p]['task'] = {idx: [eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s0']), eval_pred(model, skill, new_p, sem, task['obj'], task['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], task['s1'])] if idx not in new_p_mismatch else new_p_mismatch[idx]}
-        pred_dict[new_p]['semantic'] = sem
-        new_p_added = False
+    
             
     return skill2operators, pred_dict, skill2triedpred
 
@@ -365,7 +375,7 @@ def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/pre
                     unified_skill2operator[skill][pred_type][pred] = skill2operator[skill][pred_type][pred]
     return unified_skill2operator, equal_preds
 
-def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.8):
+def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.7):
     '''
     Assign precondtions of all skills to effect of each skill
     There should be a threshold for cross assignment, either if higher than it or lower than -1*threshold will be added
@@ -374,25 +384,28 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.8):
     pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
     all_precond = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
-    all_precond = list(itertools.chain(*all_precond))
+    all_precond = set(list(itertools.chain(*all_precond)))
 
     for skill in skill2operator:
         tasks = skill2tasks[skill]
         # skill2operator[skill]['eff'] = {}
-        print(skill)
+        # print(skill)
         for pred in all_precond:
-            # if skill == 'DropAt([OBJ], [LOC])':
+            # try:
+                # accuracy here means the portion of state change from true to false
+                state_pair_all = [pred_dict[pred]['task'][id] for id, t in tasks.items() if t['success']]
+                if not state_pair_all: # if no success case for the skill
+                    continue
+                acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
+                acc = sum(acc_ls)/len(acc_ls)
+                print(skill, pred, acc, state_pair_all)
+                # breakpoint()
+                if acc > threshold:
+                    skill2operator[skill]['eff'][pred] = 1
+                elif acc < - threshold:
+                    skill2operator[skill]['eff'][pred] = -1
+            # except:
             #     breakpoint()
-            # accuracy here means the portion of state change from true to false
-            state_pair_all = [pred_dict[pred]['task'][id] for id, t in tasks.items() if t['success']]
-            acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
-            acc = sum(acc_ls)/len(acc_ls)
-            print(skill, pred, acc, state_pair_all)
-            if acc > threshold:
-                print(pred)
-                skill2operator[skill]['eff'][pred] = 1
-            elif acc < - threshold:
-                skill2operator[skill]['eff'][pred] = -1
     return skill2operator
 
 

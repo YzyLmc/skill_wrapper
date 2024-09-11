@@ -218,11 +218,6 @@ def PickUp(object, location, controller, event):
                     standing = False
                 )
                 event = controller.step('MoveArmBase', y = 0.2)
-            elif location == 'DiningTable':
-                # event = controller.step('MoveArmBase', y = 0.5)
-                standing = True
-            else:
-                standing = True
 
             controller.step(action="SetHandSphereRadius", radius=0.1)
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]

@@ -22,22 +22,26 @@ from manipula_skills import *
 
 def capture_obs(controller, file_prefix):
     from PIL import Image
+    import os
     counter = 1
     directory = f"tasks/exps/{file_prefix.split('_')[1]}/"
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+    f_list = os.listdir(directory)
     while True:
-        screenshot_path = directory + f"{file_prefix}_{counter}.jpg"
-        screenshot_path_suc = directory + f"{file_prefix}_True_{counter}.jpg"
-        screenshot_path_fail = directory + f"{file_prefix}_False_{counter}.jpg"
-        if not os.path.exists(screenshot_path) or not os.path.exists(screenshot_path_suc) or not os.path.exists(screenshot_path_fail):
+        screenshot_path = f"{file_prefix.replace('_True', '').replace('_False','')}_{counter}.jpg"
+        # screenshot_path = f"{file_prefix}_{counter}.jpg"
+        screenshot_path_suc = f"{file_prefix.replace('_True', '').replace('_False','')}_True_{counter}.jpg"
+        screenshot_path_fail = f"{file_prefix.replace('_True', '').replace('_False','')}_False_{counter}.jpg"
+        if not (screenshot_path in f_list or screenshot_path_suc in f_list or screenshot_path_fail in f_list):
             break
         counter += 1
     event = controller.step('Pass')
     im = Image.fromarray(event.frame)
-    im.save(screenshot_path)
-    print(f"Screenshot saved to {screenshot_path}")
-    return screenshot_path
+    im.save(f"{directory}{file_prefix}_{counter}.jpg")
+    print(f"Screenshot saved to {file_prefix}_{counter}.jpg")
+    return f"{directory}{file_prefix}_{counter}.jpg"
 
 # init ai2thor controller
 controller = Controller(
@@ -139,8 +143,16 @@ if __name__ == "__main__":
 
     # task 1
     # task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
-    task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
-    task = ['PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,Sofa)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)']
+    # task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
+    # task = ['PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,Sofa)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)']
+    task = ['GoTo(DiningTable,DiningTable)', 
+            'PickUp(Book,DiningTable)', 
+            'PickUp(Book,DiningTable)', 
+            'DropAt(Book,Sofa)', 
+            'PickUp(Vase,DiningTable)', 
+            'DropAt(Vase,Sofa)', 
+            'DropAt(Vase,Sofa)', 
+            'PickUp(Bowl,DiningTable)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     breakpoint()

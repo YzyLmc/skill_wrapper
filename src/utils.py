@@ -114,7 +114,7 @@ class GPT4:
         msg = prompt2msg(query_prompt)
         # breakpoint()
         while not complete and ntries < 15:
-            # try:
+            try:
                 raw_responses = client.chat.completions.create(model=self.engine,
                 messages=prompt2msg(query_prompt),
                 temperature=self.temp,
@@ -122,12 +122,12 @@ class GPT4:
                 stop=self.stop,
                 max_tokens=self.max_tokens)
                 complete = True
-            # except:
-            #     sleep(30)
-            #     logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...")
-            #     # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
-            #     logging.info("OK continue")
-            #     ntries += 1
+            except:
+                sleep(30)
+                logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
+                logging.info("OK continue")
+                ntries += 1
         if self.n == 1:
             responses = [raw_responses.choices[0].message.content.strip()]
         else:
@@ -160,10 +160,21 @@ class GPT4:
           }}
             msg["content"].append(line_img)
         payload["messages"].append(msg)
-
-        # while not complete and ntries < 15:
-        raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
-        complete = True
+        complete = False
+        ntries = 0
+        while not complete and ntries < 15:
+            try:
+                raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+                complete = True
+            except:
+                sleep(30)
+                print(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                print(f"The prompt right now is:\n\n{query_prompt}")
+                logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                logging.info(f"The prompt right now is:\n\n{query_prompt}")
+                # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
+                logging.info("OK continue")
+                ntries += 1
 
         if self.n == 1:
             responses = [raw_responses["choices"][0]["message"]["content"].strip()]
