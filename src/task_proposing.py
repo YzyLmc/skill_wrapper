@@ -69,15 +69,15 @@ class TaskProposing():
 
 
 
-        self.curr_shannnon_entropy = 0.0
+        self.curr_shannon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
         self.task_generation_args = {
             'temperature': 0.6,
             'presence_penalty': 0.3,
-            'frequency_penalty': 0.5,
+            'frequency_penalty': 0.4,
             'top_p': 1.0,
-            'max_tokens':500,
+            'max_tokens':550,
             'engine': 'gpt-4o',
             'stop': ''
         }
@@ -107,7 +107,8 @@ class TaskProposing():
         #scaling parameters for pareto-optimal task selection
         self.k = 10 #set period after how many skill executions to switch mode
         #all alphas are in the range [1,3]
-        self.chainability_alpha = lambda x : np.cos((np.pi/self.k) * x) + 2
+        # self.chainability_alpha = lambda x : np.cos((np.pi/self.k) * x) + 2
+        self.chainability_alpha = lambda x: 1
         self.sufficience_alpha = lambda x: np.sin((np.pi/self.k) * x - (np.pi/2)) + 2
         self.entropy_gain_alpha = lambda x: np.cos( ( np.pi / self.k) * x) + 2
 
@@ -130,7 +131,7 @@ class TaskProposing():
 
         prompt_context = "A robot with a single gripper is attempting to learn the preconditions and effects for a finite set of skills by performing tasks in an environment" 
         
-        prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of skills. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\n Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills (one skill per line) to execute e.g. Task 1: Pick up the apple:\nwalk_to(CounterTop)\npick_up(Apple)\n\nTask 1:".format('\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
+        prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of skills. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\n Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nwalk_to(CounterTop)\npick_up(Apple)\n\nTask 1:".format('\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
     
         return prompt, prompt_context
         
@@ -170,27 +171,31 @@ class TaskProposing():
 
         while p2 < len(skill_sequence):
 
-            if executable_sequence[p2] is True:
+            if executable_sequence[p2] is True and executable_sequence[p1] is True:
                 skill1_idx = self.skill_to_index[skill_sequence[p1]]
                 skill2_idx = self.skill_to_index[skill_sequence[p2]]
 
                 new_skill_pair_count[skill1_idx, skill2_idx] += 1
 
                 p1 = p2 
+            elif executable_sequence[p1] is False:
+                p1 = p2
+                
+            
             p2 += 1
 
 
-        normalized_skill_pair_prob =  new_skill_pair_count / np.sum(new_skill_pair_count)
-        log_skill_pair_prob = np.where(normalized_skill_pair_prob > 0 , np.log(normalized_skill_pair_prob), 0)
+        normalized_skill_pair_prob =  new_skill_pair_count / np.sum(new_skill_pair_count) if np.sum(new_skill_pair_count) > 0 else new_skill_pair_count
+        log_skill_pair_prob = np.where(normalized_skill_pair_prob > 0.0 , np.log(normalized_skill_pair_prob), 0.0)
+
 
         new_shannon_entropy = np.sum(-1 * normalized_skill_pair_prob * log_skill_pair_prob)
-
         return new_shannon_entropy, new_skill_pair_count
     
     def compute_shannon_entropy(self, task_dictionary):
 
         normalized_skill_pair_prob =  self.attempted_skill_pair_count / np.sum(self.attempted_skill_pair_count) if np.sum(self.attempted_skill_pair_count) > 0 else  self.attempted_skill_pair_count 
-        # pdb.set_trace()
+        
         log_skill_pair_prob = np.where(normalized_skill_pair_prob > 0 , np.log(normalized_skill_pair_prob), 0)
 
         curr_shannon_entropy = np.sum(-1 * normalized_skill_pair_prob * log_skill_pair_prob)
@@ -202,7 +207,7 @@ class TaskProposing():
         #measure entropy gain for each task
         for task in task_dictionary.keys():
 
-            skill_sequence = task_dictionary[task]['abstract']
+            skill_sequence = task_dictionary[task]['lifted']
             executable_sequence = task_dictionary[task]['executable_sequence']
 
             entropy, counts = self.compute_entropy_for_task(skill_sequence, executable_sequence)
@@ -210,7 +215,6 @@ class TaskProposing():
             task_entropy_gains.append(entropy - curr_shannon_entropy) #entropy gain is maximum of difference
             task_skill_counts.append(counts)
         
-        # pdb.set_trace()
         return np.array(task_entropy_gains), task_skill_counts
 
     def get_least_explored_skills(self, k=5):
@@ -241,10 +245,8 @@ class TaskProposing():
     '''
     CHAINABILITY & SUFFICIENCE: Functions to approximate the predicate-level information
     '''
-    def generate_incremental_predicate_for_task(self, skill_sequence, abstract_skill_sequence, initial_observation):
+    def generate_incremental_predicate_for_task(self, skill_sequence, lifted_skill_sequence, initial_observation_path):
 
-        print('GENERATING INCRIMENTAL PREDICATES')
-        # pdb.set_trace()
         '''
         Sufficiency: relies on abstract state changes to be abstract with respect to the object
         Chainabilty: relies on the non-abstract state changes to be abstract
@@ -252,8 +254,16 @@ class TaskProposing():
         Can abstract and non-abstract state changes occur simultaneously?
             How is predicate failure handled?
         '''
+
+        
         #maintain dicitonary of updated predicates so far: {predicate: known assignemnt from precondition/effects of skills that are executed}
         abstract_current_predicates = {}
+
+        #skill dictionary: {skill name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
+        for p in self.predicate_dictionary:
+            p = p.split('(')[0] + '()'
+            abstract_current_predicates[p] = 1
+
         current_predicates = {}
 
         #list of predicates for each step
@@ -265,24 +275,27 @@ class TaskProposing():
         executable = True
 
         #TODO: maybe instead setup initial set of calls to VLM to estimate all the predicates first -- using inital_observation
-        #NOTE: ensure order of evaluated predicates matches the predicate list
-        #NOTE: talk to Ziyi about is_open() vs is_holding() predicate: what can be True for multiple inputs at the same time?
-        # abstract_current_predicates = {'is_gripper_empty()': 1, 'is_holding()': 0, 'is_nearby()': 1} #NOTE: set current predicate for initial value for now
-        # current_predicates = {}
-        
+       
         #iterate through the skill sequence and add/change predicate labels until something is not executable
         for i, skill in enumerate(skill_sequence):
 
             #generate abstract skill shell
-            abstract_skill = abstract_skill_sequence[i]
+            lifted_skill = lifted_skill_sequence[i]
 
             #extract arguments for skill in case of chainability
             match = re.match(r"(\w+)\((.*)\)", skill)
-            arguments = match.group(2).split(",")            
+            arguments = match.group(2).split(",")
 
-            abstract_preconditions = self.skill_dictionary[abstract_skill]['preconditions']
-            abstract_effects_pos  = self.skill_dictionary[abstract_skill]['effects_positive']
-            abstract_effects_neg = self.skill_dictionary[abstract_skill]['effects_negative']
+            match = re.match(r"(\w+)\((.*)\)", lifted_skill)
+            abstract_arguments = match.group(2).split(",")
+
+            #find correlating arguments with abstract/lifted arguments
+            abstract_to_grounded_args = {k.strip():v.strip() for (k,v) in zip(abstract_arguments, arguments)}
+                      
+
+            abstract_preconditions = self.skill_dictionary[lifted_skill]['preconditions']
+            abstract_effects_pos  = self.skill_dictionary[lifted_skill]['effects_positive']
+            abstract_effects_neg = self.skill_dictionary[lifted_skill]['effects_negative']
 
             
             #turn predicates true assuming skill can be executed
@@ -296,43 +309,50 @@ class TaskProposing():
                 
                 abstract_current_predicates[pre] = 1
             
+            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
+            
 
             if not abstract_executable:
                 abstract_executable = True
             else:
                 
                 #turn predicates positive or negative based on effects
+
+                for eff in abstract_effects_neg:
+
+                    eff = eff.split('(')[0] + '()'
+                    abstract_current_predicates[eff] = 0
+                
                 for eff in abstract_effects_pos:
 
                     eff = eff.split('(')[0] + '()'
 
                     abstract_current_predicates[eff] = 1
 
-                for eff in abstract_effects_neg:
-
-                    eff = eff.split('(')[0] + '()'
-                    abstract_current_predicates[eff] = 0
-
+            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
-            
+            #-----------------------------------------------------------#
+
             for pre in abstract_preconditions:
 
                 match = re.match(r"(\w+)\((.*)\)", pre)
                 pred_name = match.group(1)
+                pred_args = '('+pre.split('(')[1]
+
+
+                for a in abstract_to_grounded_args.keys():
+                    pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
+                # if '(x)' in pre:
+                #     pre = pre.replace('x', arguments[0])
                 
-                
-                if '(x)' in pre:
-                    pre = pre.replace('x', arguments[0])
-                
-                elif '(r)' in pre:
-                    pre = pre.replace('(r)', f'({arguments[0]})')
-                
+                # elif '(r)' in pre:
+                #     pre = pre.replace('(r)', f'({arguments[0]})')
+                pre = pred_name + pred_args
+
                 if (pre in current_predicates and current_predicates[pre] == 0):
                     executable = False
                     break
 
-
-                
                
                 current_predicates[pre] = 1
             
@@ -344,41 +364,50 @@ class TaskProposing():
                 max_executable += 1
 
                 #turn predicates positive or negative based on effects
-                for eff in abstract_effects_pos:
-
-                    match = re.match(r"(\w+)\((.*)\)", eff)
-                    pred_name = match.group(1)
-                    
-
-                    if'(x)' in eff:
-                        eff = eff.replace('x', arguments[0])
-                    elif '(r)' in eff:
-                        eff = eff.replace('(r)', f'({arguments[1]})')
-                    
-
-                    
-                    current_predicates[eff] = 1
-
-
                 for eff in abstract_effects_neg:
 
                     match = re.match(r"(\w+)\((.*)\)", eff)
                     pred_name = match.group(1)
+                    #pred_args = match.group(2).split(",")
+                    pred_args = '('+eff.split('(')[1]
+
+                    for a in abstract_to_grounded_args.keys():
+                        pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
                    
 
-                    if '(x)' in eff:
-                        eff = eff.replace('x', arguments[0])
-                    elif '(r)' in eff:
-                        eff = eff.replace('(r)', f'({arguments[0]})')
-                  
+                    # if '(x)' in eff:
+                    #     eff = eff.replace('x', arguments[0])
+                    # elif '(r)' in eff:
+                    #     eff = eff.replace('(r)', f'({arguments[0]})')
+                    eff = pred_name + pred_args
                     
 
                     
 
                     current_predicates[eff] = 0
-            
+                
+                for eff in abstract_effects_pos:
 
-            # pdb.set_trace()
+                    match = re.match(r"(\w+)\((.*)\)", eff)
+                    pred_name = match.group(1)
+                    #pred_args = match.group(2).split(",")
+                    pred_args = '('+eff.split('(')[1]
+
+
+                    for a in abstract_to_grounded_args.keys():
+                        pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
+                    
+
+                    # if'(x)' in eff:
+                    #     eff = eff.replace('x', arguments[0])
+                    # elif '(r)' in eff:
+                    #     eff = eff.replace('(r)', f'({arguments[1]})')
+                    eff = pred_name + pred_args
+
+                    
+                    current_predicates[eff] = 1
+            
+            
             
             predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
@@ -386,9 +415,9 @@ class TaskProposing():
         # pdb.set_trace()
         return predicate_sequence, max_executable, executable_sequence
 
-    def compute_task_chainability(self, predicate_sequence, max_executable):
+    def compute_task_chainability(self, executable_sequence, max_executable):
 
-        return float(max_executable / (len(predicate_sequence) + 1))
+        return abs(float(max_executable / (len(executable_sequence) if len(executable_sequence) > 0 else 1)) - 0.5)
 
     def compute_task_sufficience_probability(self, predicate_sequence, max_executable):
         '''
@@ -409,7 +438,7 @@ class TaskProposing():
         def compute_density_estimation(pred, h):
             return 0.1
             buffer_predicates = np.array(self.replay_buffer['predicate_eval'])
-            hamming_distance = np.sum((buffer_predicates - pred)!=0, axis=1)
+            hamming_distance = np.sum((buffer_predicates - pred)!=0, axis=1 if len(pred.shape)>1 else 0)
             hamming_distance = hamming_distance.reshape(-1,1)
 
             kde = np.exp(-1*hamming_distance/h)
@@ -431,7 +460,7 @@ class TaskProposing():
         return total_logprob
 
 
-    def compute_chainability_and_sufficience(self, task_dictionary, initial_observation):
+    def compute_chainability_and_sufficience(self, task_dictionary, initial_observation_path):
         
         #track to select task with maximum chainability and sufficience
         task_chainabilities = []
@@ -441,9 +470,9 @@ class TaskProposing():
         for task in task_dictionary.keys():
 
             skill_sequence = task_dictionary[task]['grounded']
-            abstract_skill_sequence = task_dictionary[task]['abstract']
+            lifted_skill_sequence = task_dictionary[task]['lifted']
 
-            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, abstract_skill_sequence, initial_observation)
+            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, lifted_skill_sequence, initial_observation_path)
 
             #update the task dictionary with maximum number of steps that can be executed
             task_dictionary[task]['max_executable'] = max_executable
@@ -451,7 +480,7 @@ class TaskProposing():
 
 
             #compute and aggregate the chainability and sufficience prob per task
-            chainability = self.compute_task_chainability(predicate_sequence, max_executable)
+            chainability = self.compute_task_chainability(executable_sequence, max_executable)
             sufficience_logprob = self.compute_task_sufficience_probability(predicate_sequence, max_executable)
 
 
@@ -492,14 +521,14 @@ class TaskProposing():
                 (eg2, suf2, chain2) = pareto_front_set[k]
                 
                 #if the new score combo dominates something from the pareto-front set, remove the original example from pareto-front set 
-                if (eg_new >= eg2) and (suf_new >= suf2) and (chain_new >= chain2) and (eg_new > eg2 or suf_new > suf2 or chain_new > chain2):
+                if (eg_new >= eg2) and (suf_new <= suf2) and (chain_new <= chain2) and (eg_new > eg2 or suf_new < suf2 or chain_new < chain2):
 
                     domination = True
                     del pareto_front_set[k]
                     pareto_front_set[curr_idx] = (eg_new, suf_new, chain_new)
                 
                 #if pareto set already dominates new example then skip
-                elif (eg_new <= eg2) and (suf_new <= suf2) and (chain_new <= chain2):
+                elif (eg_new <= eg2) and (suf_new >= suf2) and (chain_new >= chain2):
                     domination = True
                     continue 
                 
@@ -527,8 +556,9 @@ class TaskProposing():
             (entr, suff, chain) = v
 
             entropy_score = (entr - min_entropy_gain)/(max_entropy_gain - min_entropy_gain) if (max_entropy_gain - min_entropy_gain) > 0 else 0
-            sufficience_score = (suff - min_sufficiency) / (max_sufficiency - min_sufficiency) if (max_sufficiency - min_sufficiency) > 0 else 0
-            chainability_score = (chain - min_chainability) / (max_chainability - min_chainability)  if (max_chainability - min_chainability) > 0 else 0
+            # sufficience_score = (suff - min_sufficiency) / (max_sufficiency - min_sufficiency) if (max_sufficiency - min_sufficiency) > 0 else 0
+            sufficience_score = (max_sufficiency - suff) / (max_sufficiency - min_sufficiency) if (max_sufficiency - min_sufficiency) > 0 else 0
+            chainability_score = (max_chainability - chain) / (max_chainability - min_chainability)  if (max_chainability - min_chainability) > 0 else 0
 
             combined_score = entr_alpha * (entropy_score) + suff_alpha * (sufficience_score) + chain_alpha * (chainability_score)
 
@@ -603,7 +633,7 @@ class TaskProposing():
         #iterate through output text and parse
         for line in output_text:
 
-            match = re.match(r"(\w+)\((.*)\)", line)
+            match = re.match(r"(\w+)\((.*)\)", line.strip())
 
             if match and curr_task is not None:
                 skill_name = match.group(1)  # The function name
@@ -618,6 +648,8 @@ class TaskProposing():
                 closest_grounded_skill = list(self.skill_dictionary.keys())[closest_skill_idx].split('(')[0]
                 closest_grounded_skill_abstract = list(self.skill_dictionary.keys())[closest_skill_idx]
 
+                max_args = len(re.match(r"(\w+)\((.*)\)", closest_grounded_skill_abstract).group(2).split(","))
+
                 #get the closest similarity argument embedding
                 for i, arg in enumerate(arguments):
                     query_arg_embedding = self.embedding_model.encode(arg, convert_to_tensor=True, device=self.device)
@@ -628,11 +660,11 @@ class TaskProposing():
 
                     arguments[i] = closest_grounded_arg
                 
-                task_dictionary[curr_task]['abstract'].append(closest_grounded_skill_abstract)
-                task_dictionary[curr_task]['grounded'].append(closest_grounded_skill + '(' + ','.join(arguments)+')')
+                task_dictionary[curr_task]['lifted'].append(closest_grounded_skill_abstract)
+                task_dictionary[curr_task]['grounded'].append(closest_grounded_skill + '(' + ','.join(arguments[:max_args])+')')
 
             elif len(line) > 0 and 'Task' in line:
-                task_dictionary[line] = {'grounded':[], 'abstract':[]}
+                task_dictionary[line] = {'grounded':[], 'lifted':[]}
                 curr_task = line
         
         # pdb.set_trace()
@@ -692,7 +724,7 @@ if __name__ == '__main__':
     }
 
     grounded_skill_dictionary = {
-        'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': ['is_at_location(obj, loc)']},
+        'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
         'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
         'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     }
@@ -732,3 +764,4 @@ if __name__ == '__main__':
 
     chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
     print(chosen_task, chosen_skill_sequence)
+    pdb.set_trace()
