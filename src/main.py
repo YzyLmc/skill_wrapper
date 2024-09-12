@@ -87,16 +87,15 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
         print('Task:', chosen_skill_sequence)
         try:
             generated_code = convert_task_to_code(chosen_skill_sequence)
+            local_scope = {}
+            global_scope = {}
+            exec(generated_code, global_scope, local_scope)
             task_success = True
         except:
             pass
 
     # breakpoint()
-    local_scope = {}
-    global_scope = {}
-    exec(generated_code, global_scope, local_scope)
     replay_buffer['skill'] = chosen_task
-
     if args.step_by_step:
             print('Task done. You should check the images labels')
             breakpoint()
