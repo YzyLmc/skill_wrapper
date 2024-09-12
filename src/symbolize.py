@@ -181,6 +181,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     prompt = construct_prompt(prompt, skill, pred_dict)
     # breakpoint()
     # response consists of predicate and its semantic
+    print('Generating predicate')
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
@@ -332,11 +333,10 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                     pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
 
-
-
             print(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
+            print(f'Done evaluating predicate {new_p} for all tasks')
             skill2triedpred[skill]['precond'] = []
         else:
             skill2triedpred[skill]['precond'].append(new_p)

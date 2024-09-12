@@ -32,6 +32,56 @@ def pred_dict2grounded_predicates_dict(pred_dict):
         grounded_predicates_dictionary[pred] = pred_dict[origin_pred]['semantic']
     return grounded_predicates_dictionary
 
+def update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks):
+    'update replay buffer after one iteration'
+    # calculate new tasks
+    def convert_to_skill(command):
+        if command.startswith("GoTo"):
+            args = command[5:-1].replace(' ','').split(",")  # Extract arguments
+            return f'GoTo_{args[0]}_{args[1]}'
+        elif command.startswith("PickUp"):
+            args = command[7:-1].replace(' ','').split(",")  # Extract arguments
+            return f'PickUp_{args[0]}_{args[1]}'
+        elif command.startswith("DropAt"):
+            args = command[7:-1].replace(' ','').split(",")  # Extract arguments
+            return f'DropAt_{args[0]}_{args[1]}'
+
+    # breakpoint()
+    if not 'num2id' in replay_buffer:
+        replay_buffer['num2id'] = {}
+    new_tasks = {}
+    for s, tasks in skill2tasks.items():
+        for id, task in tasks.items():
+            if not id in old_skill2tasks[s]:
+                new_tasks[id] = task
+
+    replay_buffer['skill'].extend(chosen_skill_sequence)
+
+    for command in chosen_skill_sequence:
+        skill_prefix = convert_to_skill(command)
+        for id, t in new_tasks.items():
+            if skill_prefix in id:
+                replay_buffer['image_before'].append(t['s0'][0])
+                replay_buffer['image_after'].append(t['s1'][0])
+                # len_before = len(replay_buffer['skill']) - len(chosen_skill_sequence)
+                len_before = len(replay_buffer['num2id'])
+                replay_buffer['num2id'][len(replay_buffer['num2id'])] = id
+                replay_buffer['num2id'][len(replay_buffer['num2id'])] = id
+
+    # breakpoint()
+    predicate_eval = []
+    for i in range(len(replay_buffer['skill'])):
+        truth_values = []
+        for p in pred_dict:
+            idx = replay_buffer['num2id'][i]
+            truth_values.append(pred_dict[p]['task'][idx][0])
+            truth_values.append(pred_dict[p]['task'][idx][1])
+        predicate_eval.append(truth_values)
+    replay_buffer['predicate_eval'] = predicate_eval
+
+    # print(replay_buffer)
+    return replay_buffer
+
 def update_tasks(skill_list, task_fpath="tasks/exps"):
     '''
     Update skill2tasks after executing one task
@@ -86,6 +136,8 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
         t += 1
         print('Task:', chosen_skill_sequence)
         try:
+            if len(chosen_skill_sequence) < 6:
+                continue
             generated_code = convert_task_to_code(chosen_skill_sequence)
             local_scope = {}
             global_scope = {}
@@ -95,12 +147,12 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
             pass
 
     # breakpoint()
-    replay_buffer['skill'] = chosen_task
     if args.step_by_step:
             print('Task done. You should check the images labels')
             breakpoint()
 
     # imgs will be stored at tasks/exps
+    old_skill2tasks = deepcopy(skill2tasks)
     skill2tasks = update_tasks(list(skill2tasks.keys()))
 
     for skill in skill2operators:
@@ -112,10 +164,11 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     if not log_data:
         log_data = {0:{'model': args.model, 'env': args.env}}
     time_step = max([int(key) for key in list(log_data.keys())]) + 1
-    log_data[time_step] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence}
+    log_data[time_step] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
 
     grounded_skill_dictionary = skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary)
     grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
+    replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
 
     return log_data, skill2operators, skill2tasks, pred_dict, grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary
 
@@ -129,7 +182,7 @@ def main():
             # load from log file
             log_data = load_from_file(args.load_fpath)
             last_run_num = max([key for key in log_data.keys() if key.isdigit()])
-            skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"]
+            skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
 
         else:   
             # start from scratch

@@ -68,7 +68,7 @@ def GoTo(object_or_location_1, object_or_location_2, controller, event):
                  'CoffeeTable': {'x': -0.3915063440799713, 'y': 0.9070531129837036, 'z': 2.458493709564209}}
     for loc in pose_dict:
         if object_or_location_1 == loc and dist_pose(event.metadata['agent']['position'], pose_dict[loc]) > 0.1: # cannot start at a place far away
-            breakpoint()
+            # breakpoint()
             return False, event
 
     obj = [obj for obj in metadata["objects"] if object_or_location_2 in obj['objectId']][0]
@@ -244,7 +244,7 @@ def PickUp(object, location, controller, event):
                 )
                 event = controller.step('MoveArmBase', y = 0.3)
 
-            controller.step(action="SetHandSphereRadius", radius=0.1)
+            controller.step(action="SetHandSphereRadius", radius=0.08)
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
             position = deepcopy(obj["position"])
             # if "Book" in object:
@@ -277,7 +277,7 @@ def PickUp(object, location, controller, event):
             elif "TissueBox" in object:
                 event = controller.step(
                     action='MoveArm',
-                    position=dict(x=0, y=0, z=-0.15),
+                    position=dict(x=-0.03, y=0.02, z=-0.08),
                     coordinateSpace='wrist',
                     speed=1,
                     returnToStart=False
@@ -286,7 +286,7 @@ def PickUp(object, location, controller, event):
             elif "Bowl" in object:
                 event = controller.step(
                     action='MoveArm',
-                    position=dict(x=0.05, y=0, z=-0.1),
+                    position=dict(x=0.05, y=0, z=-0.12),
                     coordinateSpace='wrist',
                     speed=1,
                     returnToStart=False
