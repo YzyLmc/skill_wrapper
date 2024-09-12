@@ -323,6 +323,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                     new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
                     if new_p_not_goto not in pred_dict:
                         pred_dict[new_p_not_goto] = {'task': {}}
+                        pred_dict[new_p_not_goto]['semantic'] = sem
                     breakpoint()
                 for s in skill2tasks:  
                     for idx, task in skill2tasks[s].items():
@@ -382,6 +383,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                     new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
                     if new_p_not_goto not in pred_dict:
                         pred_dict[new_p_not_goto] = {'task': {}}
+                        pred_dict[new_p_not_goto]['semantic'] = sem
                     breakpoint()
                 pred_dict[new_p] = {'task': {}}
                 for s in skill2tasks:
@@ -461,6 +463,14 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
+    def f1_score(pred, skill, skill2tasks, pred_dict):
+        "f1 score of a predicate as one skill's precondition"
+        tasks = skill2tasks[skill]
+        success_tasks = [id for id, t in tasks.items() if t['success']]
+        fail_tasks = [t for t in tasks if not t['success']]
+        for t_suc in success_tasks:
+            tp = [p for p in pred_dict if pred_dict[p]['task'][t][0] == True]
+
     all_precond = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
     all_precond = set(list(itertools.chain(*all_precond)))
 
