@@ -18,6 +18,7 @@ import copy
 from copy import deepcopy
 import itertools
 from PIL import Image
+from retrying import retry
 
 # OpenAI API Key
 api_key=os.getenv("OPENAI_API_KEY")
@@ -106,7 +107,7 @@ class GPT4:
         self.max_tokens = max_tokens
         self.n = n
         self.stop = stop
-
+    # @retry(wait_fixed=15000, stop_max_attempt_number=5)
     def generate(self, query_prompt):
         '''query_prompt: query with task description and in-contex examples splited with \n\n'''
         complete = False
@@ -123,8 +124,8 @@ class GPT4:
                 max_tokens=self.max_tokens)
                 complete = True
             except:
-                sleep(30)
-                logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                sleep(10)
+                logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
                 # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
                 logging.info("OK continue")
                 ntries += 1
@@ -134,6 +135,7 @@ class GPT4:
             responses = [choice["message"]["content"].strip() for choice in raw_responses.choices]
         return responses
     
+    # @retry(wait_fixed=15000, stop_max_attempt_number=5)
     def generate_multimodal(self, query_prompt, imgs, max_tokens=500):
         '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
@@ -166,11 +168,13 @@ class GPT4:
             try:
                 raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
                 complete = True
-            except:
-                sleep(30)
-                print(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                sleep(0.2)
+            except Exception as e:
+                print(e)
+                sleep(10)
+                print(f"{ntries}: waiting for the server. sleep for 10 sec...")
                 print(f"The prompt right now is:\n\n{query_prompt}")
-                logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...")
+                logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
                 logging.info(f"The prompt right now is:\n\n{query_prompt}")
                 # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
                 logging.info("OK continue")

@@ -61,11 +61,15 @@ def GoTo(object_or_location_1, object_or_location_2, controller, event):
         return False, event
     
     metadata = event.metadata
-    start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
+    # start = [obj for obj in metadata["objects"] if object_or_location_1 in obj['objectId']][0]
     event = controller.step('Pass')
-    success = dist_pose(event.metadata['agent']['position'], start['position']) < 2 # cannot start at a place far away
-    if not success:
-        return success, event
+    pose_dict = {'Sofa': {'x': -0.1749999225139618, 'y': 0.9070531129837036, 'z': 3.083493709564209},
+                 'DiningTable': {'x': -4.324999809265137, 'y': 0.9070531129837036, 'z': 0.5165063142776489},
+                 'CoffeeTable': {'x': -0.3915063440799713, 'y': 0.9070531129837036, 'z': 2.458493709564209}}
+    for loc in pose_dict:
+        if object_or_location_1 == loc and dist_pose(event.metadata['agent']['position'], pose_dict[loc]) > 0.1: # cannot start at a place far away
+            breakpoint()
+            return False, event
 
     obj = [obj for obj in metadata["objects"] if object_or_location_2 in obj['objectId']][0]
     try:
@@ -93,6 +97,15 @@ def GoTo(object_or_location_1, object_or_location_2, controller, event):
             rotation = dining_table_pose['rotation'],
             horizon = int(dining_table_pose['cameraHorizon']),
             standing = dining_table_pose['isStanding']
+        )
+    elif "CoffeeTable" in object_or_location_2:
+        coffee_table_pose = {'name': 'agent', 'position': {'x': -0.3915063440799713, 'y': 0.9070531129837036, 'z': 2.458493709564209}, 'rotation': {'x': -0.0, 'y': 90.0, 'z': 0.0}, 'cameraHorizon': 30.000003814697266, 'isStanding': True, 'inHighFrictionArea': False}
+        controller.step(
+            action = 'Teleport',
+            position = coffee_table_pose['position'],
+            rotation = coffee_table_pose['rotation'],
+            horizon = int(coffee_table_pose['cameraHorizon']),
+            standing = coffee_table_pose['isStanding']
         )
     else:
         # obj_names = [obj['objectId'] for obj in metadata["objects"]]
@@ -198,7 +211,7 @@ def PickUp(object, location, controller, event):
     try:
         for _ in range(2):
             metadata = event.metadata
-            if metadata['arm']['heldObjects']:
+            if metadata['arm']['heldObjects'] and _ == 0:
                 return False, event
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
             try:
@@ -219,6 +232,18 @@ def PickUp(object, location, controller, event):
                 )
                 event = controller.step('MoveArmBase', y = 0.2)
 
+            elif 'CoffeeTable' in receptacle:
+                agent_pose = metadata['agent']
+                # sofa_pose = {'name': 'agent', 'position': agent_pose['position'], 'rotation': agent_pose['rotation'], 'cameraHorizon': , 'isStanding': True, 'inHighFrictionArea': False}
+                controller.step(
+                    action = 'Teleport',
+                    position = agent_pose['position'],
+                    rotation = agent_pose['rotation'],
+                    horizon = int(agent_pose['cameraHorizon']),
+                    standing = True
+                )
+                event = controller.step('MoveArmBase', y = 0.3)
+
             controller.step(action="SetHandSphereRadius", radius=0.1)
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
             position = deepcopy(obj["position"])
@@ -234,7 +259,7 @@ def PickUp(object, location, controller, event):
             if "Book" in object:
                 event = controller.step(
                     action='MoveArm',
-                    position=dict(x=0.1, y=0, z=-0.2),
+                    position=dict(x=0.15, y=0, z=-0.2),
                     coordinateSpace='wrist',
                     speed=1,
                     returnToStart=False
@@ -243,7 +268,7 @@ def PickUp(object, location, controller, event):
             elif "Vase" in object:
                 event = controller.step(
                     action='MoveArm',
-                    position=dict(x=0, y=0, z=-0.05),
+                    position=dict(x=0, y=0.15, z=-0.1),
                     coordinateSpace='wrist',
                     speed=1,
                     returnToStart=False
@@ -266,7 +291,7 @@ def PickUp(object, location, controller, event):
                     speed=1,
                     returnToStart=False
                 )
-
+            # if _ == 1:
             event = controller.step(
                 action="PickupObject",
                 objectIdCandidates=[obj['objectId']],
@@ -307,7 +332,7 @@ def PickUp(object, location, controller, event):
                 )
             event = controller.step('Done')
 
-        success = True if obj["objectId"] in event.metadata['arm']['heldObjects'] else False
+        success = True if obj["objectId"] in event.metadata['arm']['heldObjects'][0] else False
         return success, event
     except:
         return False, event
@@ -340,14 +365,21 @@ def DropAt(object, location, controller, event):
         if "DiningTable" in location:
             event = controller.step(
                 "MoveArm",
-                position=dict(x=-0.2,y=0,z=0.45),
+                position=dict(x=-0.2,y=-0.2,z=0.45),
+                coordinateSpace="armBase",
+                returnToStart=False
+            )
+        elif "CoffeeTable" in location:
+            event = controller.step(
+                "MoveArm",
+                position=dict(x=-0.3,y=-0.25,z=0.5),
                 coordinateSpace="armBase",
                 returnToStart=False
             )
         elif "Sofa" in location:
             event = controller.step(
                 "MoveArm",
-                position=dict(x=0,y=-0.5,z=0.4),
+                position=dict(x=0,y=-0.5,z=0.45),
                 coordinateSpace="armBase",
                 returnToStart=False
             )
@@ -376,6 +408,16 @@ def DropAt(object, location, controller, event):
         success = True if location in receptacle else False
         return success, event
     except:
+        controller.step(
+            action="MoveArm",
+            position=dict(x=0, y=0, z=0.4),
+            coordinateSpace="armBase",
+            restrictMovement=False,
+            speed=1,
+            fixedDeltaTime=0.02
+        )
+        event = controller.step(action="SetHandSphereRadius", radius=0.04)
+        event = No_op(controller)
         return False, event
 
 # not for the workshop. Too tricky to implement

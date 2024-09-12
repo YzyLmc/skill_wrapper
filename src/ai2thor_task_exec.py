@@ -59,7 +59,7 @@ controller = Controller(
                 fieldOfView=90
             )
 event = controller.reset(scene="FloorPlan203", fieldOfView=100)
-controller.step(action="SetHandSphereRadius", radius=0.15)
+controller.step(action="SetHandSphereRadius", radius=0.04)
 sofa_pose = {'name': 'agent', 'position': {'x': -0.1749999225139618, 'y': 0.9070531129837036, 'z': 3.083493709564209}, 'rotation': {'x': -0.0, 'y': 270.0, 'z': 0.0}, 'cameraHorizon': 30.00001525878906, 'isStanding': True, 'inHighFrictionArea': False}
 controller.step(
             action = 'Teleport',
@@ -81,8 +81,15 @@ for obj in [obj for obj in event.metadata["objects"] if 'Plate' in obj['objectId
 for obj in [obj for obj in event.metadata["objects"] if 'CellPhone' in obj['objectId']]:
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
+for obj in [obj for obj in event.metadata["objects"] if 'Watch' in obj['objectId']]:
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
 for obj in [obj for obj in event.metadata["objects"] if 'RemoteControl' in obj['objectId']]:
     remote = deepcopy(obj)
+    event = controller.step('RemoveFromScene', objectId=obj["objectId"])
+
+for obj in [obj for obj in event.metadata["objects"] if 'Laptop' in obj['objectId']]:
+    laptop = deepcopy(obj)
     event = controller.step('RemoveFromScene', objectId=obj["objectId"])
 
 poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Book" in obj['name']]
@@ -98,17 +105,21 @@ obj = remote
 poses.append({'objectName':obj_replace_with['name'], "position":{'x': obj['position']['x'] + 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.4}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
+poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if "Vase" not in obj['name']]
+replace_with = 'Vase'# replace laptop
+obj_replace_with = [obj for obj in event.metadata["objects"] if "Vase" in obj['objectId']][0]
+obj = laptop
+poses.append({'objectName':obj_replace_with['name'], "position":{'x': obj['position']['x'] + 0.2, 'y': obj['position']['y'], 'z': obj['position']['z']-0.4}})
+event = controller.step('SetObjectPoses',objectPoses = poses)
+
 poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Bowl" in obj['name']]
 object = "Bowl"
 obj = [obj for obj in event.metadata["objects"] if "Bowl" in obj['objectId']][0]
-poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
+poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] + 0.3, 'y': obj['position']['y'], 'z': obj['position']['z'] + 0.3}})
 event = controller.step('SetObjectPoses',objectPoses = poses)
 
-poses = [{'objectName':obj['name'], "position":obj['position'], "rotation": obj['rotation']} for obj in event.metadata['objects'] if not "Vase" in obj['name']]
-object = "Vase"
-obj = [obj for obj in event.metadata["objects"] if "Vase" in obj['objectId']][0]
-poses.append({'objectName':obj['name'], "position":{'x': obj['position']['x'] - 0.1, 'y': obj['position']['y'], 'z': obj['position']['z']}})
-event = controller.step('SetObjectPoses',objectPoses = poses)
+suc, event = GoTo('Sofa', 'DiningTable', controller, event)
+suc, event = GoTo('DiningTable', 'Sofa', controller, event)
 '''
     # commands = task.splitlines()
     commands = task

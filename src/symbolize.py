@@ -21,98 +21,131 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
 def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
     '''
     Evaluate one predicate given one image.
-    If skill or predicate takes variables they should contain [OBJ] [LOC_1]or [LOC_2] in the input.
-    GoTo(loc_1, loc_2) will be evaluated differently since the arguments are different. 
+    If skill or predicate takes variables they should contain [OBJ] [LOC] [LOC_1]or [LOC_2] in the input.
+    For all mismatch arguments, output false.
+
+    Obsoleted: --- GoTo(loc_1, loc_2) will be evaluated differently since the arguments are different. 
     Empty string '' means no argument
     '''
-    def construct_prompt(prompt, skill, pred, obj, loc):
-        if 'GoTo' not in skill: # pickup or dropat
-            if '[LOC_1]' in pred or '[LOC_2]' in pred: # convert goto pred to pickup and dropat
-                if not ('[LOC_1]' in pred and '[LOC_2]' in pred):
-                    # e.g., At([LOC_1]),  At([LOC_2])
-                    pred = pred.replace('[LOC_1]', loc)
-                    pred = pred.replace('[LOC_2]', loc)
-                else: # both [LOC_1] and [LOC_2] are in the prompt
-                    # e.g. clearPath([LOC_1], [LOC_2]), N/A
-                    # always return one value so if 50% success and 50% fail this pred will not be added to precond or eff
-                    return None
+    # def construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2):
+    #     if 'GoTo' not in skill: # pickup or dropat
+    #         if '[LOC_1]' in pred or '[LOC_2]' in pred: # convert goto pred to pickup and dropat
+    #             if not ('[LOC_1]' in pred and '[LOC_2]' in pred):
+    #                 # e.g., At([LOC_1]),  At([LOC_2])
+    #                 pred = pred.replace('[LOC_1]', loc)
+    #                 pred = pred.replace('[LOC_2]', loc)
+    #             else: # both [LOC_1] and [LOC_2] are in the prompt
+    #                 # e.g. clearPath([LOC_1], [LOC_2]), N/A
+    #                 # always return one value so if 50% success and 50% fail this pred will not be added to precond or eff
+    #                 return None
                 
-            else: # pickup and dropat pred, or not argument
-                while "[OBJ]" in pred or "[LOC]" in pred:
-                    pred = pred.replace("[OBJ]", obj)
-                    pred = pred.replace("[LOC]", loc)
+    #         else: # pickup and dropat pred, or not argument
+    #             while "[OBJ]" in pred or "[LOC]" in pred:
+    #                 pred = pred.replace("[OBJ]", obj)
+    #                 pred = pred.replace("[LOC]", loc)
 
-            while "[LOC]" in skill or "[OBJ]" in skill:
-                skill = skill.replace("[LOC]", loc)
-                skill = skill.replace("[OBJ]", obj)
-        else:
-            assert 'GoTo' in skill
-            if ('[LOC_1]' in pred or '[LOC_2]' in pred): # GoTo pred
-                # e.g., At([LOC_1]),  At([LOC_2])
-                # e.g. clearPath([LOC_1], [LOC_2])
-                pred = pred.replace('[LOC_1]', loc_1)
-                pred = pred.replace('[LOC_2]', loc_2)
-            else: # pickup and drop at on goto
-                # first determine the type of the arguments are loc or obj
-                # goto might have 2 obj, 1 obj 1 loc, or 2 loc
-                # pred might have 0 arg, 1 obj, 1 loc, 1 obj and 1 loc
-                goto_obj_num = len([obj for obj in obj_ls if obj in [loc_1, loc_2]])
-                goto_loc_num = len([obj for obj in loc_ls if obj in [loc_1, loc_2]])
-                pred_obj_num = 1 if '[OBJ]' in pred else 0
-                pred_loc_num = 1 if '[LOC]' in pred else 0
-                if pred_obj_num + pred_loc_num == 0:
-                    pass
-                elif pred_obj_num == 1 and pred_loc_num == 0:
-                    if (goto_obj_num == 2 and goto_loc_num == 0):
-                        if loc_2 in obj_ls:
-                            while "[OBJ]" in pred:
-                                pred = pred.replace("[OBJ]", loc_2)
-                        else:
-                            return None
-                    elif goto_obj_num == 0 and goto_loc_num== 2:
-                        return None
-                    elif goto_obj_num == 1 and goto_loc_num == 1:
-                        obj = loc_1 if loc_1 in obj_ls else loc_2
-                        while "[OBJ]" in pred:
-                            pred = pred.replace("[OBJ]", obj)
-                elif pred_obj_num == 0 and pred_loc_num == 1:
-                    if goto_obj_num == 2 and goto_loc_num == 0:
-                        return None
-                    elif goto_obj_num == 0 and goto_loc_num== 2:
-                        if loc_2 in loc_ls:
-                            while "[LOC]" in pred:
-                                pred = pred.replace("[LOC]", loc_2)
-                        else:
-                            return None
-                    elif goto_obj_num == 1 and goto_loc_num == 1:
-                        loc = loc_1 if loc_1 in loc_ls else loc_2
-                        while "[LOC]" in pred:
-                            pred = pred.replace("[LOC]", loc)
-                elif pred_obj_num == 1 and pred_loc_num == 1:
-                    if (goto_obj_num == 2 and goto_loc_num == 0) or (goto_obj_num == 0 and goto_loc_num== 0):
-                        return None
-                    elif goto_obj_num == 1 and goto_loc_num == 1:
-                        obj = loc_1 if loc_1 in obj_ls else loc_2
-                        loc = loc_1 if loc_1 in loc_ls else loc_2
-                        while "[LOC]" in pred or '[OBJ]' in pred:
-                            # breakpoint()
-                            pred = pred.replace("[OBJ]", obj)
-                            pred = pred.replace("[LOC]", loc)
+    #         while "[LOC]" in skill or "[OBJ]" in skill:
+    #             skill = skill.replace("[LOC]", loc)
+    #             skill = skill.replace("[OBJ]", obj)
+    #     else:
+    #         assert 'GoTo' in skill
+    #         if ('[LOC_1]' in pred or '[LOC_2]' in pred): # GoTo pred
+    #             # e.g., At([LOC_1]),  At([LOC_2])
+    #             # e.g. clearPath([LOC_1], [LOC_2])
+    #             pred = pred.replace('[LOC_1]', loc_1)
+    #             pred = pred.replace('[LOC_2]', loc_2)
+    #         else: # pickup and drop at on goto
+    #             # first determine the type of the arguments are loc or obj
+    #             # goto might have 2 obj, 1 obj 1 loc, or 2 loc
+    #             # pred might have 0 arg, 1 obj, 1 loc, 1 obj and 1 loc
+    #             goto_obj_num = len([obj for obj in obj_ls if obj in [loc_1, loc_2]])
+    #             goto_loc_num = len([obj for obj in loc_ls if obj in [loc_1, loc_2]])
+    #             pred_obj_num = 1 if '[OBJ]' in pred else 0
+    #             pred_loc_num = 1 if '[LOC]' in pred else 0
+    #             if pred_obj_num + pred_loc_num == 0:
+    #                 pass
+    #             elif pred_obj_num == 1 and pred_loc_num == 0:
+    #                 if (goto_obj_num == 2 and goto_loc_num == 0):
+    #                     if loc_2 in obj_ls:
+    #                         while "[OBJ]" in pred:
+    #                             pred = pred.replace("[OBJ]", loc_2)
+    #                     else:
+    #                         return None
+    #                 elif goto_obj_num == 0 and goto_loc_num== 2:
+    #                     return None
+    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
+    #                     obj = loc_1 if loc_1 in obj_ls else loc_2
+    #                     while "[OBJ]" in pred:
+    #                         pred = pred.replace("[OBJ]", obj)
+    #             elif pred_obj_num == 0 and pred_loc_num == 1:
+    #                 if goto_obj_num == 2 and goto_loc_num == 0:
+    #                     return None
+    #                 elif goto_obj_num == 0 and goto_loc_num== 2:
+    #                     if loc_2 in loc_ls:
+    #                         while "[LOC]" in pred:
+    #                             pred = pred.replace("[LOC]", loc_2)
+    #                     else:
+    #                         return None
+    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
+    #                     loc = loc_1 if loc_1 in loc_ls else loc_2
+    #                     while "[LOC]" in pred:
+    #                         pred = pred.replace("[LOC]", loc)
+    #             elif pred_obj_num == 1 and pred_loc_num == 1:
+    #                 if (goto_obj_num == 2 and goto_loc_num == 0) or (goto_obj_num == 0 and goto_loc_num== 0):
+    #                     return None
+    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
+    #                     obj = loc_1 if loc_1 in obj_ls else loc_2
+    #                     loc = loc_1 if loc_1 in loc_ls else loc_2
+    #                     while "[LOC]" in pred or '[OBJ]' in pred:
+    #                         # breakpoint()
+    #                         pred = pred.replace("[OBJ]", obj)
+    #                         pred = pred.replace("[LOC]", loc)
+    #         while "[LOC_1]" in skill or "[LOC_2]" in skill:
+    #             skill = skill.replace("[LOC_1]", loc_1)
+    #             skill = skill.replace("[LOC_2]", loc_2)
+    #     while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in prompt:
+    #         prompt = prompt.replace("[PRED]", pred)
+    #         prompt = prompt.replace("[SKILL]", skill)
+    #         prompt = prompt.replace("[SEMANTIC]", sem)
+    #     return prompt
+
+    def construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2):
+        arg_vec = [int('[OBJ]' in  pred) + int('[OBJ]' in  skill), 
+                   int('[LOC]' in  pred) + int('[LOC]' in  skill), 
+                   int('[LOC_1]' in  pred) + int('[LOC_1]' in  skill), 
+                   int('[LOC_2]' in  pred) + int('[LOC_2]' in  skill)]
+        # breakpoint()
+        if sum(arg_vec[:2]) > 0 and sum(arg_vec[2:]) > 0:
+            return None
+        
+        elif sum(arg_vec[:2]) > 0:
+            while "[OBJ]" in pred or "[LOC]" in pred:
+                pred = pred.replace("[OBJ]", obj).replace("[LOC]", loc)
+            while "[OBJ]" in skill or "[LOC]" in skill:
+                skill = skill.replace("[OBJ]", obj).replace("[LOC]", loc)
+
+        elif sum(arg_vec[2:]) > 0:
+            while "[LOC_1]" in pred or "[LOC_2]" in pred:
+                pred = pred.replace("[LOC_1]", loc_1).replace("[LOC_2]", loc_2)
             while "[LOC_1]" in skill or "[LOC_2]" in skill:
-                skill = skill.replace("[LOC_1]", loc_1)
-                skill = skill.replace("[LOC_2]", loc_2)
+                skill = skill.replace("[LOC_1]", loc_1).replace("[LOC_2]", loc_2)
+
         while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in prompt:
             prompt = prompt.replace("[PRED]", pred)
             prompt = prompt.replace("[SKILL]", skill)
             prompt = prompt.replace("[SEMANTIC]", sem)
+
         return prompt
+
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, skill, pred, obj, loc)
+    prompt = construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2)
     print(f'Evaluating predicate {pred} on skill {skill} with arguments {obj} {loc} {loc_1} {loc_2}')
     if prompt:
+        print('Calling GPT4')
         resp = model.generate_multimodal(prompt, img)[0]
         return True if "True" in resp.split('\n')[-1] else False
     else:
+        print(f"mismatch skill and predicate: return False\n{skill} / {pred}")
         return False
 
 def eval_pred_set(model, skill, pred2sem, obj, loc,loc_1, loc_2, img):
@@ -262,25 +295,45 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
     new_p_added = False
     # breakpoint()
-
+    print("About to enter precondition refinement")
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['precond'].keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
         print('new predicate', new_p, sem)
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
         print('new predicate truth value', new_p_mismatch)
         if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
+            print('Entering #1 if')
             skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
             print(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
                 pred_dict[new_p] = {'task': {}}
-                for s in skill2tasks:
+                if ('[LOC]' in new_p) and ('[OBJ]' not in new_p):
+                    new_p_goto_1 = new_p.replace('[LOC]', '[LOC_1]')
+                    new_p_goto_2 = new_p.replace('[LOC]', '[LOC_2]')
+                    if new_p_goto_1 not in pred_dict:
+                        pred_dict[new_p_goto_1] = {'task': {}}
+                        pred_dict[new_p_goto_1]['semantic'] = sem
+                    if new_p_goto_2 not in pred_dict:
+                        pred_dict[new_p_goto_2] = {'task': {}}
+                        pred_dict[new_p_goto_2]['semantic'] = sem
+                    breakpoint()
+                elif ('[LOC_1]' in new_p) != ('[LOC_2]' in new_p): # only one loc in new predicate
+                    new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
+                    if new_p_not_goto not in pred_dict:
+                        pred_dict[new_p_not_goto] = {'task': {}}
+                    breakpoint()
+                for s in skill2tasks:  
                     for idx, task in skill2tasks[s].items():
-                         if idx not in new_p_mismatch:
+                        if idx not in new_p_mismatch:
+                                print('Evaluating for precond')
                                 pred_dict[new_p]['task'][idx] = [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])]
                 for new_p_id in new_p_mismatch:
                     pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
+
+
+
             print(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
@@ -294,7 +347,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     # check effect
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-    # breakpoint()
+    print("About to enter effect refinement")
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         print('new predicate', new_p, sem)
@@ -307,12 +360,29 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
         s_2_2 = new_p_mismatch[mismatch_tasks[skill][1]][1]
         success_task = mismatch_tasks[skill][0] if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == True else mismatch_tasks[skill][1]
         state_change_success = int(new_p_mismatch[success_task][1]==True) - int(new_p_mismatch[success_task][0]==True)
+        print('Before Entering #2 if for eff')
         # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
         if (int(s_1_2==True) - int(s_1_1==True) != int(s_2_2==True) - int(s_2_1==True)) and state_change_success != 0:
+            
             skill2operators[skill]['eff'][new_p] = state_change_success
             print(f"Predicate {new_p} added to effect with truth value {skill2operators[skill]['eff'][new_p]}")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
+                if ('[LOC]' in new_p) and ('[OBJ]' not in new_p):
+                    new_p_goto_1 = new_p.replace('[LOC]', '[LOC_1]')
+                    new_p_goto_2 = new_p.replace('[LOC]', '[LOC_2]')
+                    if new_p_goto_1 not in pred_dict:
+                        pred_dict[new_p_goto_1] = {'task': {}}
+                        pred_dict[new_p_goto_1]['semantic'] = sem
+                    if new_p_goto_2 not in pred_dict:
+                        pred_dict[new_p_goto_2] = {'task': {}}
+                        pred_dict[new_p_goto_2]['semantic'] = sem
+                    breakpoint()
+                elif ('[LOC_1]' in new_p) != ('[LOC_2]' in new_p): # only one loc in new predicate
+                    new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
+                    if new_p_not_goto not in pred_dict:
+                        pred_dict[new_p_not_goto] = {'task': {}}
+                    breakpoint()
                 pred_dict[new_p] = {'task': {}}
                 for s in skill2tasks:
                     for idx, task in skill2tasks[s].items():
@@ -383,7 +453,7 @@ def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/pre
                     unified_skill2operator[skill][pred_type][pred] = skill2operator[skill][pred_type][pred]
     return unified_skill2operator, equal_preds
 
-def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.7):
+def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, threshold=0.4):
     '''
     Assign precondtions of all skills to effect of each skill
     There should be a threshold for cross assignment, either if higher than it or lower than -1*threshold will be added
@@ -405,7 +475,14 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.7):
                 if not state_pair_all: # if no success case for the skill
                     continue
                 acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
-                acc = sum(acc_ls)/len(acc_ls)
+                total_num = len(acc_ls)
+                for ps in equal_preds:
+                    if pred in ps:
+                        for p in ps:
+                            state_pair_all = [pred_dict[p]['task'][id] for id, t in tasks.items() if t['success']]
+                            acc_ls += state_pair_all
+                            total_num += len(state_pair_all)
+                acc = sum(acc_ls)/total_num
                 print(skill, pred, acc, state_pair_all)
                 # breakpoint()
                 if acc > threshold:
@@ -439,30 +516,30 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, threshold=0.7):
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
-    # test predicate evaluation function
-    # pred = 'handEmpty()'
-    # pred = 'IsObjectReachable([OBJ], [LOC])'
-    # pred = 'is_held([OBJ])'
-    # pred = 'isPathClear([LOC_1], [LOC_2])'
+    # # test predicate evaluation function
+    # # pred = 'handEmpty()'
+    # # pred = 'IsObjectReachable([OBJ], [LOC])'
+    # # pred = 'is_held([OBJ])'
+    # # pred = 'isPathClear([LOC_1], [LOC_2])'
     # pred = 'At([LOC_1])'
-    # pred = 'at([LOC])'
-    pred = 'at([OBJ])'
-    skill = 'PickUp([OBJ], [LOC])'
-    # skill = 'GoTo([LOC_1], [LOC_2])'
-    # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
-    # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
-    sem = "return true if the agent is near the location else false."
-    # obj = 'KeyChain'
-    obj = 'Book'
-    loc = 'DiningTable'
-    loc_1 = 'Sofa'
-    loc_2 = 'DiningTable'
-    loc_2 = 'Book'
-    img = ['Before_PickUp_2.jpg']
-    # img = ['test_new.jpg']
-    response = eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img)
-    print(response)
-    breakpoint()
+    # # pred = 'at([LOC])'
+    # # pred = 'at([OBJ])'
+    # skill = 'PickUp([OBJ], [LOC])'
+    # # skill = 'GoTo([LOC_1], [LOC_2])'
+    # # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
+    # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
+    # sem = "return true if the agent is near the location else false."
+    # # obj = 'KeyChain'
+    # obj = 'Book'
+    # loc = 'DiningTable'
+    # loc_1 = 'Sofa'
+    # # loc_2 = 'DiningTable'
+    # loc_2 = 'Book'
+    # img = ['Before_PickUp_2.jpg']
+    # # img = ['test_new.jpg']
+    # response = eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img)
+    # print(response)
+    # breakpoint()
 
     # test predicate proposing for refining
 
@@ -684,32 +761,40 @@ if __name__ == '__main__':
     # goto will have no change because all tasks succeeded
     # but pred_dict is updated
     skill = 'GoTo([LOC_1], [LOC_2])'
-    skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
-    print(skill2operators, '\n\n', pred_dict)
+    # skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict)
+    # print(skill2operators, '\n\n', pred_dict)
 
-    breakpoint()
+    # breakpoint()
 
     # merge before
     # unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
     # print(unified_skill2operator, '\n\n', equal_preds)
 
-    # unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+    unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
 
     # # reassign
-    skill2operators = cross_assignment(skill2operators, skill2tasks, pred_dict, threshold=0.5)
-    print(skill2operators)
+    # skill2operators = cross_assignment(skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds, threshold=0.45)
+    # print(skill2operators)
     # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 
     #                    'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 
     #                    'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
     skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
                        'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
                        'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {'is_at([OBJ], [LOC])': 1}}}
+    # breakpoint()
+
+    # # # merge after
+    # unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+    # print(unified_skill2operator, '\n\n', equal_preds)
+
+    # unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
+    #                           'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
+    #                           'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 
+
+    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {}}, 'DropAt([OBJ], [LOC])': {'precond': {'isHolding([OBJ])': True}, 'eff': {}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+    skill2tasks = {'DropAt([OBJ], [LOC])': {'DropAt_Vase_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Vase_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Vase_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Vase', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_CoffeeTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_CoffeeTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'CoffeeTable', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}, 'GoTo_CoffeeTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_CoffeeTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_CoffeeTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'CoffeeTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}}, 'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Vase_CoffeeTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Vase', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}}
+    pred_dict = {'isHolding([OBJ])': {'task': {'GoTo_DiningTable_CoffeeTable_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'GoTo_CoffeeTable_Sofa_True_1': [False, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Vase_CoffeeTable_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, True], 'DropAt_Bowl_CoffeeTable_True_1': [True, False], 'DropAt_Vase_DiningTable_False_1': [False, False]}, 'semantic': 'The robot is currently holding the object.'}}
+    merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+    assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
+    print(assigned_skill2operators)
     breakpoint()
-
-    # # merge after
-    unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
-    print(unified_skill2operator, '\n\n', equal_preds)
-
-    unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
-                              'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
-                              'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 

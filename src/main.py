@@ -78,18 +78,24 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
     # new_predicate_dictionary, new_skill_dictionary, new_object_list, new_replay_buffer
-    # won't update buffer since the scoring functions is abandoned
     chosen_skill_sequence = None
     t = 0
-    while not chosen_skill_sequence and t < 10:
+    task_success = False
+    while t < 10 and not task_success:
         chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
         t += 1
-    print('Task:', chosen_skill_sequence)
-    generated_code = convert_task_to_code(chosen_skill_sequence)
+        print('Task:', chosen_skill_sequence)
+        try:
+            generated_code = convert_task_to_code(chosen_skill_sequence)
+            task_success = True
+        except:
+            pass
+
     # breakpoint()
     local_scope = {}
     global_scope = {}
     exec(generated_code, global_scope, local_scope)
+    replay_buffer['skill'] = chosen_task
 
     if args.step_by_step:
             print('Task done. You should check the images labels')
@@ -132,7 +138,7 @@ def main():
             grounded_skill_dictionary = {
                 'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
                 'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
-                'GoTo(init, goal)': {'arguments': {'init': "the object name or location for the robot to start from", 'to': "the object name or location for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
+                'GoTo(init, goal)': {'arguments': {'init': "the location for the robot to start from", 'to': "the location for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
             }
             
             # init skill to operators
@@ -153,8 +159,8 @@ def main():
         curr_observation_path = []
         # init task proposing system
         replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[]}
-        objects_in_scene = ['Book', 'Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa']
-        env_description = 'Book, Vase, and Bowl are on the DiningTable, and Tissue is on the Sofa. Robot is at the Sofa initially. Book, Vase, TissueBox, and Bowl are objects, and Sofa and DiningTable are locations. Sofa and DiningTable are large so even if you are nearby them you might not be able to pick up certain object from them.'
+        objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
+        env_description = 'Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially.'
         task_proposing = TaskProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=8*args.num_iter, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
         
         counter = 1
@@ -176,24 +182,28 @@ def main():
                         breakpoint()
                 except:
                     breakpoint()
-            print(f"iteration #{i} is done")
+            print(f"iteration #{i+1} is done")
             print(f"current operators:{skill2operators}")
-            print(f"result has been saved to {log_save_path}")
+            save_to_file(log_data, log_save_path)
             print(f"result has been saved to {log_save_path}")
 
             if args.step_by_step:
                 print('about to cross assign and merge')
                 breakpoint()
 
-            # save
-            assigned_skill2operators = cross_assignment(skill2operators, skill2tasks, pred_dict)
-            log_data[i]['assigned_skill2operators'] = assigned_skill2operators
-            merged_skill2operators = merge_predicates(model, assigned_skill2operators, pred_dict)
-            log_data[i]['merged_skill2operators'] = merged_skill2operators
-            save_to_file(log_data, log_save_path)
-            print('Final operators this round:\n', merged_skill2operators[0])
-            print(f"result has been saved to {log_save_path}")
+            # try
+            try:
+                merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+                assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
 
+                log_data[i+1]['assigned_skill2operators'] = assigned_skill2operators
+                log_data[i+1]['merged_skill2operators'] = merged_skill2operators
+                save_to_file(log_data, log_save_path)
+                print('Final operators this round:\n', merged_skill2operators)
+                print(f"result has been saved to {log_save_path}")
+            except:
+                print('merge failed. Will continue next iteration. merge can be done later manually')
+                pass
             if args.step_by_step:
                 breakpoint()
 
