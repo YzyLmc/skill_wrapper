@@ -3,6 +3,7 @@
 import argparse
 import os
 from copy import deepcopy
+import logging
 
 from utils import GPT4, load_from_file, save_to_file
 from task_proposing import TaskProposing
@@ -135,6 +136,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
         chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
         t += 1
         print('Task:', chosen_skill_sequence)
+        logging.info(f'Task: {chosen_skill_sequence}')
         try:
             if len(chosen_skill_sequence) < 6:
                 continue
@@ -176,6 +178,28 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
 def main():
     # init parameters
     if args.env == "ai2thor":
+        # init logging
+        counter = 1
+        while True:
+            screenshot_path = f"{args.save_dir}/f'log_raw_results_{counter}.log'"
+            if not os.path.exists(screenshot_path):
+                break
+            counter += 1
+
+        logging.basicConfig(level=logging.INFO,
+                                format='%(message)s',
+                                handlers=[
+                                    logging.FileHandler(os.path.join(args.save_dir, f'log_raw_results_{counter}.log'), mode='w'),
+                                    logging.StreamHandler()
+                                ]
+            )
+        class NoHTTPFilter(logging.Filter):
+            def filter(self, record):
+                return not "HTTP" in record.getMessage()
+        logger = logging.getLogger()
+        logger.addFilter(NoHTTPFilter())
+        logging.getLogger('requests').setLevel(logging.CRITICAL)
+
         model = GPT4(engine=args.model)
         if args.continue_learning:
             assert args.load_fpath
@@ -235,9 +259,12 @@ def main():
                 except:
                     breakpoint()
             print(f"iteration #{i+1} is done")
+            logging.info(f"iteration #{i+1} is done")
             print(f"current operators:{skill2operators}")
+            logging.info(f"iteration #{i+1} is done")
             save_to_file(log_data, log_save_path)
             print(f"result has been saved to {log_save_path}")
+            logging.info(f"result has been saved to {log_save_path}")
 
             if args.step_by_step:
                 print('about to cross assign and merge')
@@ -253,6 +280,8 @@ def main():
                 save_to_file(log_data, log_save_path)
                 print('Final operators this round:\n', merged_skill2operators)
                 print(f"result has been saved to {log_save_path}")
+                logging.info('Final operators this round:\n', merged_skill2operators)
+                logging.info(f"result has been saved to {log_save_path}")
             except:
                 print('merge failed. Will continue next iteration. merge can be done later manually')
                 pass

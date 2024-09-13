@@ -678,9 +678,9 @@ class TaskProposing():
 
     def run_task_proposing(self, new_predicate_dictionary, new_skill_dictionary, new_object_list, new_replay_buffer, curr_observation_path):
 
-        if self.curr_skill_count > self.max_skill_count:
-            print('SKILL EXECUTION HAS REACHED LIMIT: curr_skill_count > max_skill_count')
-            return None, None
+        # if self.curr_skill_count > self.max_skill_count:
+        #     print('SKILL EXECUTION HAS REACHED LIMIT: curr_skill_count > max_skill_count')
+        #     return None, None
 
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
         self.update_predicate_dictionary(new_predicate_dictionary)
@@ -755,7 +755,7 @@ if __name__ == '__main__':
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['pick_up(Apple)','put_down(Apple,CounterTop)','walk_to(Fridge)','pick_up(Potato)','walk_to(Toaster)','put_down(Potato,Toaster)'], 'predicate_eval':[[0,1,0],[0,0,0],[1,0,0],[1,1,0],[0,0,0],[0,0,1]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa, Book)','PickUp(Book,DiningTable)','GoTo(Book, Sofa)','DropAt(Book, Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[[], [], [], [],[],[]]}
-    replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)'], 'predicate_eval':[[],[],[],[], []]}
+    replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)'], 'predicate_eval':[[1,0,1],[],[],[], []]}
     curr_observation_path = []
 
 

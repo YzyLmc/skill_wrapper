@@ -123,8 +123,11 @@ class GPT4:
                 stop=self.stop,
                 max_tokens=self.max_tokens)
                 complete = True
-            except:
+            except Exception as e:
+                print(f"Response content: {response.content}")
+                print(e)
                 sleep(10)
+                print(f"{ntries}: waiting for the server. sleep for 10 sec...")
                 logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
                 # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
                 logging.info("OK continue")

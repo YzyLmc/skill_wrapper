@@ -208,16 +208,19 @@ def PickUp(object, location, controller, event):
     object: str : name of the object
     '''
     # add try so will do nothing for unchainable tasks
+    metadata = event.metadata
+    obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
+    try:
+        receptacle = obj['parentReceptacles'][0]
+        if not location in receptacle:
+            return False, event
+    except:
+        receptacle = ''
+
     try:
         for _ in range(2):
-            metadata = event.metadata
             if metadata['arm']['heldObjects'] and _ == 0:
                 return False, event
-            obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
-            try:
-                receptacle = obj['parentReceptacles'][0]
-            except:
-                receptacle = ''
             print('receptacle', receptacle)
             # sofa is low so set standing to false
             if 'Sofa' in receptacle:
@@ -379,7 +382,7 @@ def DropAt(object, location, controller, event):
         elif "Sofa" in location:
             event = controller.step(
                 "MoveArm",
-                position=dict(x=0,y=-0.5,z=0.45),
+                position=dict(x=-0.2,y=-0.5,z=0.45),
                 coordinateSpace="armBase",
                 returnToStart=False
             )

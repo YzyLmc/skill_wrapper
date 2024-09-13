@@ -80,6 +80,72 @@ def init_env(controller):
     event = controller.step('SetObjectPoses',objectPoses = poses)
     return event, controller
 
-def eval_init_state(controller, skill_list):
-    
+def eval_init_state(controller, command_list):
+    'drive the agent to the init state for eval'
+    'command_list example: '
+    event, controller = init_env(controller)
+    for command in command_list:
+        executable_command = 
+        exec
     return event, controller
+
+
+    def sampler()
+    from itertools import product
+
+    # Define objects and locations
+    objects = ['a', 'b', 'c']
+    containers = ['A', 'B', 'C']
+
+    # Generate all possible states (robot location, object locations, robot holding state)
+    # States are tuples: (robot_location, object_a_location, object_b_location, object_c_location, holding)
+    states = []
+    for robot_loc, obj_a_loc, obj_b_loc, obj_c_loc in product(containers, containers + ['holding'], containers + ['holding'], containers + ['holding']):
+        # Ensure that at most one object is 'holding'
+        held_objects = [obj_a_loc == 'holding', obj_b_loc == 'holding', obj_c_loc == 'holding']
+        if sum(held_objects) <= 1:  # Only one object can be held at a time
+            if any(held_objects):  # If an object is being held, robot can't be 'hand_empty'
+                holding = 'holding'
+            else:
+                holding = 'hand_empty'
+            states.append((robot_loc, obj_a_loc, obj_b_loc, obj_c_loc, holding))
+
+    # Function to filter states based on predicates
+    def get_states_satisfying_predicates(at=None, at_obj=None, holding=None, hand_empty=None):
+        satisfying_states = []
+        
+        for state in states:
+            robot_loc, obj_a_loc, obj_b_loc, obj_c_loc, robot_holding = state
+
+            # Check At(loc)
+            if at and robot_loc != at:
+                continue
+
+            # Check AtObj(obj, loc)
+            if at_obj:
+                obj, loc = at_obj
+                if obj == 'a' and obj_a_loc != loc:
+                    continue
+                if obj == 'b' and obj_b_loc != loc:
+                    continue
+                if obj == 'c' and obj_c_loc != loc:
+                    continue
+
+            # Check Holding(obj)
+            if holding:
+                if robot_holding != 'holding' or (holding == 'a' and obj_a_loc != 'holding') or (holding == 'b' and obj_b_loc != 'holding') or (holding == 'c' and obj_c_loc != 'holding'):
+                    continue
+
+            # Check HandEmpty()
+            if hand_empty is not None and (hand_empty and robot_holding != 'hand_empty'):
+                continue
+
+            # If all checks pass, add the state
+            satisfying_states.append(state)
+
+        return satisfying_states
+
+    # # Example usage:
+    # # Find all states where the robot is at A, and is holding object 'a'
+    # example_states = get_states_satisfying_predicates(at='A', holding='a')
+    # print("Example states:", example_states)
