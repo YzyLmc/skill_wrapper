@@ -177,6 +177,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
             prompt = prompt.replace("[LOC_1]", "init")
             prompt = prompt.replace("[LOC_2]", "goal")
         return prompt
+    model = GPT4(engine='o1-preview')
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred_dict)
@@ -357,6 +358,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         logging.info(f"mismatch state for effect generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
+        logging.info(f"current predicates in effect set of skill {skill}:\n{list(skill2operators[skill]['eff'].keys())}")
         print('new predicate', new_p, sem)
         logging.info(f'new predicate {new_p}, {sem}')
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
@@ -469,69 +471,126 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
     Assign precondtions of all skills to effect of each skill
     
     success execution -> precond == True, eff == 1
-    precond == False , eff != 1 -> failed execution
+    precond == False , eff != 1 -> failed execution : ?for eff really? There's no gurantee on independent factor
 
     There should be a threshold for cross assignment, either if higher than it or lower than -1*threshold will be added
     skill2operator:: {skill_name:{precond:{str:Bool}, eff:{str:int}}}
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
-    def score(pred, skill, skill2tasks, pred_dict, type):
+    def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
         "score of a predicate as one skill's precondition"
         "type : {precond, eff}"
         tasks = skill2tasks[skill]
         success_tasks = [id for id, t in tasks.items() if t['success']]
         fail_tasks = [id for id, t in tasks.items() if not t['success']]
+        repeated = False
         if type == 'precond':
-            t, f = 0
-            for t_suc in success_tasks:
-                t += 1 if pred_dict[pred]['task'][t_suc][0] == True else 0
-            tscore = t/len(success_tasks)
-
-            for t_fail in tasks:
-                f_n += 1 if pred_dict[pred]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
-                f_d += 1 if pred_dict[pred]['task'][t_fail][0] == False else 0
+            t_p, t_d, f_n, f_d = 0, 0, 0, 0
+            for ps in equal_preds:
+                if pred in ps:
+                    repeated = True
+                    for p in ps:
+                        for t_suc in success_tasks:
+                            t_p += 1 if pred_dict[p]['task'][t_suc][0] == True else 0
+                            t_d += 1
+                        for t_fail in tasks:
+                            f_n += 1 if pred_dict[p]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
+                            f_d += 1 if pred_dict[p]['task'][t_fail][0] == False else 0
+            if repeated == False:
+                for p in ps:
+                        for t_suc in success_tasks:
+                            t_p += 1 if pred_dict[pred]['task'][t_suc][0] == True else 0
+                            t_d += 1
+                        for t_fail in tasks:
+                            f_n += 1 if pred_dict[pred]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
+                            f_d += 1 if pred_dict[pred]['task'][t_fail][0] == False else 0
             fscore = f_n/f_d
+            if not success_tasks:
+                return 0, fscore
+            tscore = t_p/len(success_tasks)
         if type == 'eff':
-            # could be 1, 0, -1
-            for t_suc in success_tasks:
-                t += 1 if pred_dict[pred]['task'][t_suc][0] == True else 0
-            tscore = t/len(success_tasks)
-
+            # truth value change could be 1, 0, -1
+            # tscore and fscore should both be high and agree with each other
+            t, f = [], []
+            for ps in equal_preds:
+                if pred in ps:
+                    repeated = True
+                    for p in ps:
+                        t += sum([int(pred_dict[p]['task'][t_suc][1]==True) - int(pred_dict[p]['task'][t_suc][0]==True) for t_suc in success_tasks])
+                    break
+            
+            if repeated == False:
+                t = sum([int(pred_dict[pred]['task'][t_suc][1]==True) - int(pred_dict[pred]['task'][t_suc][0]==True) for t_suc in success_tasks])
+                # breakpoint()
+                if not success_tasks:
+                    return 0, 0
+                tscore = t/len(success_tasks)
+            else:
+                if not success_tasks:
+                    return 0, 0
+                tscore = t/(len(pred)*len(success_tasks))
+            sign = 1 if tscore > 0 else -1
+            # if has effect eff=1 on this predicate, eff={-1,0} must fail
+            if repeated == False:
+                f = sum([1 if int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True) in [0, -sign] else 0 for t in fail_tasks])
+                if not fail_tasks:
+                    return tscore, 0
+                fscore = f/len(fail_tasks)
+            else:
+                for p in ps:
+                    f += sum(int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True))
+                    if not fail_tasks:
+                        return tscore, 0
+                    fscore = f/(len(fail_tasks)*len(ps))
         return tscore, fscore
         
 
-    all_precond = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
-    all_precond = set(list(itertools.chain(*all_precond)))
+    all_pred = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
+    all_pred = set(list(itertools.chain(*all_pred)))
 
+    reassigned_skill2operator = deepcopy(skill2operator)
     for skill in skill2operator:
-        tasks = skill2tasks[skill]
-        # skill2operator[skill]['eff'] = {}
-        # print(skill)
-        for pred in all_precond:
-            # try:
-                # accuracy here means the portion of state change from true to false
-                state_pair_all = [pred_dict[pred]['task'][id] for id, t in tasks.items() if t['success']]
-                if not state_pair_all: # if no success case for the skill
-                    continue
-                acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
-                total_num = len(acc_ls)
-                for ps in equal_preds:
-                    if pred in ps:
-                        for p in ps:
-                            state_pair_all = [pred_dict[p]['task'][id] for id, t in tasks.items() if t['success']]
-                            acc_ls += state_pair_all
-                            total_num += len(state_pair_all)
-                acc = sum(acc_ls)/total_num
-                print(skill, pred, acc, state_pair_all)
-                # breakpoint()
-                if acc > threshold:
-                    skill2operator[skill]['eff'][pred] = 1
-                elif acc < - threshold:
-                    skill2operator[skill]['eff'][pred] = -1
-            # except:
-            #     breakpoint()
-    return skill2operator
+        reassigned_skill2operator[skill] = {'precond':{}, 'eff':{}}
+        for pred in all_pred:
+            t_precond, f_precond = score(pred, skill, skill2tasks, pred_dict, equal_preds, 'precond')
+            
+            if t_precond > 0.5 and f_precond > 0.5:
+                reassigned_skill2operator[skill]['precond'][pred] = True
+            t_eff, f_eff = score(pred, skill, skill2tasks, pred_dict, equal_preds, 'eff')
+            if abs(t_eff) > 0.5 and f_eff > 0.5:
+                reassigned_skill2operator[skill]['eff'][pred] = 1 if t_eff > 0 else -1
+            print(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
+    return reassigned_skill2operator
+
+    # for skill in skill2operator:
+    #     tasks = skill2tasks[skill]
+    #     # skill2operator[skill]['eff'] = {}
+    #     # print(skill)
+    #     for pred in all_pred:
+    #         # try:
+    #             # accuracy here means the portion of state change from true to false
+    #             state_pair_all = [pred_dict[pred]['task'][id] for id, t in tasks.items() if t['success']]
+    #             if not state_pair_all: # if no success case for the skill
+    #                 continue
+    #             acc_ls = [int(state_pair[1]==True) - int(state_pair[0]==True) for state_pair in state_pair_all]
+    #             total_num = len(acc_ls)
+    #             for ps in equal_preds:
+    #                 if pred in ps:
+    #                     for p in ps:
+    #                         state_pair_all = [pred_dict[p]['task'][id] for id, t in tasks.items() if t['success']]
+    #                         acc_ls += state_pair_all
+    #                         total_num += len(state_pair_all)
+    #             acc = sum(acc_ls)/total_num
+    #             print(skill, pred, acc, state_pair_all)
+    #             # breakpoint()
+    #             if acc > threshold:
+    #                 skill2operator[skill]['eff'][pred] = 1
+    #             elif acc < - threshold:
+    #                 skill2operator[skill]['eff'][pred] = -1
+    #         # except:
+    #         #     breakpoint()
+    # return skill2operator
 
 
 # ### task proposing part below
@@ -831,9 +890,12 @@ if __name__ == '__main__':
     #                           'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
     #                           'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 
 
-    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {}}, 'DropAt([OBJ], [LOC])': {'precond': {'isHolding([OBJ])': True}, 'eff': {}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
-    skill2tasks = {'DropAt([OBJ], [LOC])': {'DropAt_Vase_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Vase_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Vase_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Vase', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_CoffeeTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_CoffeeTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'CoffeeTable', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}, 'GoTo_CoffeeTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_CoffeeTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_CoffeeTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'CoffeeTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}}, 'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Vase_CoffeeTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Vase', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}}
-    pred_dict = {'isHolding([OBJ])': {'task': {'GoTo_DiningTable_CoffeeTable_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'GoTo_CoffeeTable_Sofa_True_1': [False, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Vase_CoffeeTable_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, True], 'DropAt_Bowl_CoffeeTable_True_1': [True, False], 'DropAt_Vase_DiningTable_False_1': [False, False]}, 'semantic': 'The robot is currently holding the object.'}}
+    # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {}}, 'DropAt([OBJ], [LOC])': {'precond': {'isHolding([OBJ])': True}, 'eff': {}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
+    # skill2tasks = {'DropAt([OBJ], [LOC])': {'DropAt_Vase_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Vase_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Vase_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Vase', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_CoffeeTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_CoffeeTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'CoffeeTable', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}, 'GoTo_CoffeeTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_CoffeeTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_CoffeeTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'CoffeeTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}}, 'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Vase_CoffeeTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Vase', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}}
+    # pred_dict = {'isHolding([OBJ])': {'task': {'GoTo_DiningTable_CoffeeTable_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'GoTo_CoffeeTable_Sofa_True_1': [False, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Vase_CoffeeTable_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, True], 'DropAt_Bowl_CoffeeTable_True_1': [True, False], 'DropAt_Vase_DiningTable_False_1': [False, False]}, 'semantic': 'The robot is currently holding the object.'}}
+    log_data = load_from_file('tasks/log/ai2thor_5_log_3continue.json')
+    last_run_num = '5'
+    skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
     merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
     assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
     print(assigned_skill2operators)

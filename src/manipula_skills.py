@@ -219,6 +219,7 @@ def PickUp(object, location, controller, event):
 
     try:
         for _ in range(2):
+
             if metadata['arm']['heldObjects'] and _ == 0:
                 return False, event
             print('receptacle', receptacle)
@@ -247,7 +248,7 @@ def PickUp(object, location, controller, event):
                 )
                 event = controller.step('MoveArmBase', y = 0.3)
 
-            controller.step(action="SetHandSphereRadius", radius=0.08)
+            controller.step(action="SetHandSphereRadius", radius=0.1)
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
             position = deepcopy(obj["position"])
             # if "Book" in object:
@@ -280,7 +281,7 @@ def PickUp(object, location, controller, event):
             elif "TissueBox" in object:
                 event = controller.step(
                     action='MoveArm',
-                    position=dict(x=-0.03, y=0.02, z=-0.08),
+                    position=dict(x=-0.05, y=0.02, z=-0.1),
                     coordinateSpace='wrist',
                     speed=1,
                     returnToStart=False

@@ -112,26 +112,51 @@ class GPT4:
         '''query_prompt: query with task description and in-contex examples splited with \n\n'''
         complete = False
         ntries = 0
-        msg = prompt2msg(query_prompt)
-        # breakpoint()
-        while not complete and ntries < 15:
-            try:
-                raw_responses = client.chat.completions.create(model=self.engine,
-                messages=prompt2msg(query_prompt),
-                temperature=self.temp,
-                n=self.n,
-                stop=self.stop,
-                max_tokens=self.max_tokens)
-                complete = True
-            except Exception as e:
-                print(f"Response content: {response.content}")
-                print(e)
-                sleep(10)
-                print(f"{ntries}: waiting for the server. sleep for 10 sec...")
-                logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
-                # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
-                logging.info("OK continue")
-                ntries += 1
+        if 'o1' in self.engine:
+            msg = [{
+                "role": "user",
+                "content": query_prompt
+            }]
+            while not complete and ntries < 15:
+                try:
+                    raw_responses = client.chat.completions.create(model=self.engine,
+                    messages=msg,
+                    # temperature=self.temp,
+                    # n=self.n,
+                    # stop=self.stop,
+                    # max_completion_tokens=self.max_tokens,
+                    )
+                    complete = True
+                except Exception as e:
+                    # print(f"Response content: {response.content}")
+                    print(e)
+                    sleep(10)
+                    print(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                    logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                    # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
+                    logging.info("OK continue")
+                    ntries += 1
+        else:
+            msg = prompt2msg(query_prompt)
+            # breakpoint()
+            while not complete and ntries < 15:
+                try:
+                    raw_responses = client.chat.completions.create(model=self.engine,
+                    messages=msg,
+                    temperature=self.temp,
+                    n=self.n,
+                    stop=self.stop,
+                    max_tokens=self.max_tokens)
+                    complete = True
+                except Exception as e:
+                    # print(f"Response content: {response.content}")
+                    print(e)
+                    sleep(10)
+                    print(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                    logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                    # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
+                    logging.info("OK continue")
+                    ntries += 1
         if self.n == 1:
             responses = [raw_responses.choices[0].message.content.strip()]
         else:

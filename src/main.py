@@ -164,9 +164,9 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     # we need to save skill2tasks, skill2operators, and pred_dict at each step (task)
     # logfile:: {num: {'skill2tasks':dict, 'skill2operators':dict, 'pred_dict':dict} }
     if not log_data:
-        log_data = {0:{'model': args.model, 'env': args.env}}
+        log_data = {"0":{'model': args.model, 'env': args.env}}
     time_step = max([int(key) for key in list(log_data.keys())]) + 1
-    log_data[time_step] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
+    log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
 
     grounded_skill_dictionary = skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary)
     grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
@@ -181,31 +181,32 @@ def main():
         # init logging
         counter = 1
         while True:
-            screenshot_path = f"{args.save_dir}/f'log_raw_results_{counter}.log'"
-            if not os.path.exists(screenshot_path):
+            save_path = f"{args.save_dir}/log_raw_results_{counter}.log"
+            if not os.path.exists(save_path):
                 break
             counter += 1
 
         logging.basicConfig(level=logging.INFO,
                                 format='%(message)s',
                                 handlers=[
-                                    logging.FileHandler(os.path.join(args.save_dir, f'log_raw_results_{counter}.log'), mode='w'),
+                                    logging.FileHandler(save_path, mode='w'),
                                     logging.StreamHandler()
                                 ]
             )
-        class NoHTTPFilter(logging.Filter):
-            def filter(self, record):
-                return not "HTTP" in record.getMessage()
-        logger = logging.getLogger()
-        logger.addFilter(NoHTTPFilter())
-        logging.getLogger('requests').setLevel(logging.CRITICAL)
+        # class NoHTTPFilter(logging.Filter):
+        #     def filter(self, record):
+        #         return not "HTTP" in record.getMessage()
+        # logger = logging.getLogger()
+        # logger.addFilter(NoHTTPFilter())
+        logging.getLogger('requests').setLevel(logging.DEBUG)
+        logging.getLogger('httpx').setLevel(logging.DEBUG)
 
         model = GPT4(engine=args.model)
         if args.continue_learning:
             assert args.load_fpath
             # load from log file
             log_data = load_from_file(args.load_fpath)
-            last_run_num = max([key for key in log_data.keys() if key.isdigit()])
+            last_run_num = str(max([key for key in log_data.keys() if key.isdigit()]))
             skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
 
         else:   
@@ -247,10 +248,10 @@ def main():
                     break
                 counter += 1
         if args.continue_learning:
-            start_num = max([int(key) for key in log_data.keys() if key.isdigit()])
+            start_num = str(max([int(key) for key in log_data.keys() if key.isdigit()]))
         else:
-            start_num = 0
-        for i in range(start_num, args.num_iter):
+            start_num = "0"
+        for i in range(int(start_num), args.num_iter):
             log_data, skill2operators, skill2tasks, pred_dict, grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary = single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, curr_observation_path, args, log_data=log_data)
             if pred_dict:
                 try:
@@ -258,12 +259,12 @@ def main():
                         breakpoint()
                 except:
                     breakpoint()
-            print(f"iteration #{i+1} is done")
+            # print(f"iteration #{i+1} is done")
             logging.info(f"iteration #{i+1} is done")
-            print(f"current operators:{skill2operators}")
+            # print(f"current operators:{skill2operators}")
             logging.info(f"iteration #{i+1} is done")
             save_to_file(log_data, log_save_path)
-            print(f"result has been saved to {log_save_path}")
+            # print(f"result has been saved to {log_save_path}")
             logging.info(f"result has been saved to {log_save_path}")
 
             if args.step_by_step:
@@ -275,8 +276,8 @@ def main():
                 merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
                 assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
 
-                log_data[i+1]['assigned_skill2operators'] = assigned_skill2operators
-                log_data[i+1]['merged_skill2operators'] = merged_skill2operators
+                log_data[str(i+1)]['assigned_skill2operators'] = assigned_skill2operators
+                log_data[str(i+1)]['merged_skill2operators'] = merged_skill2operators
                 save_to_file(log_data, log_save_path)
                 print('Final operators this round:\n', merged_skill2operators)
                 print(f"result has been saved to {log_save_path}")
@@ -285,8 +286,16 @@ def main():
             except:
                 print('merge failed. Will continue next iteration. merge can be done later manually')
                 pass
-            if args.step_by_step:
-                breakpoint()
+
+            # Write back only the lines that don't start with 'HTTP'
+            with open(save_path, 'r') as file:
+                lines = file.readlines()
+            with open(save_path, 'w') as file:
+                for line in lines:
+                    if not line.startswith('HTTP'):
+                        file.write(line)
+                        if args.step_by_step:
+                            breakpoint()
 
     # TODO: integrate with habitat env    
     elif args.env == 'habitat':
