@@ -140,13 +140,13 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
 
     prompt = load_from_file(prompt_fpath)
     prompt = construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2)
-    print(f'Evaluating predicate {pred} on skill {skill} with arguments {obj} {loc} {loc_1} {loc_2}')
+    logging.info(f'Evaluating predicate {pred} on skill {skill} with arguments {obj} {loc} {loc_1} {loc_2}')
     if prompt:
-        print('Calling GPT4')
+        logging.info('Calling GPT4')
         resp = model.generate_multimodal(prompt, img)[0]
         return True if "True" in resp.split('\n')[-1] else False
     else:
-        print(f"mismatch skill and predicate: return False\n{skill} / {pred}")
+        logging.info(f"mismatch skill and predicate: return False\n{skill} / {pred}")
         return False
 
 def eval_pred_set(model, skill, pred2sem, obj, loc,loc_1, loc_2, img):
@@ -183,10 +183,10 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     prompt = construct_prompt(prompt, skill, pred_dict)
     # breakpoint()
     # response consists of predicate and its semantic
-    print('Generating predicate')
+    logging.info('Generating predicate')
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
-    pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
+    pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])').replace(' ','')
     return pred, sem
 
 # def evaluate_all_tasks(pred_dict, skill2tasks):
@@ -212,7 +212,7 @@ def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
         return duplicates
     
     # evaluate new task first
-    print('evaluating from mismatch_symbolic_state')
+    logging.info('evaluating from mismatch_symbolic_state')
     for pred in pred_dict.keys():
         for skill, tasks in skill2tasks.items():
             for id, task in tasks.items():
@@ -221,7 +221,7 @@ def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
                         eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s0']), \
                         eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s1'])
                     ]    
-    print('Done evaluation from mismatch_symbolic_state')
+    logging.info('Done evaluation from mismatch_symbolic_state')
     # look for duplicated tasks
     dup_tasks = {}
     if pred_type == "precond":
@@ -298,20 +298,20 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
     new_p_added = False
     # breakpoint()
-    print("About to enter precondition refinement")
+    logging.info("About to enter precondition refinement")
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['precond'].keys()),  'precond', tried_pred=skill2triedpred[skill]['precond'])
         logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
-        print('new predicate', new_p, sem)
+        # logging.info('new predicate', new_p, sem)
         logging.info(f"new predicate {new_p}, {sem}")
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
-        print('new predicate truth value', new_p_mismatch)
+        # logging.info('new predicate truth value', new_p_mismatch)
         logging.info(f'new predicate truth value{new_p_mismatch}')
         if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
-            print('Entering #1 if')
+            # print('Entering #1 if')
             skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
-            print(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
             logging.info(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
+            # logging.info(f"Predicate {new_p} added to precondition with truth value {skill2operators[skill]['precond'][new_p]}")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
                 pred_dict[new_p] = {'task': {}}
@@ -330,20 +330,24 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                     if new_p_not_goto not in pred_dict:
                         pred_dict[new_p_not_goto] = {'task': {}}
                         pred_dict[new_p_not_goto]['semantic'] = sem
+                    new_p_the_other = new_p.replace("[LOC_1]", '[LOC_2]') if "[LOC_1]" in new_p else new_p.replace("[LOC_2]", '[LOC_1]')
+                    if not new_p_the_other in pred_dict:
+                        pred_dict[new_p_the_other] = {'task': {}}
+                        pred_dict[new_p_the_other]['semantic'] = sem
                     # breakpoint()
                 for s in skill2tasks:  
                     for idx, task in skill2tasks[s].items():
                         if idx not in new_p_mismatch:
-                                print('Evaluating for precond')
+                                logging.info('Evaluating for precond')
                                 pred_dict[new_p]['task'][idx] = [eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s0']), eval_pred(model, s, new_p, sem, task['obj'], task['loc'], skill2tasks[s][idx]['loc_1'], skill2tasks[s][idx]['loc_2'], task['s1'])]
                 for new_p_id in new_p_mismatch:
                     pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
 
-            print(f'Done evaluating predicate {new_p} for all tasks')
+            logging.info(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
-            print(f'Done evaluating predicate {new_p} for all tasks')
+            logging.info(f'Done evaluating predicate {new_p} for all tasks')
             skill2triedpred[skill]['precond'] = []
         else:
             skill2triedpred[skill]['precond'].append(new_p)
@@ -354,15 +358,15 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
     # check effect
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-    print("About to enter effect refinement")
+    logging.info("About to enter effect refinement")
     while skill in mismatch_tasks and t < max_t:
         new_p, sem = generate_pred(model, skill, list(skill2operators[skill]['eff'].keys()), 'eff', tried_pred=skill2triedpred[skill]['eff'])
         logging.info(f"mismatch state for effect generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
         logging.info(f"current predicates in effect set of skill {skill}:\n{list(skill2operators[skill]['eff'].keys())}")
-        print('new predicate', new_p, sem)
+        # logging.info('new predicate', new_p, sem)
         logging.info(f'new predicate {new_p}, {sem}')
         new_p_mismatch = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in mismatch_tasks[skill]}
-        print('new predicate truth value', new_p_mismatch)
+        # logging.info('new predicate truth value', new_p_mismatch)
         logging.info(f'new predicate truth value {new_p_mismatch}')
         # first index for task number, second index for before and after
         s_1_1 = new_p_mismatch[mismatch_tasks[skill][0]][0]
@@ -371,13 +375,13 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
         s_2_2 = new_p_mismatch[mismatch_tasks[skill][1]][1]
         success_task = mismatch_tasks[skill][0] if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == True else mismatch_tasks[skill][1]
         state_change_success = int(new_p_mismatch[success_task][1]==True) - int(new_p_mismatch[success_task][0]==True)
-        print('Before Entering #2 if for eff')
+        # print('Before Entering #2 if for eff')
         # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
         if (int(s_1_2==True) - int(s_1_1==True) != int(s_2_2==True) - int(s_2_1==True)) and state_change_success != 0:
             
             skill2operators[skill]['eff'][new_p] = state_change_success
-            print(f"Predicate {new_p} added to effect with truth value {skill2operators[skill]['eff'][new_p]}")
             logging.info(f"Predicate {new_p} added to effect with truth value {skill2operators[skill]['eff'][new_p]}")
+            # logging.info(f"Predicate {new_p} added to effect with truth value {skill2operators[skill]['eff'][new_p]}")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
                 if ('[LOC]' in new_p) and ('[OBJ]' not in new_p):
@@ -395,6 +399,10 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                     if new_p_not_goto not in pred_dict:
                         pred_dict[new_p_not_goto] = {'task': {}}
                         pred_dict[new_p_not_goto]['semantic'] = sem
+                    new_p_the_other = new_p.replace("[LOC_1]", '[LOC_2]') if "[LOC_1]" in new_p else new_p.replace("[LOC_2]", '[LOC_1]')
+                    if not new_p_the_other in pred_dict:
+                        pred_dict[new_p_the_other] = {'task': {}}
+                        pred_dict[new_p_the_other]['semantic'] = sem
                     # breakpoint()
                 pred_dict[new_p] = {'task': {}}
                 for s in skill2tasks:
@@ -404,7 +412,7 @@ def refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2tri
                 for new_p_id in new_p_mismatch:
                     pred_dict[new_p]['task'][new_p_id] = new_p_mismatch[new_p_id]
                 pred_dict[new_p]['semantic'] = sem
-            print(f'Done evaluating predicate {new_p} for all tasks')
+            logging.info(f'Done evaluating predicate {new_p} for all tasks')
             new_p_added = False
             pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
             skill2triedpred[skill]['eff'] = []
@@ -505,10 +513,15 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
                         for t_fail in tasks:
                             f_n += 1 if pred_dict[pred]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
                             f_d += 1 if pred_dict[pred]['task'][t_fail][0] == False else 0
-            fscore = f_n/f_d
-            if not success_tasks:
-                return 0, fscore
-            tscore = t_p/len(success_tasks)
+            if not tasks:
+                return 0, 0
+            elif not success_tasks:
+                return 0, f_n/f_d
+            elif not fail_tasks:
+                return t_p/t_d, 0
+            else:
+                tscore = t_p/t_d
+                fscore = f_n/f_d
         if type == 'eff':
             # truth value change could be 1, 0, -1
             # tscore and fscore should both be high and agree with each other
@@ -546,8 +559,9 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
         return tscore, fscore
         
 
-    all_pred = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
-    all_pred = set(list(itertools.chain(*all_pred)))
+    # all_pred = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
+    # all_pred = set(list(itertools.chain(*all_pred)))
+    all_pred = list(pred_dict.keys())
 
     reassigned_skill2operator = deepcopy(skill2operator)
     for skill in skill2operator:
@@ -560,7 +574,7 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
             t_eff, f_eff = score(pred, skill, skill2tasks, pred_dict, equal_preds, 'eff')
             if abs(t_eff) > 0.5 and f_eff > 0.5:
                 reassigned_skill2operator[skill]['eff'][pred] = 1 if t_eff > 0 else -1
-            print(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
+            logging.info(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
     return reassigned_skill2operator
 
     # for skill in skill2operator:
@@ -893,10 +907,11 @@ if __name__ == '__main__':
     # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {}}, 'DropAt([OBJ], [LOC])': {'precond': {'isHolding([OBJ])': True}, 'eff': {}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
     # skill2tasks = {'DropAt([OBJ], [LOC])': {'DropAt_Vase_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Vase_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Vase_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Vase', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_CoffeeTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_CoffeeTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'CoffeeTable', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}, 'GoTo_CoffeeTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_CoffeeTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_CoffeeTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'CoffeeTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}}, 'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Vase_CoffeeTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Vase', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}}
     # pred_dict = {'isHolding([OBJ])': {'task': {'GoTo_DiningTable_CoffeeTable_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'GoTo_CoffeeTable_Sofa_True_1': [False, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Vase_CoffeeTable_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, True], 'DropAt_Bowl_CoffeeTable_True_1': [True, False], 'DropAt_Vase_DiningTable_False_1': [False, False]}, 'semantic': 'The robot is currently holding the object.'}}
-    log_data = load_from_file('tasks/log/ai2thor_5_log_3continue.json')
-    last_run_num = '5'
+    log_data = load_from_file('tasks/log/ai2thor_10_log_1continue.json')
+    last_run_num = '10'
     skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
     merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
+    print(equal_preds)
     assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
     print(assigned_skill2operators)
     breakpoint()

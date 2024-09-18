@@ -135,7 +135,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     while t < 10 and not task_success:
         chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
         t += 1
-        print('Task:', chosen_skill_sequence)
+        print(f'Task: {chosen_skill_sequence}')
         logging.info(f'Task: {chosen_skill_sequence}')
         try:
             if len(chosen_skill_sequence) < 6:
@@ -150,7 +150,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
 
     # breakpoint()
     if args.step_by_step:
-            print('Task done. You should check the images labels')
+            logging.info('Task done. You should check the images labels')
             breakpoint()
 
     # imgs will be stored at tasks/exps
@@ -193,13 +193,9 @@ def main():
                                     logging.StreamHandler()
                                 ]
             )
-        # class NoHTTPFilter(logging.Filter):
-        #     def filter(self, record):
-        #         return not "HTTP" in record.getMessage()
-        # logger = logging.getLogger()
-        # logger.addFilter(NoHTTPFilter())
-        logging.getLogger('requests').setLevel(logging.DEBUG)
-        logging.getLogger('httpx').setLevel(logging.DEBUG)
+        
+        logging.getLogger('requests').setLevel(logging.INFO)
+        logging.getLogger('httpx').setLevel(logging.INFO)
 
         model = GPT4(engine=args.model)
         if args.continue_learning:
@@ -268,7 +264,7 @@ def main():
             logging.info(f"result has been saved to {log_save_path}")
 
             if args.step_by_step:
-                print('about to cross assign and merge')
+                logging.info('about to cross assign and merge')
                 breakpoint()
 
             # try
@@ -279,12 +275,12 @@ def main():
                 log_data[str(i+1)]['assigned_skill2operators'] = assigned_skill2operators
                 log_data[str(i+1)]['merged_skill2operators'] = merged_skill2operators
                 save_to_file(log_data, log_save_path)
-                print('Final operators this round:\n', merged_skill2operators)
-                print(f"result has been saved to {log_save_path}")
-                logging.info('Final operators this round:\n', merged_skill2operators)
+                logging.info(f'Final operators this round:\n{assigned_skill2operators}')
+                # logging.info(f"result has been saved to {log_save_path}")
+                # logging.info('Final operators this round:\n', assigned_skill2operators)
                 logging.info(f"result has been saved to {log_save_path}")
             except:
-                print('merge failed. Will continue next iteration. merge can be done later manually')
+                logging.info('merge failed. Will continue next iteration. merge can be done later manually')
                 pass
 
             # Write back only the lines that don't start with 'HTTP'
