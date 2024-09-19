@@ -487,7 +487,7 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
     pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
     '''
     def equal_pred_dict(equal_preds):
-        
+
         pass
     def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
         "score of a predicate as one skill's precondition"
@@ -545,6 +545,8 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
                 if not success_tasks:
                     return 0, 0
                 tscore = t/(len(ps)*len(success_tasks))
+            if t == 0:
+                return 0, 0
             sign = 1 if tscore > 0 else -1
             # if has effect eff=1 on this predicate, eff={-1,0} must fail
             if repeated == False:
