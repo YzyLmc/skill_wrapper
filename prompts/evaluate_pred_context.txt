@@ -1,0 +1,1 @@
+You will be given visual third-person observations tof a robot in a simulation attempting to perform certain skills. Given visual observations and descriptions about the predicates, you need to determine whether a given predicate evaluates to true or false

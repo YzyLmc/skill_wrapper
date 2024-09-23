@@ -1,0 +1,4 @@
+A robot is attempting to execute an action called `[SKILL_NAME]` on `[ARGS]` denoted as `[SKILL]`. One of the predicates that are required to execute `[SKILL]` is [PRED], which means [SEMANTIC]\nIn the image, the robot is attempting to `[SKILL_WITH_ARGS]`.
+
+Q: Based on the image and the predicate definition, does the predicate [PRED_WITH_ARGS] evaluate to True or False?
+A: Let's think step by step, within 4-5 sentences:

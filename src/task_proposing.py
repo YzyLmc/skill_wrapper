@@ -720,7 +720,7 @@ if __name__ == '__main__':
     grounded_skill_dictionary = {
         'PickUp(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': [],  'effects_positive':[], 'effects_negative': []},
         'DropAt(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': [], 'effects_positive':[], 'effects_negative': []},
-        'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to go to"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
+        'GoTo(init, goal)': {'arguments': {'init': "the location or object for the robot to start from", 'goal': "the location or object for the robot to reach"}, 'preconditions': [], 'effects_positive':[], 'effects_negative':[]}
     }
 
     grounded_skill_dictionary = {

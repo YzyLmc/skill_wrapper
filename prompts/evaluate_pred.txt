@@ -1,0 +1,1 @@
+Therefore, the predicate [PRED_WITH_ARGS] evaluates to (answer only True/False):
