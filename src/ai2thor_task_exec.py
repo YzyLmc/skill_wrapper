@@ -156,14 +156,15 @@ if __name__ == "__main__":
     # task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
     # task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
     # task = ['PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,Sofa)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)']
-    task = ['GoTo(DiningTable,DiningTable)', 
-            'PickUp(Book,DiningTable)', 
-            'PickUp(Book,DiningTable)', 
-            'DropAt(Book,Sofa)', 
-            'PickUp(Vase,DiningTable)', 
-            'DropAt(Vase,Sofa)', 
-            'DropAt(Vase,Sofa)', 
-            'PickUp(Bowl,DiningTable)']
+    # task = ['GoTo(DiningTable,DiningTable)', 
+    #         'PickUp(Book,DiningTable)', 
+    #         'PickUp(Book,DiningTable)', 
+    #         'DropAt(Book,Sofa)', 
+    #         'PickUp(Vase,DiningTable)', 
+    #         'DropAt(Vase,Sofa)', 
+    #         'DropAt(Vase,Sofa)', 
+    #         'PickUp(Bowl,DiningTable)']
+    task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'PickUp(Vase,CoffeeTable)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     breakpoint()

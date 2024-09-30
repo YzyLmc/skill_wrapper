@@ -7,7 +7,7 @@ import logging
 
 from utils import GPT4, load_from_file, save_to_file
 from task_proposing import TaskProposing
-from symbolize import refine_pred, merge_predicates, cross_assignment
+from symbolize import refine_pred, merge_predicates, cross_assignment, refine_pred_new
 from ai2thor_task_exec import convert_task_to_code
 
 # bunch of conversion functions to seam refinement and task proposal
@@ -159,7 +159,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
 
     for skill in skill2operators:
         skill2triedpred = {} # reset tried_predicate buffer after each skill
-        skill2operators, pred_dict, skill2triedpred = refine_pred(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
+        skill2operators, pred_dict, skill2triedpred = refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
 
     # we need to save skill2tasks, skill2operators, and pred_dict at each step (task)
     # logfile:: {num: {'skill2tasks':dict, 'skill2operators':dict, 'pred_dict':dict} }

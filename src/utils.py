@@ -164,7 +164,7 @@ class GPT4:
         return responses
     
     # @retry(wait_fixed=15000, stop_max_attempt_number=5)
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=500):
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False):
         '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
         ntries = 0
@@ -178,7 +178,12 @@ class GPT4:
         payload = {
             "model": self.engine,
             "messages": [],
-            "max_tokens": max_tokens}
+            "max_tokens": max_tokens,
+            "logprobs": logprobs,
+            "temperature": self.temp
+            }
+        if logprobs:
+            payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
         for line_txt in txts:
             line_txt["type"] = "text"
@@ -241,17 +246,17 @@ def get_top_down_frame(controller):
 
 if __name__ == "__main__":
     gpt = GPT4()
-    imgs = ["test_imgs/test_0.png", "test_imgs/test_1.png"]
-    imgs = ["test_imgs/pickup.png"]
-    imgs = ["test_imgs/success.png", "test_imgs/failure.png"]
-    imgs = ["test_imgs/failure.png"]
-    imgs = ["test_imgs/caption.png"]
-    imgs = ["test_imgs/1.jpg", "test_imgs/3.jpg"]
-
+    # imgs = ["test_imgs/test_0.png", "test_imgs/test_1.png"]
+    # imgs = ["test_imgs/pickup.png"]
+    # imgs = ["test_imgs/success.png", "test_imgs/failure.png"]
+    # imgs = ["test_imgs/failure.png"]
+    # imgs = ["test_imgs/caption.png"]
+    # imgs = ["test_imgs/1.jpg", "test_imgs/3.jpg"]
+    imgs = ['tasks/exps_31/GoTo/After_GoTo_Sofa_CoffeeTable_True_4.jpg']
     # txt = "The robot is executing pickup() action. There are certain PDDL predicates that are related to the task. Please propose them."
     # txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
     # txt = 'A robot is executing tasks in the envrionment. Here is what the robot sees from an egocentric view. Please provide a general description of the type of the environment, such as household or facotry, and the robots, such as its mobility and embodiement.'
-    txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, and the first image shows a successful attempt, while the second one is a failure. How can you guide the robot from the failure image to the successful image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
+    # txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, and the first image shows a successful attempt, while the second one is a failure. How can you guide the robot from the failure image to the successful image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
     # txt = 'If this is what you see exactly, in which picture the robot gripper is on the left of the image? Is it the first one or the second?'
     # txt = "If this is what you see exactly, is the bread located on the left of the table or the right in both pictures?"
     # txt = 'What is on the left of the table?'
@@ -260,14 +265,16 @@ if __name__ == "__main__":
     # txt = "If these images are what you see exactly, from the second image to the first image, which direction did the gripper move to, left or right?"
     
     # txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, how can you guide the robot from the second image to the first image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
-    txt = "You are a robot,  this image is exactly what you see right now. You are commanded to execute PickUp() action, and you have two actions available: MoveGripperLeft() amd MoveGripperRight(), if this image is exactly what you are seeing from your eyes, what would be your next action?"
-    txt = "What are the objects in this picture?"
-    txt = """
-    There are certain predicates associated with different skills, please find out the ones that have changed their truth value by comparing the visual observation before and after the execution of the skill. You only have to fill the predicates and truth values before and after the execution on the "Effect" line without explanation. Note that not all predicates are necessary to form the effect, you should only select the most essential ones based on the visual observation.
-    Skill: PickUp(object, location)
-    Predicates: 'AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsReachable(object)', 'IsFreeHand()'
-    object = Book, location = Table
-    """
-    responses = gpt.generate_multimodal(txt, imgs)
+    # txt = "You are a robot,  this image is exactly what you see right now. You are commanded to execute PickUp() action, and you have two actions available: MoveGripperLeft() amd MoveGripperRight(), if this image is exactly what you are seeing from your eyes, what would be your next action?"
+    # txt = "What are the objects in this picture?"
+    # txt = """
+    # There are certain predicates associated with different skills, please find out the ones that have changed their truth value by comparing the visual observation before and after the execution of the skill. You only have to fill the predicates and truth values before and after the execution on the "Effect" line without explanation. Note that not all predicates are necessary to form the effect, you should only select the most essential ones based on the visual observation.
+    # Skill: PickUp(object, location)
+    # Predicates: 'AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsReachable(object)', 'IsFreeHand()'
+    # object = Book, location = Table
+    # """
+    txt = "A robot is executing a skill PickUp(Book, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate HasEmptyHands()? Answer with reasoning and True or False in a separate line. Note that the blue sphere on the gripper is a part of the gripper and is not an object, and it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nHasEmptyHand(): The robot's hands are empty and not holding anything."
+    responses = gpt.generate_multimodal(txt, imgs,logprobs=True)
+    # responses = gpt.generate_multimodal(txt, imgs)
     # responses = gpt.generate(txt)
     print(responses)

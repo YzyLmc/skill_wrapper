@@ -248,7 +248,7 @@ def PickUp(object, location, controller, event):
                 )
                 event = controller.step('MoveArmBase', y = 0.3)
 
-            controller.step(action="SetHandSphereRadius", radius=0.1)
+            controller.step(action="SetHandSphereRadius", radius=0.06)
             obj = [obj for obj in metadata["objects"] if object in obj['objectId']][0]
             position = deepcopy(obj["position"])
             # if "Book" in object:
@@ -383,7 +383,7 @@ def DropAt(object, location, controller, event):
         elif "Sofa" in location:
             event = controller.step(
                 "MoveArm",
-                position=dict(x=-0.2,y=-0.5,z=0.45),
+                position=dict(x=-0.1,y=-0.5,z=0.45),
                 coordinateSpace="armBase",
                 returnToStart=False
             )
