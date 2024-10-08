@@ -144,7 +144,9 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
     if prompt:
         logging.info('Calling GPT4')
         resp = model.generate_multimodal(prompt, img)[0]
-        return True if "True" in resp.split('\n')[-1] else False
+        result = True if "True" in resp.split('\n')[-1] else False
+        print(result)
+        return result
     else:
         logging.info(f"mismatch skill and predicate: return False\n{skill} / {pred}")
         return False
@@ -462,7 +464,7 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
             # skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
 
         # use tscore and fscore to evaluate new_p
-        if tscore_precond > 0.5 and  fscore_precond > 0.5:
+        if tscore_precond >= 0.5 and  fscore_precond >= 0.5:
             logging.info(f"Predicate {new_p} added to predicate set by precondition check")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
@@ -505,8 +507,9 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
     t = 0
     pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
     logging.info("About to enter effect refinement")
+    # breakpoint()
     while skill in mismatch_tasks and t < max_t:
-        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()), 'eff', tried_pred=skill2triedpred[skill])
+        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()), 'eff', tried_pred=[skill])
         logging.info(f"mismatch state for effect generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
         logging.info(f'new predicate {new_p}, {sem}')
         new_p_tv = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in skill2tasks[skill]}
@@ -517,7 +520,7 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
         tscore_eff, fscore_eff = score(new_p, skill, skill2tasks, pred_dict_tmp, [], 'eff')
         logging.info(f"Effect tscore: {tscore_eff}, fscore: {fscore_eff}")
         # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
-        if abs(tscore_eff) > 0.2 and fscore_eff > 0.2:
+        if abs(tscore_eff) >= 0.2 and fscore_eff >= 0.2:
             logging.info(f"Predicate {new_p} added to the predicate set by effect check")
             new_p_added = True
             if new_p_added and new_p not in pred_dict:
@@ -551,8 +554,29 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
         else:
             skill2triedpred[skill].append(new_p)
         t += 1
+    # breakpoint()
+    # partitioning
+    partitioned_output = partition_by_effect(pred_dict)
+    grounded_skill_dictionary = defaultdict(dict)
+    for idx, operator in partitioned_output.items():
+        base_action_name = operator['name'][0].split('_')[0]
+        action_counter = 1
 
-    return skill2operators, pred_dict, skill2triedpred
+        # hardcode skill name, will remove after workshop
+        if "PickUp" in base_action_name or "DropAt" in base_action_name:
+            action_name = f"{base_action_name}_{action_counter}([OBJ], [LOC])"
+        else:
+            action_name = f"{base_action_name}_{action_counter}([LOC_1], [LOC_2])"
+        while action_name in grounded_skill_dictionary:
+            action_counter += 1
+            if "PickUp" in base_action_name or "DropAt" in base_action_name:
+                action_name = f"{base_action_name}_{action_counter}([OBJ], [LOC])"
+            else:
+                action_name = f"{base_action_name}_{action_counter}([LOC_1], [LOC_2])"
+        grounded_skill_dictionary[action_name]['precondition'] = operator['precondition']
+        grounded_skill_dictionary[action_name]['effect'] = operator['effect']
+
+    return skill2operators, pred_dict, skill2triedpred, grounded_skill_dictionary
 
 ############################# ORIGINAL REASSIGNMENT CODE ####################################
 def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/predicate_unify.txt'):
@@ -747,7 +771,7 @@ def partition_by_effect(pred_dict):
         'calculate precondition and effect based on task2pred'
         'Effect is calculated as change of truth values'
         'Preconddtion is the intersection of '
-        result = defaultdict(lambda: {'name': [], 'effect': {}, 'precond': {}})
+        result = defaultdict(lambda: {'name': [], 'effect': {}, 'precondition': {}})
         for outer_key, inner_dict in nested_dict.items():
             value_dict = {k: v[1] - v[0] for k, v in inner_dict.items() if v[1] - v[0] != 0}
             group_id = None
@@ -760,11 +784,11 @@ def partition_by_effect(pred_dict):
                 result[group_id]['effect'] = value_dict
             result[group_id]['name'].append(outer_key)
             for k, v in inner_dict.items():
-                if k not in result[group_id]['precond']:
-                    result[group_id]['precond'][k] = v[0]
+                if k not in result[group_id]['precondition']:
+                    result[group_id]['precondition'][k] = v[0]
                 else:
-                    if result[group_id]['precond'][k] != v[0]:
-                        result[group_id]['precond'].pop(k)
+                    if result[group_id]['precondition'][k] != v[0]:
+                        result[group_id]['precondition'].pop(k)
         return dict(result)
     
     task2pred = convert_to_task2pred(pred_dict)

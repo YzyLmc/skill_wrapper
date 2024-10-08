@@ -4,6 +4,8 @@ import argparse
 import os
 from copy import deepcopy
 import logging
+from collections import defaultdict
+import re
 
 from utils import GPT4, load_from_file, save_to_file
 from task_proposing import TaskProposing
@@ -20,6 +22,24 @@ def skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictiona
                 grounded_skill_dictionary[s]['effects_positive'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in skill2operators[skill]['eff'].items() if value == 1]
                 grounded_skill_dictionary[s]['effects_negative'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in skill2operators[skill]['eff'].items() if value == -1]
     return grounded_skill_dictionary
+# new templating function just stuff argument definitions in
+def complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary):
+    # construct atgument definition from previous dictionary first
+    prefix2definition = {}
+    for skill in grounded_skill_dictionary:
+        skill_prefix = skill.split('_')[0]
+        if skill_prefix not in prefix2definition:
+            prefix2definition[skill] = {"arguments":grounded_skill_dictionary[skill]['arguments']}
+    output = defaultdict(dict)
+    for skill in new_grounded_skill_dictionary:
+        skill_prefix = skill.split('_')[0]
+        for s in prefix2definition:
+            if skill_prefix in s:
+                output[skill]['preconditions'] = [precond.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for precond in new_grounded_skill_dictionary[skill]['precondition'].keys()]
+                output[skill]['effects_positive'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == 1]
+                output[skill]['effects_negative'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == -1]
+                output[skill]['arguments'] = prefix2definition[s]['arguments']
+    return output
 
 def pred_dict2grounded_predicates_dict(pred_dict):
     grounded_predicates_dictionary = {}
@@ -99,7 +119,7 @@ def update_tasks(skill_list, task_fpath="tasks/exps"):
             f_name = f.split('.')[0]
             args = f_name.split('_')
             task_id = "_".join(args[1:])
-            if  not f"Before_{task_id}.jpg" in files or not f"After_{task_id}.jpg" in files:
+            if not f"Before_{task_id}.jpg" in files or not f"After_{task_id}.jpg" in files:
                 print('filename unmatch. fix it')
                 breakpoint()
             skill2tasks_new[skill][task_id] = {
@@ -140,6 +160,10 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
         try:
             if len(chosen_skill_sequence) < 6:
                 continue
+            breakpoint()
+            # map partitioned operator back to skills
+            chosen_skill_sequence = [re.sub(r'_\d+', '', action) for action in chosen_skill_sequence]
+            breakpoint()
             generated_code = convert_task_to_code(chosen_skill_sequence)
             local_scope = {}
             global_scope = {}
@@ -159,7 +183,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
 
     for skill in skill2operators:
         skill2triedpred = {} # reset tried_predicate buffer after each skill
-        skill2operators, pred_dict, skill2triedpred = refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
+        skill2operators, pred_dict, skill2triedpred, new_grounded_skill_dictionary = refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
 
     # we need to save skill2tasks, skill2operators, and pred_dict at each step (task)
     # logfile:: {num: {'skill2tasks':dict, 'skill2operators':dict, 'pred_dict':dict} }
@@ -168,7 +192,7 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     time_step = max([int(key) for key in list(log_data.keys())]) + 1
     log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
 
-    grounded_skill_dictionary = skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary)
+    grounded_skill_dictionary = complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary)
     grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
     replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
 
@@ -303,7 +327,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", "chatgpt-4o-latest"], default="gpt-4o-2024-08-06")
     parser.add_argument("--num_iter", type=int, default=5, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
-    parser.add_argument("--max_retry_time", type=int, default=5, help="maximum time to generate predicate to distinguish two states.")
+    parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
     parser.add_argument("--no_log", action='store_true')
     parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")

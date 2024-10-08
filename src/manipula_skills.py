@@ -345,7 +345,22 @@ def DropAt(object, location, controller, event):
     '''
     location: str : name of the object to drop. Named location for LLM to reason
     '''
+    def dist_pose(obj1, obj2):
+        x1, y1, z1 = obj1["x"], obj1["y"], obj1["z"]
+        x2, y2, z2 = obj2["x"], obj2["y"], obj2["z"]
+        p1 = np.array([x1, y1, z1])
+        p2 = np.array([x2, y2, z2])
+        return np.sqrt(np.sum((p1-p2)**2, axis=0))
+    
     try:
+        pose_dict = {'Sofa': {'x': -0.1749999225139618, 'y': 0.9070531129837036, 'z': 3.083493709564209},
+                    'DiningTable': {'x': -4.324999809265137, 'y': 0.9070531129837036, 'z': 0.5165063142776489},
+                    'CoffeeTable': {'x': -0.3915063440799713, 'y': 0.9070531129837036, 'z': 2.458493709564209}}
+        for loc in pose_dict:
+            if location == loc and dist_pose(event.metadata['agent']['position'], pose_dict[loc]) > 0.1: # cannot drop at a place far away
+                # breakpoint()
+                return False, event
+            
         metadata = event.metadata
         if not metadata['arm']['heldObjects']:
             return False, event
