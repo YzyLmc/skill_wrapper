@@ -208,8 +208,10 @@ class TaskProposing():
         for task in task_dictionary.keys():
 
             skill_sequence = task_dictionary[task]['lifted']
+            skill_sequence = [re.sub(r'_\d+', '', action) for action in skill_sequence]
             executable_sequence = task_dictionary[task]['executable_sequence']
-
+            # executable_sequence = [re.sub(r'_\d+', '', action) for action in executable_sequence]
+            breakpoint()
             entropy, counts = self.compute_entropy_for_task(skill_sequence, executable_sequence)
 
             task_entropy_gains.append(entropy - curr_shannon_entropy) #entropy gain is maximum of difference
@@ -689,7 +691,7 @@ class TaskProposing():
 
         #Step 1: create prompt with least explored skill pairs and object set
         prompt, prompt_context = self.create_foundation_model_prompt()
-
+        breakpoint()
         #Step 2: run foundation model using the generated prompt
         foundation_model_output = self.run_foundation_model(prompt, prompt_context, curr_observation_path)
 
@@ -750,7 +752,7 @@ if __name__ == '__main__':
     # objects_in_scene = ['Apple', 'Bread', 'Fridge', 'Egg', 'Cabinet1', 'Cabinet2', 'Cabinet3', 'CounterTop', 'Newspaper', 'PaperTowerRoll', 'Toaster', 'Faucet', 'LightSwitch', 'Mug', 'Kettle', 'Statue', 'Bowl', 'Bin', 'Lettuce', 'Tomato', 'Potato', 'Microwave']
 
     objects_in_scene = ['Book', 'Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa']
-    env_description = 'Book, Vase, and Bowl are on the DiningTable, and RemoteConrtol is onthe sofa. Robot is at the DiningTable initially.'
+    env_description = 'Book, Vase, and Bowl are on the DiningTable, and RemoteConrtol is on the sofa. Robot is at the DiningTable initially.'
 
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['pick_up(Apple)','put_down(Apple,CounterTop)','walk_to(Fridge)','pick_up(Potato)','walk_to(Toaster)','put_down(Potato,Toaster)'], 'predicate_eval':[[0,1,0],[0,0,0],[1,0,0],[1,1,0],[0,0,0],[0,0,1]]}
     # replay_buffer = {'image_before':[], 'image_after':[], 'skill':['GoTo(Sofa, Book)','PickUp(Book,DiningTable)','GoTo(Book, Sofa)','DropAt(Book, Sofa)'], 'predicate_eval':[[], [], [], [],[],[]]}
