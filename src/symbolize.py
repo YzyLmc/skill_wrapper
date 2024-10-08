@@ -564,15 +564,15 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
 
         # hardcode skill name, will remove after workshop
         if "PickUp" in base_action_name or "DropAt" in base_action_name:
-            action_name = f"{base_action_name}_{action_counter}([OBJ], [LOC])"
+            action_name = f"{base_action_name}_{action_counter}(obj, loc)"
         else:
-            action_name = f"{base_action_name}_{action_counter}([LOC_1], [LOC_2])"
+            action_name = f"{base_action_name}_{action_counter}(init, goal)"
         while action_name in grounded_skill_dictionary:
             action_counter += 1
             if "PickUp" in base_action_name or "DropAt" in base_action_name:
-                action_name = f"{base_action_name}_{action_counter}([OBJ], [LOC])"
+                action_name = f"{base_action_name}_{action_counter}(obj, loc)"
             else:
-                action_name = f"{base_action_name}_{action_counter}([LOC_1], [LOC_2])"
+                action_name = f"{base_action_name}_{action_counter}(init, goal)"
         grounded_skill_dictionary[action_name]['precondition'] = operator['precondition']
         grounded_skill_dictionary[action_name]['effect'] = operator['effect']
 
