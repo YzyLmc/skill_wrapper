@@ -573,8 +573,8 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
                 action_name = f"{base_action_name}_{action_counter}(obj, loc)"
             else:
                 action_name = f"{base_action_name}_{action_counter}(init, goal)"
-        grounded_skill_dictionary[action_name]['precondition'] = operator['precondition']
-        grounded_skill_dictionary[action_name]['effect'] = operator['effect']
+        grounded_skill_dictionary[action_name]['precondition'] = [p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)') for p, value in operator['precondition'].items() if value == 1]
+        grounded_skill_dictionary[action_name]['effect'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['effect'].items()}
 
     return skill2operators, pred_dict, skill2triedpred, grounded_skill_dictionary
 

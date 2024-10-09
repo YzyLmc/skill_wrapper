@@ -35,9 +35,9 @@ def complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_d
         skill_prefix = skill.split('_')[0]
         for s in prefix2definition:
             if skill_prefix in s:
-                output[skill]['preconditions'] = [precond.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for precond in new_grounded_skill_dictionary[skill]['precondition'].keys()]
-                output[skill]['effects_positive'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == 1]
-                output[skill]['effects_negative'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == -1]
+                output[skill]['preconditions'] = new_grounded_skill_dictionary[skill]['precondition']
+                output[skill]['effects_positive'] = [eff for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == 1]
+                output[skill]['effects_negative'] = [eff for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == -1]
                 output[skill]['arguments'] = prefix2definition[s]['arguments']
     return output
 
@@ -97,7 +97,13 @@ def update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2
             idx = replay_buffer['num2id'][i]
             truth_values.append(pred_dict[p]['task'][idx][0])
             truth_values.append(pred_dict[p]['task'][idx][1])
-        predicate_eval.append(truth_values)
+        overlapped_replay_buffer =[]
+        for i in range(len(truth_values)):
+            if i == len(truth_values) - 1:
+                overlapped_replay_buffer.extend(truth_values[i])  # Add both elements from the last sublist
+            else:
+                overlapped_replay_buffer.append(truth_values[i][0])
+        predicate_eval.append(overlapped_replay_buffer)
     replay_buffer['predicate_eval'] = predicate_eval
 
     # print(replay_buffer)
@@ -190,8 +196,8 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
     if not log_data:
         log_data = {"0":{'model': args.model, 'env': args.env}}
     time_step = max([int(key) for key in list(log_data.keys())]) + 1
-    log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
-
+    # log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
+    log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': grounded_skill_dictionary, 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
     grounded_skill_dictionary = complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary)
     grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
     replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
