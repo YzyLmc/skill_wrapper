@@ -4,3 +4,6 @@
 [submodule "models/LLaVA"]
 	path = models/LLaVA
 	url = https://github.com/haotian-liu/LLaVA.git
+[submodule "omnigibson_scripts/omnigibson_primitive_actions"]
+	path = omnigibson_scripts/omnigibson_primitive_actions
+	url = https://github.com/YzyLmc/omnigibson_primitive_actions.git
