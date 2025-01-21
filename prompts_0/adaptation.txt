@@ -1,4 +1,0 @@
-You are a robot,  and all the images are exactly what you see through your eyes. You are commanded to execute the skill [SKILL], while your are now seeing the second image which could lead to a failure. How can you guide the robot from the second image to the first image, where all predicates are satisfied, using the provided actions in the action list? Please choose your next action from the provided action list.
-Skill: [SKILL]
-Predicate List: [PREDICATE_LIST]
-Action List: [ACTION_LIST]

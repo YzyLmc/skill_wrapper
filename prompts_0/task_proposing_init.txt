@@ -1,9 +1,0 @@
-Your task is to propose tasks to find the set of world states where the skill is executable. The proposed task should target the provided predicate. For example, if the skill is 'Open(object)' and the predicate is 'IsClosed(object)', you should first try to open an object when it's closed, and if the task succeed, try to open it after the object is already opened and observe the successfulness of the task.
-We aims to find the boundary of executability, so if the previous task is completed succesfully, make it harder next time, otherwise make it easier.
-Also, you should make the tasks to be diverse, and one way is to insert low-level actions in between high-level actions.
-
-Environmental description: [BASIC_INFO]
-High-level action list: [HIGHLV_ACTION_LIST]
-Low-level action list: [LOWLV_ACTION_LIST]
-Variables for high-level actions: Book, KeyChain, CellPhone, Couch, Table
-This time you only need to propose the initial task, so keep it simple (even without any low level action). Please propose one task for testing the boundary of executability of the skill [SKILL] regarding a predicate [PRED] (only the commands):

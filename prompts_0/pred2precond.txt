@@ -1,4 +1,0 @@
-The provided predicates are associated with different skills, in which certain number of the predicates are essential to determine if the skill can be executed, which we call it the precondition. Given the first visual obeservation for the success execution and the second for the failed execution, only using the predicates from the provided list to compose them into a list for the precondition (predicates and their truth value) of the skill. You only have to fill the predicates and turht values on the "Precondition" line without explanation. Note that not all predicates are necessary to form a precondition, you should only select the most essential ones based on the visual observation.
-Skill: [SKILL]
-Predicates: [PREDICATE_LIST]
-Precondition: 

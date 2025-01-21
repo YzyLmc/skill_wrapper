@@ -1,3 +1,0 @@
-There are certain predicates associated with different skills, please find out the ones that have changed their truth value by comparing the visual observation before and after the execution of the skill. You only have to fill the predicates and truth values before and after the execution on the "Effect" line without explanation. Note that not all predicates are necessary to form the effect, you should only select the most essential ones based on the visual observation.
-Skill: [SKILL]
-Predicates: [PREDICATE_LIST]

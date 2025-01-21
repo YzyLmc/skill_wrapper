@@ -1,3 +1,0 @@
-You are a robot executing the skill and a list of predicates have to be satisfied for the skill execution. Now you need to predicate if your are going to succeed. Given the first image to be a successful case, the second image to be a failure case, and the third image to be the view that you are currently seeing through your eyes, do you think you are going to succeed? Use one sentence to answer, and provide your final answer with only 'Yes' or 'No' in a separate line.
-Skill: [SKILL]
-Predicate List: [PREDICATE_LIST]
