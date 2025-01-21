@@ -573,7 +573,7 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
                 action_name = f"{base_action_name}_{action_counter}(obj, loc)"
             else:
                 action_name = f"{base_action_name}_{action_counter}(init, goal)"
-        grounded_skill_dictionary[action_name]['precondition'] = [p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)') for p, value in operator['precondition'].items() if value == 1]
+        grounded_skill_dictionary[action_name]['precondition'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['precondition'].items()}
         grounded_skill_dictionary[action_name]['effect'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['effect'].items()}
 
     return skill2operators, pred_dict, skill2triedpred, grounded_skill_dictionary
@@ -664,8 +664,42 @@ def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
             elif f_d == 0 or not fail_tasks:
                 return t_p/t_d, 0
             else:
-                tscore = t_p/t_d
-                fscore = f_n/f_d
+                tscore_t = t_p/t_d
+                fscore_t = f_n/f_d
+            # calculate false score
+            t_p, t_d, f_n, f_d = 0, 0, 0, 0
+            for ps in equal_preds:
+                if pred in ps:
+                    repeated = True
+                    for p in ps:
+                        for t_suc in success_tasks:
+                            t_p += 1 if pred_dict[p]['task'][t_suc][0] == False else 0
+                            t_d += 1
+                        for t_fail in tasks:
+                            f_n += 1 if pred_dict[p]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
+                            f_d += 1 if pred_dict[p]['task'][t_fail][0] == True else 0
+            if repeated == False:
+                    for t_suc in success_tasks:
+                        t_p += 1 if pred_dict[pred]['task'][t_suc][0] == False else 0
+                        t_d += 1
+                    for t_fail in tasks:
+                        f_n += 1 if pred_dict[pred]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
+                        f_d += 1 if pred_dict[pred]['task'][t_fail][0] == True else 0
+            if not tasks:
+                return 0, 0
+            elif t_d == 0 or not success_tasks:
+                return 0, f_n/f_d
+            elif f_d == 0 or not fail_tasks:
+                return t_p/t_d, 0
+            else:
+                tscore_f = t_p/t_d
+                fscore_f = f_n/f_d
+            if tscore_t * fscore_t > tscore_f * fscore_f:
+                tscore = tscore_t
+                fscore = fscore_t
+            else:
+                tscore = tscore_f
+                fscore = fscore_f
         if type == 'eff':
             # truth value change could be 1, 0, -1
             # tscore and fscore should both be high and agree with each other
