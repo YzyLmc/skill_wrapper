@@ -181,7 +181,11 @@ class GPT4:
             "max_tokens": max_tokens,
             "logprobs": logprobs,
             "temperature": self.temp
+            } if self.engine != "o1" else {
+            "model": self.engine,
+            "messages": [],
             }
+        assert not (logprobs and self.engine == "o1")
         if logprobs:
             payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
@@ -245,7 +249,7 @@ def get_top_down_frame(controller):
     return Image.fromarray(top_down_frame)
 
 if __name__ == "__main__":
-    gpt = GPT4()
+    gpt = GPT4(engine="o1")
     # imgs = ["test_imgs/test_0.png", "test_imgs/test_1.png"]
     # imgs = ["test_imgs/pickup.png"]
     # imgs = ["test_imgs/success.png", "test_imgs/failure.png"]
