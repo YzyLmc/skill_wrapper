@@ -49,7 +49,11 @@ def TurnRight(controller):
     )
 
 def GoTo(object_or_location_1, object_or_location_2, controller, event):
-    '''Teleport to a distance from the obj *The goto function has to be imperfect*'''
+    '''
+    Teleport to a fixed location associated with an object.
+    It now only works with FloorPlan203
+
+    '''
     def dist_pose(obj1, obj2):
         x1, y1, z1 = obj1["x"], obj1["y"], obj1["z"]
         x2, y2, z2 = obj2["x"], obj2["y"], obj2["z"]

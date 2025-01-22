@@ -555,11 +555,12 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
             skill2triedpred[skill].append(new_p)
         t += 1
     # breakpoint()
+    
     # partitioning
     partitioned_output = partition_by_effect(pred_dict)
     grounded_skill_dictionary = defaultdict(dict)
     for idx, operator in partitioned_output.items():
-        base_action_name = operator['name'][0].split('_')[0]
+        base_action_name = operator['task'][0].split('_')[0]
         action_counter = 1
 
         # hardcode skill name, will remove after workshop
@@ -573,6 +574,7 @@ def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill
                 action_name = f"{base_action_name}_{action_counter}(obj, loc)"
             else:
                 action_name = f"{base_action_name}_{action_counter}(init, goal)"
+        grounded_skill_dictionary[action_name]['task'] = operator['task']
         grounded_skill_dictionary[action_name]['precondition'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['precondition'].items()}
         grounded_skill_dictionary[action_name]['effect'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['effect'].items()}
 
@@ -804,8 +806,10 @@ def partition_by_effect(pred_dict):
     def group_nested_dict(nested_dict):
         'calculate precondition and effect based on task2pred'
         'Effect is calculated as change of truth values'
-        'Preconddtion is the intersection of '
-        result = defaultdict(lambda: {'name': [], 'effect': {}, 'precondition': {}})
+        'Preconddtion is the intersection of all abstract states before execution'
+        result = defaultdict(lambda: {'task': [], 'effect': {}, 'precondition': {}})
+
+        # effect
         for outer_key, inner_dict in nested_dict.items():
             value_dict = {k: v[1] - v[0] for k, v in inner_dict.items() if v[1] - v[0] != 0}
             group_id = None
@@ -816,14 +820,21 @@ def partition_by_effect(pred_dict):
             if group_id is None:
                 group_id = len(result)
                 result[group_id]['effect'] = value_dict
-            result[group_id]['name'].append(outer_key)
-            for k, v in inner_dict.items():
-                if k not in result[group_id]['precondition']:
-                    result[group_id]['precondition'][k] = v[0]
-                else:
-                    if result[group_id]['precondition'][k] != v[0]:
-                        result[group_id]['precondition'].pop(k)
-        return dict(result)
+            result[group_id]['task'].append(outer_key)
+
+        result = dict(result)
+        # precondition
+        for k, v in result.items():
+            cluster = v['task']
+            temp_dict = defaultdict(list)
+            for task in cluster:
+                for pred in nested_dict[task]:
+                    temp_dict[pred].append(nested_dict[task][pred][0])
+            for pred, v_list in temp_dict.items():
+                if len(set(v_list)) == 1:
+                    result[k]['precondition'][pred] = v_list[0]
+
+        return result
     
     task2pred = convert_to_task2pred(pred_dict)
     suc_task2pred = {}
@@ -831,7 +842,7 @@ def partition_by_effect(pred_dict):
     for task, value in task2pred.items():
         if not "False" in task:
             suc_task2pred[task] = value
-    partitioned_tasks = group_nested_dict(task2pred)
+    partitioned_tasks = group_nested_dict(suc_task2pred)
 
     return partitioned_tasks
 

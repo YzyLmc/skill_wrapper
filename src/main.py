@@ -24,7 +24,7 @@ def skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictiona
     return grounded_skill_dictionary
 # new templating function just stuff argument definitions in
 def complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary):
-    # construct atgument definition from previous dictionary first
+    # construct argument definition from previous dictionary first for skill sequence proposal
     prefix2definition = {}
     for skill in grounded_skill_dictionary:
         skill_prefix = skill.split('_')[0]
@@ -32,9 +32,9 @@ def complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_d
             prefix2definition[skill_prefix] = {"arguments":grounded_skill_dictionary[skill]['arguments']}
     output = defaultdict(dict)
     for skill in new_grounded_skill_dictionary:
-        # skill_prefix = skill.split('_')[0]
         for skill_prefix in prefix2definition:
             if skill_prefix in skill:
+                output[skill]['task'] = new_grounded_skill_dictionary[skill]['task']
                 output[skill]['preconditions'] = new_grounded_skill_dictionary[skill]['precondition']
                 output[skill]['effects_positive'] = [eff for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == 1]
                 output[skill]['effects_negative'] = [eff for eff, value in new_grounded_skill_dictionary[skill]['effect'].items() if value == -1]
@@ -168,10 +168,10 @@ def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, r
         try:
             if len(chosen_skill_sequence) < 6:
                 continue
-            breakpoint()
+            # breakpoint()
             # map partitioned operator back to skills
             chosen_skill_sequence = [re.sub(r'_\d+', '', action) for action in chosen_skill_sequence]
-            breakpoint()
+            # breakpoint()
             generated_code = convert_task_to_code(chosen_skill_sequence)
             local_scope = {}
             global_scope = {}
@@ -321,7 +321,7 @@ def main():
                 lines = file.readlines()
             with open(save_path, 'w') as file:
                 for line in lines:
-                    if not line.startswith('HTTP'):
+                    if not 'HTTP' in line:
                         file.write(line)
                         if args.step_by_step:
                             breakpoint()
