@@ -256,8 +256,8 @@ if __name__ == "__main__":
     # imgs = ["test_imgs/failure.png"]
     # imgs = ["test_imgs/caption.png"]
     # imgs = ["test_imgs/1.jpg", "test_imgs/3.jpg"]
-    imgs = ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_3.jpg']
-    imgs = ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_3.jpg']
+    imgs = ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_2.jpg']
+    imgs = ['tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_2.jpg']
     # txt = "The robot is executing pickup() action. There are certain PDDL predicates that are related to the task. Please propose them."
     # txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
     # txt = 'A robot is executing tasks in the envrionment. Here is what the robot sees from an egocentric view. Please provide a general description of the type of the environment, such as household or facotry, and the robots, such as its mobility and embodiement.'
@@ -278,8 +278,9 @@ if __name__ == "__main__":
     # Predicates: 'AtLocation(object,location)', 'Holding(object)', 'At(location)', 'IsReachable(object)', 'IsFreeHand()'
     # object = Book, location = Table
     # """
-    txt = "A robot is executing a skill PickUp(Bowl, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate HasEmptyHands()? Answer with reasoning and True or False in a separate line. Note that it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nHasEmptyHand(): The robot's hands are empty and not holding anything."
-    responses = gpt.generate_multimodal(txt, imgs,logprobs=False)
+    # txt = "A robot is executing a skill PickUp(Book, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate HasEmptyHands()? Answer with reasoning and True or False in a separate line. Note that the blue sphere on the gripper is a part of the gripper and is not an object, and it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nHasEmptyHand(): The robot's hands are empty and not holding anything."
+    txt = "A robot is executing a skill GoTo(CoffeeTable, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate isClose(CoffeeTable)? Answer with reasoning and True or False in a separate line. Note that the blue sphere on the gripper is a part of the gripper and is not an object, and it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nisClose(loc): The robot is physically close to the location `loc`."
+    responses = gpt.generate_multimodal(txt, imgs,logprobs=True)
     # responses = gpt.generate_multimodal(txt, imgs)
     # responses = gpt.generate(txt)
     print(responses)

@@ -85,12 +85,12 @@ def eval_init_state(controller, command_list):
     'command_list example: '
     event, controller = init_env(controller)
     for command in command_list:
-        executable_command = 
-        exec
+        executable_command
     return event, controller
 
 
-    def sampler()
+# sampler for 3 obj and 3 
+def sampler():
     from itertools import product
 
     # Define objects and locations
@@ -110,8 +110,8 @@ def eval_init_state(controller, command_list):
                 holding = 'hand_empty'
             states.append((robot_loc, obj_a_loc, obj_b_loc, obj_c_loc, holding))
 
-    # Function to filter states based on predicates
-    def get_states_satisfying_predicates(at=None, at_obj=None, holding=None, hand_empty=None):
+# Function to filter states based on predicates
+def get_states_satisfying_predicates(at=None, at_obj=None, holding=None, hand_empty=None):
         satisfying_states = []
         
         for state in states:
