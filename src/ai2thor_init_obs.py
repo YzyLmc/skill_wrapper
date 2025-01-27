@@ -22,18 +22,19 @@ from manipula_skills import *
 
 # init ai2thor controller
 controller = Controller(
+    local_executable_path="/home/ziyi/git/ai2thor-4.3.0/unity/test.x86_64",
     massThreshold = 1,
-                agentMode="arm",
-                scene = "FloorPlan203",
-                snapToGrid=False,
-                visibilityDistance=1.5,
-                gridSize=0.1,
-                renderDepthImage=True,
-                renderInstanceSegmentation=True,
-                renderObjectImage = True,
-                width= 720,
-                height= 720,
-                fieldOfView=90
+    agentMode="arm",
+    scene = "FloorPlan203",
+    snapToGrid=False,
+    visibilityDistance=1.5,
+    gridSize=0.1,
+    renderDepthImage=True,
+    renderInstanceSegmentation=True,
+    renderObjectImage = True,
+    width= 720,
+    height= 720,
+    fieldOfView=90
             )
 event = controller.reset(scene="FloorPlan203", fieldOfView=100)
 controller.step(action="SetHandSphereRadius", radius=0.04)
@@ -128,9 +129,8 @@ for img in event.third_party_camera_frames:
     im.save(f"{directory}obs_{counter}.jpg")
     print(f"Screenshot saved to {directory}obs_{counter}.jpg")
     counter += 1
-
 '''
-
+    return template
 if __name__ == "__main__":
     generated_code = get_initial_obs()
     print(generated_code)

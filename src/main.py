@@ -11,6 +11,7 @@ from utils import GPT4, load_from_file, save_to_file
 from task_proposing import TaskProposing
 from symbolize import refine_pred, merge_predicates, cross_assignment, refine_pred_new
 from ai2thor_task_exec import convert_task_to_code
+from ai2thor_init_obs import get_initial_obs
 
 # bunch of conversion functions to seam refinement and task proposal
 def skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary):
@@ -231,6 +232,7 @@ def main():
 
         model = GPT4(engine=args.model)
         if args.continue_learning:
+            # TODO: continue learning not tested after update
             assert args.load_fpath
             # load from log file
             log_data = load_from_file(args.load_fpath)
@@ -258,11 +260,14 @@ def main():
 
             skill2tasks = update_tasks(skill2tasks)
             log_data = None
-        # breakpoint()
 
         # env description
         grounded_predicate_dictionary = {}
         curr_observation_path = []
+
+        # get initial observation
+        get_initial_obs()
+        
         # init task proposing system
         replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[]}
         objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
