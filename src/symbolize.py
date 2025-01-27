@@ -8,6 +8,66 @@ import logging
 
 from manipula_skills import *
 
+def grounded_to_string(dict):
+    """
+    Assembly a dictionary of grounded/lifted representation to string
+    dict::dict:: {'name':str, 'params':list}
+    """
+    return f"{dict['name']}({', '.join(dict['params'])})"
+
+def ground_with_params(lifted, params, type_dict):
+    """
+    Grounded a skill or a predicate with parameters and their types.
+    lifted::dict:: lifted skill/predicate with parameter type, e.g., {'name':"GoTo", 'params':["[ROBOT]", "[LOC]", "[LOC]"]}/{'name':"At", 'params':["[LOC]"]}
+    params::list:: list of parameters, e.g., ["Apple", "Table"]
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['[OBJ]'], "Table": ['[LOC]']}
+    """
+    # tuple is applicable to the lifted representation
+    assert len(lifted['params']) == len(params)
+    for i, p in enumerate(params):
+        assert p in type_dict
+        assert lifted['params'][i] in type_dict[p]
+
+    # grounded skill/predicate
+    return {'name': lifted['name'], 'params': params}
+
+# TODO: revise data structure under tasks, record grounding parameters
+def possible_grounded_predicates(pred_dict, type_dict):
+    """
+    Generate all possible grounded predicate using the combination of predicates and objects
+    pred_dict::dict:: {pred_name:{task: {id: [Bool, Bool]}, sem: str, params:list(str)}}
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['[OBJ]'], "Table": ['[LOC]']}
+    return:: list:: list of possible grounded predicates
+    """
+    # build inverse type_dict
+    type_dict_inv = defaultdict(list)
+    for param, type_ls in type_dict.items():
+        for type  in type_ls:
+            type_dict_inv[type].append(param)
+    
+    # generate all possible grounded predicates
+    grounded_predicates = []
+    for pred_name, pred_info in pred_dict.items():
+        for params in itertools.product(*[type_dict_inv[p] for p in pred_info['params']]):
+            grounded_predicates.append({'name': pred_name, 'params': params})
+    
+    return grounded_predicates
+
+def pred_to_update(grounded_predicates, skill):
+    '''
+    Given a skill and its parameters, find the set of predicates that need updates
+    skill::dict:: {'name':str, 'params':list}
+    grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
+    '''
+    return [gp for gp in grounded_predicates if any([p in gp['params'] for p in skill['params']])]
+
+def lift_grounded_predicate(grounded_pred, type_dict, pred_dict):
+    """
+    Lift a grounded predicate, e.g., {'name': 'At', 'params': ['Apple', 'Table']} to a {'name':"At", 'params':["[OBJ]", "[LOC]"]}
+    """
+    assert all([p in type_dict for p in grounded_pred['params']])
+    return pred_dict[grounded_pred['name']]
+
 # evaluate an execution using foundation model. Expected acc to be ~ 70%
 def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
     'Get successfulness of the execution given images and the skill name'
@@ -19,6 +79,37 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
+def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_dict, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+    '''
+    evaluate truth value of a predicate using a dictionary of parameters
+    skill::str:: lifted skill with parameter type, e.g., GoTo([ROBOT], [LOC], [LOC])
+    pred::str:: grounded predicate with parameter type, e.g., At([LOC])
+    '''
+    def construct_prompt(prompt, grounded_skill, grounded_pred):
+        place_holders = ['[GROUNDED_SKILL]', '[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
+        while any([p in prompt for p in place_holders]):
+            prompt = prompt.replace('[GROUNDED_SKILL]', grounded_skill)
+            prompt = prompt.replace('[GROUNDED_PRED]', grounded_pred)
+            prompt = prompt.replace('[LIFTED_PRED]', lift_grounded_predicate(grounded_pred, type_dict, pred_dict))
+            prompt = prompt.replace('[SEMANTIC]', pred_dict[grounded_pred['name']]['sem'])
+        return prompt
+    
+    prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, grounded_skill, grounded_pred)
+    logging.info(f'Evaluating predicate {grounded_pred} on skill {grounded_skill}')
+    if prompt:
+        logging.info('Calling GPT4')
+        resp = model.generate_multimodal(prompt, img)[0]
+        result = True if "True" in resp.split('\n')[-1] else False
+        print(result)
+        return result
+    else:
+        logging.info(f"mismatch skill and predicate: return False\n{skill} / {pred}")
+        return False
+    
+
+        
+
 def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
     '''
     Evaluate one predicate given one image.
@@ -28,88 +119,6 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
     Obsoleted: --- GoTo(loc_1, loc_2) will be evaluated differently since the arguments are different. 
     Empty string '' means no argument
     '''
-    # def construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2):
-    #     if 'GoTo' not in skill: # pickup or dropat
-    #         if '[LOC_1]' in pred or '[LOC_2]' in pred: # convert goto pred to pickup and dropat
-    #             if not ('[LOC_1]' in pred and '[LOC_2]' in pred):
-    #                 # e.g., At([LOC_1]),  At([LOC_2])
-    #                 pred = pred.replace('[LOC_1]', loc)
-    #                 pred = pred.replace('[LOC_2]', loc)
-    #             else: # both [LOC_1] and [LOC_2] are in the prompt
-    #                 # e.g. clearPath([LOC_1], [LOC_2]), N/A
-    #                 # always return one value so if 50% success and 50% fail this pred will not be added to precond or eff
-    #                 return None
-                
-    #         else: # pickup and dropat pred, or not argument
-    #             while "[OBJ]" in pred or "[LOC]" in pred:
-    #                 pred = pred.replace("[OBJ]", obj)
-    #                 pred = pred.replace("[LOC]", loc)
-
-    #         while "[LOC]" in skill or "[OBJ]" in skill:
-    #             skill = skill.replace("[LOC]", loc)
-    #             skill = skill.replace("[OBJ]", obj)
-    #     else:
-    #         assert 'GoTo' in skill
-    #         if ('[LOC_1]' in pred or '[LOC_2]' in pred): # GoTo pred
-    #             # e.g., At([LOC_1]),  At([LOC_2])
-    #             # e.g. clearPath([LOC_1], [LOC_2])
-    #             pred = pred.replace('[LOC_1]', loc_1)
-    #             pred = pred.replace('[LOC_2]', loc_2)
-    #         else: # pickup and drop at on goto
-    #             # first determine the type of the arguments are loc or obj
-    #             # goto might have 2 obj, 1 obj 1 loc, or 2 loc
-    #             # pred might have 0 arg, 1 obj, 1 loc, 1 obj and 1 loc
-    #             goto_obj_num = len([obj for obj in obj_ls if obj in [loc_1, loc_2]])
-    #             goto_loc_num = len([obj for obj in loc_ls if obj in [loc_1, loc_2]])
-    #             pred_obj_num = 1 if '[OBJ]' in pred else 0
-    #             pred_loc_num = 1 if '[LOC]' in pred else 0
-    #             if pred_obj_num + pred_loc_num == 0:
-    #                 pass
-    #             elif pred_obj_num == 1 and pred_loc_num == 0:
-    #                 if (goto_obj_num == 2 and goto_loc_num == 0):
-    #                     if loc_2 in obj_ls:
-    #                         while "[OBJ]" in pred:
-    #                             pred = pred.replace("[OBJ]", loc_2)
-    #                     else:
-    #                         return None
-    #                 elif goto_obj_num == 0 and goto_loc_num== 2:
-    #                     return None
-    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
-    #                     obj = loc_1 if loc_1 in obj_ls else loc_2
-    #                     while "[OBJ]" in pred:
-    #                         pred = pred.replace("[OBJ]", obj)
-    #             elif pred_obj_num == 0 and pred_loc_num == 1:
-    #                 if goto_obj_num == 2 and goto_loc_num == 0:
-    #                     return None
-    #                 elif goto_obj_num == 0 and goto_loc_num== 2:
-    #                     if loc_2 in loc_ls:
-    #                         while "[LOC]" in pred:
-    #                             pred = pred.replace("[LOC]", loc_2)
-    #                     else:
-    #                         return None
-    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
-    #                     loc = loc_1 if loc_1 in loc_ls else loc_2
-    #                     while "[LOC]" in pred:
-    #                         pred = pred.replace("[LOC]", loc)
-    #             elif pred_obj_num == 1 and pred_loc_num == 1:
-    #                 if (goto_obj_num == 2 and goto_loc_num == 0) or (goto_obj_num == 0 and goto_loc_num== 0):
-    #                     return None
-    #                 elif goto_obj_num == 1 and goto_loc_num == 1:
-    #                     obj = loc_1 if loc_1 in obj_ls else loc_2
-    #                     loc = loc_1 if loc_1 in loc_ls else loc_2
-    #                     while "[LOC]" in pred or '[OBJ]' in pred:
-    #                         # breakpoint()
-    #                         pred = pred.replace("[OBJ]", obj)
-    #                         pred = pred.replace("[LOC]", loc)
-    #         while "[LOC_1]" in skill or "[LOC_2]" in skill:
-    #             skill = skill.replace("[LOC_1]", loc_1)
-    #             skill = skill.replace("[LOC_2]", loc_2)
-    #     while "[PRED]" in prompt or "[SKILL]" in prompt or "[SEMANTIC]" in prompt:
-    #         prompt = prompt.replace("[PRED]", pred)
-    #         prompt = prompt.replace("[SKILL]", skill)
-    #         prompt = prompt.replace("[SEMANTIC]", sem)
-    #     return prompt
-
     def construct_prompt(prompt, skill, pred, obj, loc, loc_1, loc_2):
         arg_vec = [int('[OBJ]' in  pred) + int('[OBJ]' in  skill), 
                    int('[LOC]' in  pred) + int('[LOC]' in  skill), 
@@ -151,20 +160,20 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
         logging.info(f"mismatch skill and predicate: return False\n{skill} / {pred}")
         return False
 
-def eval_pred_set(model, skill, pred2sem, obj, loc,loc_1, loc_2, img):
-    '''
-    Evaluate set of predicates
-    pred_set::list(str)
-    returns::Dict(str:bool)
-    '''
-    return {pred: eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img) for pred, sem in pred2sem.items()}
+# def eval_pred_set(model, skill, pred2sem, obj, loc,loc_1, loc_2, img):
+#     '''
+#     Evaluate set of predicates
+#     pred_set::list(str)
+#     returns::Dict(str:bool)
+#     '''
+#     return {pred: eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img) for pred, sem in pred2sem.items()}
 
 # TODO: have to track predicates have been tried in the prompt?
 # Adding to precondition or effect are different prompts
 def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
     '''
     generate_predicates based on existing predicates dictionary describing the same symbolic state
-    pred_dict:: Dict(pred_name: Bool)
+    pred_dict:: {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
     type:: str:: 'precond' or 'eff' 
     '''
     def construct_prompt(prompt, skill, pred_dict):
@@ -191,6 +200,7 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])').replace(' ','')
     return pred, sem
 
+# TODO: Separate predicate update from detecting mismatch states
 def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
     '''
     look for same symbolic states (same s1 or s2 - s1) in task dictionary
@@ -232,8 +242,6 @@ def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
             dup_tasks[skill] = tasks_with_same_symbolic_states(task2state)
     elif pred_type == "eff":
         # return two same symbolic states TRANSITION (symbolic)
-        # success_task = mismatch_tasks[skill][0] if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == True else mismatch_tasks[skill][1]
-        # state_change_success = int(new_p_mismatch[success_task][1]==True) - int(new_p_mismatch[success_task][0]==True)
         for skill, tasks in skill2tasks.items():
             task2state = {}
             for id, task in tasks.items():
