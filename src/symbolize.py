@@ -1,4 +1,12 @@
-'Get symbolic representation from skill semantic info and observation'
+'''
+Get symbolic representation from skill semantic info and observation
+Data structures:
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+    pred_dict:: {pred_name:{params:list, sem: str}}
+    pred_list:: [{'name':str, 'params':list, 'semantic':str}]
+    grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+'''
 from utils import GPT4, load_from_file
 from collections import defaultdict
 import inspect
@@ -8,7 +16,7 @@ import logging
 
 from manipula_skills import *
 
-def grounded_to_string(dict):
+def dict_to_string(dict):
     """
     Assembly a dictionary of grounded/lifted representation to string
     dict::dict:: {'name':str, 'params':list}
@@ -20,7 +28,7 @@ def ground_with_params(lifted, params, type_dict):
     Grounded a skill or a predicate with parameters and their types.
     lifted::dict:: lifted skill/predicate with parameter type, e.g., {'name':"GoTo", 'params':["[ROBOT]", "[LOC]", "[LOC]"]}/{'name':"At", 'params':["[LOC]"]}
     params::list:: list of parameters, e.g., ["Apple", "Table"]
-    type_dict:: dict:: {param: type}, e.g., {"Apple": ['[OBJ]'], "Table": ['[LOC]']}
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     """
     # tuple is applicable to the lifted representation
     assert len(lifted['params']) == len(params)
@@ -32,11 +40,12 @@ def ground_with_params(lifted, params, type_dict):
     return {'name': lifted['name'], 'params': params}
 
 # TODO: revise data structure under tasks, record grounding parameters
-def possible_grounded_predicates(pred_dict, type_dict):
+def possible_grounded_predicates(pred_list, type_dict):
     """
     Generate all possible grounded predicate using the combination of predicates and objects
-    pred_dict::dict:: {pred_name:{task: {id: [Bool, Bool]}, sem: str, params:list(str)}}
-    type_dict:: dict:: {param: type}, e.g., {"Apple": ['[OBJ]'], "Table": ['[LOC]']}
+    pred_dict::dict:: {pred_name:{semantic: str, params:list(str)}}
+    pred_list:: [{'name':str, 'params':list, 'semantic':str}]
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     return:: list:: list of possible grounded predicates
     """
     # build inverse type_dict
@@ -47,9 +56,9 @@ def possible_grounded_predicates(pred_dict, type_dict):
     
     # generate all possible grounded predicates
     grounded_predicates = []
-    for pred_name, pred_info in pred_dict.items():
-        for params in itertools.product(*[type_dict_inv[p] for p in pred_info['params']]):
-            grounded_predicates.append({'name': pred_name, 'params': params})
+    for pred in pred_list:
+        for params in itertools.product(*[type_dict_inv[p] for p in pred['params']]):
+            grounded_predicates.append({'name': pred['name'], 'params': params})
     
     return grounded_predicates
 
@@ -61,14 +70,23 @@ def pred_to_update(grounded_predicates, skill):
     '''
     return [gp for gp in grounded_predicates if any([p in gp['params'] for p in skill['params']])]
 
-def lift_grounded_predicate(grounded_pred, type_dict, pred_dict):
+def lift_grounded_predicate(grounded_pred, type_dict, pred_list):
     """
     Lift a grounded predicate, e.g., {'name': 'At', 'params': ['Apple', 'Table']} to a {'name':"At", 'params':["[OBJ]", "[LOC]"]}
     """
     assert all([p in type_dict for p in grounded_pred['params']])
-    return pred_dict[grounded_pred['name']]
+    output_list = []
+    # iterate through the pred_list to find the lifted representation
+    for pred in pred_list:
+        if pred['name'] == grounded_pred['name']:
+            if all([p in type_dict for p in pred['params']]):
+                output_list.append(pred)
+    # cannot have more than one matched lifted predicate
+    # e.g., existing two predicates At(a, b) and At(a, c) while the grounded version At(apple, banana) has type(banana) = [b, c]
+    assert len(output_list) == 1
+    return output_list[0]
 
-# evaluate an execution using foundation model. Expected acc to be ~ 70%
+# Not used: evaluate an execution using foundation model. Expected acc to be ~ 70%
 def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
     'Get successfulness of the execution given images and the skill name'
     def construct_prompt(prompt, skill):
@@ -79,19 +97,23 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_dict, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
     '''
     evaluate truth value of a predicate using a dictionary of parameters
-    skill::str:: lifted skill with parameter type, e.g., GoTo([ROBOT], [LOC], [LOC])
-    pred::str:: grounded predicate with parameter type, e.g., At([LOC])
+    grounded_skill::dict:: grounded skill with parameter type, e.g., {'name':'GoTo', "params":['location', 'location']}
+    grounded_pred::dict:: grounded predicate with parameter type, e.g., {'name':"At", 'params':["location"]}
     '''
     def construct_prompt(prompt, grounded_skill, grounded_pred):
+        # return none if none of the parameters of the grounded predicate match any of the parameters of the grounded skill
+        if not any([p in grounded_pred['params'] for p in grounded_skill['params']]):
+            return None
         place_holders = ['[GROUNDED_SKILL]', '[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
+        lifted_pred = lift_grounded_predicate(grounded_pred, type_dict, pred_list)
         while any([p in prompt for p in place_holders]):
             prompt = prompt.replace('[GROUNDED_SKILL]', grounded_skill)
             prompt = prompt.replace('[GROUNDED_PRED]', grounded_pred)
-            prompt = prompt.replace('[LIFTED_PRED]', lift_grounded_predicate(grounded_pred, type_dict, pred_dict))
-            prompt = prompt.replace('[SEMANTIC]', pred_dict[grounded_pred['name']]['sem'])
+            prompt = prompt.replace('[LIFTED_PRED]', dict_to_string(lifted_pred))
+            prompt = prompt.replace('[SEMANTIC]', lifted_pred['semantic'])
         return prompt
     
     prompt = load_from_file(prompt_fpath)
@@ -101,15 +123,13 @@ def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_dic
         logging.info('Calling GPT4')
         resp = model.generate_multimodal(prompt, img)[0]
         result = True if "True" in resp.split('\n')[-1] else False
-        print(result)
+        logging.info(f'{grounded_pred} evaluated to {result}')
         return result
     else:
-        logging.info(f"mismatch skill and predicate: return False\n{skill} / {pred}")
+        logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
         return False
-    
-
-        
-
+            
+# hard-coded eval function, will be replaced by the one above
 def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
     '''
     Evaluate one predicate given one image.
@@ -168,7 +188,32 @@ def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath
 #     '''
 #     return {pred: eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img) for pred, sem in pred2sem.items()}
 
-# TODO: have to track predicates have been tried in the prompt?
+def generate_pred_new(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
+    '''
+    propose new predicates based on the contrastive pair
+    '''
+    # TODO: add tried_pred back to the prompt
+    def construct_prompt(prompt, grounded_skill, pred_list):
+        while "[SKILL]" in prompt or "[PRED_DICT]" in prompt or "[TRIED_PRED]" in prompt:
+            prompt = prompt.replace("[SKILL]",  dict_to_string(grounded_skill))
+            # construct predicate list from pred_dict
+            pred_list_str = '\n'.join([f'{dict_to_string(pred)}: {pred["semantic"]}' for pred in pred_list])
+            prompt = prompt.replace("[PRED_LIST]", pred_list_str)
+            prompt = prompt.replace("[TRIED_PRED]", [dict_to_string(pred) for pred in tried_pred])
+
+    # model = GPT4(engine='o1-preview')
+    prompt_fpath += f"_{pred_type}.txt"
+    prompt = load_from_file(prompt_fpath)
+    prompt = construct_prompt(prompt, skill, pred_list)
+    logging.info('Generating predicate')
+    resp = model.generate(prompt)[0]
+    pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
+    # separate the parameters from the predicate into dictionary
+    # e.g., "At(obj, loc)"" -> {"name":"At", "params": ["obj", "loc"]}
+    new_pred = {'name': pred.split("(")[0], 'params': pred.split("(")[1].strip(")").split(", ")}
+    new_pred['semantic'] = sem
+    return new_pred
+
 # Adding to precondition or effect are different prompts
 def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
     '''
@@ -199,6 +244,17 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])').replace(' ','')
     return pred, sem
+
+def update_missing_predicates(model, pred_list, skill2tasks):
+    '''
+    grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+    skill2tasks:: dict(skill:dict(id: (step:(dict('s0':img_path, 's1':img_path,'params':list, 'success': Bool))))
+    '''
+    pass
+
+def detect_mismatch():
+    pass
 
 # TODO: Separate predicate update from detecting mismatch states
 def mismatch_symbolic_state(model, pred_dict, skill2tasks, pred_type):
