@@ -2,7 +2,6 @@
 Get symbolic representation from skill semantic info and observation
 Data structures:
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    pred_dict:: {pred_name:{params:list, sem: str}}
     pred_list:: [{'name':str, 'params':list, 'semantic':str}]
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
     lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
@@ -15,6 +14,17 @@ import itertools
 import logging
 
 from manipula_skills import *
+
+def set_pred_value(pred_list, grounded_pred, key, value):
+    """
+    Set predicate value by looking up pred_list and find the matching predicate.
+    grounded_pred::dict:: {'name':str, 'params':list}
+    """
+    for pred in pred_list:
+        pred_short = {'name':pred['name'], 'params':pred['params']}
+        if pred_short == grounded_pred:
+            pred[key] = value
+            break
 
 def dict_to_string(dict):
     """
@@ -128,6 +138,13 @@ def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_lis
     else:
         logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
         return False
+    
+def eval_pred_init(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath='prompts/evaluate_pred_ai2thor_init.txt'):
+    '''
+    Evaluate the predicates in the initial state with multiple images, using a different prompt.
+    '''
+    # TODO: test and tune prompt for evaluate initial state
+    return eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath=prompt_fpath)
             
 # hard-coded eval function, will be replaced by the one above
 def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
@@ -245,12 +262,16 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])').replace(' ','')
     return pred, sem
 
-def update_missing_predicates(model, pred_list, grounded_predicate_truth_value_log, lifted_predicate_truth_value_log):
+def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_truth_value_log, lifted_predicate_truth_value_log, type_dict):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
-    lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+    lifted_predicate_truth_value_log::dict::(same as pred_dict before) {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
+    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+    NOTE: step could be integer or string 'init', task is integer, init step doesn't have 'success' key
     '''
 
     # look for predicates that haven't been evaluated
@@ -260,25 +281,29 @@ def update_missing_predicates(model, pred_list, grounded_predicate_truth_value_l
     # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the evaluation function
 
     logging.info('looking for empty grounded predicates')
-    for task, steps in grounded_predicate_truth_value_log.items():
+    for task_id, steps in tasks.items():
+        # task not added to log? Maybe don't need this
+        if task_id not in grounded_predicate_truth_value_log:
+            grounded_predicate_truth_value_log[task_id] = {'init':pred_list_init}
         # for each step, iterate through all steps and find empty predicates and update them
-        for step, pred_ls in steps.items():
-            for pred in pred_ls:
-                if pred['truth_value'] == None:
+        for step_id, pred_list in grounded_predicate_truth_value_log[task_id].items():
+            for pred in pred_list:
+                # pred is grounded
+                items_per_step = steps[step_id]
+                # case 1: missing truth value in init state
+                if step_id == 'init' and pred['truth_value'] == None:
                     # evaluate the predicate
-                    pred['truth_value'] = eval_pred(model, task, pred['name'], pred['params'], task['img'])
-                    # lift the predicate
-                    lifted_pred = lift_grounded_predicate(pred, type_dict, pred_list)
-                    lifted_predicate_truth_value_log[lifted_pred['name']][task][step] = pred['truth_value']
+                    truth_value = eval_pred_init(model, items_per_step['image'], items_per_step['skill'], pred, type_dict, pred_list)
+                    set_pred_value(grounded_predicate_truth_value_log[task_id][step_id], pred, "truth_value", truth_value)
+                    # NOTE: maybe avoid lifted predicate log entirely, or calculate afterward
+                    # # lift the predicate
+                    # lifted_pred = lift_grounded_predicate(pred, type_dict, pred_list)
+                    # lifted_predicate_truth_value_log[lifted_pred['name']][task_id]
+                    
+                elif not step_id == 'init':
+                    skill = items_per_step['skill']
 
-    for pred in pred_list.keys():
-        for skill, tasks in skill2tasks.items():
-            for id, task in tasks.items():
-                if id not in pred_dict[pred]['task']:
-                    pred_dict[pred]['task'][id] = [
-                        eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s0']), \
-                        eval_pred(model, skill, pred, pred_dict[pred]['semantic'], task['obj'], task['loc'], task['loc_1'], task['loc_2'], task['s1'])
-                    ]    
+                
     logging.info('Done evaluation from mismatch_symbolic_state')
     
 
