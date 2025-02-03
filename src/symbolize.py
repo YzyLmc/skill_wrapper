@@ -15,16 +15,44 @@ import logging
 
 from manipula_skills import *
 
-def set_pred_value(pred_list, grounded_pred, key, value):
-    """
-    Set predicate value by looking up pred_list and find the matching predicate.
-    grounded_pred::dict:: {'name':str, 'params':list}
-    """
-    for pred in pred_list:
-        pred_short = {'name':pred['name'], 'params':pred['params']}
-        if pred_short == grounded_pred:
-            pred[key] = value
-            break
+class PredicateState:
+    def __init__(self, predicates):
+        """
+        Initializes the predicate state.
+        predicates::list:: A list of predicate dictionaries {'name': str, 'params': tuple/list, ...}
+        """
+        self.pred_dict = {self._keyify(pred): pred for pred in predicates}
+
+    def _keyify(self, pred):
+        """Generates a unique key from predicate name and parameters."""
+        return (pred["name"], tuple(pred["params"]))
+
+    def set_pred_value(self, grounded_pred, key, value):
+        """
+        Sets the predicate value efficiently using dictionary lookup.
+        """
+        pred_key = self._keyify(grounded_pred)
+        if pred_key in self.pred_dict:
+            self.pred_dict[pred_key][key] = value
+
+    def get_pred_value(self, grounded_pred, key):
+        """
+        Retrieves the predicate value.
+        """
+        pred_key = self._keyify(grounded_pred)
+        return self.pred_dict.get(pred_key, {}).get(key, None)
+
+
+# def set_pred_value(pred_list, grounded_pred, key, value):
+#     """
+#     Set predicate value by looking up pred_list and find the matching predicate.
+#     grounded_pred::dict:: {'name':str, 'params':list}
+#     """
+#     for pred in pred_list:
+#         pred_short = {'name':pred['name'], 'params':pred['params']}
+#         if pred_short == grounded_pred:
+#             pred[key] = value
+#             break
 
 def dict_to_string(dict):
     """
@@ -267,6 +295,7 @@ def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_t
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    grounded_predicate_truth_value_log::dict::{task:{step:PredicateState}}
     lifted_predicate_truth_value_log::dict::(same as pred_dict before) {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
@@ -278,14 +307,17 @@ def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_t
     # The truth values could be missing if:
     #    1. the predicate is newly added (assuming all possible grounded predicates are added, including the init step)
     #    2. a task is newly executed
-    # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the evaluation function
+    # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the scoring function
 
     logging.info('looking for empty grounded predicates')
     for task_id, steps in tasks.items():
         # task not added to log? Maybe don't need this
+        # tasks always get updated after every execution
         if task_id not in grounded_predicate_truth_value_log:
             grounded_predicate_truth_value_log[task_id] = {'init':pred_list_init}
         # for each step, iterate through all steps and find empty predicates and update them
+        # calculate predicates to update based on the last action every step after init
+        # init step is updated separately
         for step_id, pred_list in grounded_predicate_truth_value_log[task_id].items():
             for pred in pred_list:
                 # pred is grounded
@@ -295,10 +327,11 @@ def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_t
                     # evaluate the predicate
                     truth_value = eval_pred_init(model, items_per_step['image'], items_per_step['skill'], pred, type_dict, pred_list)
                     set_pred_value(grounded_predicate_truth_value_log[task_id][step_id], pred, "truth_value", truth_value)
-                    # NOTE: maybe avoid lifted predicate log entirely, or calculate afterward
-                    # # lift the predicate
-                    # lifted_pred = lift_grounded_predicate(pred, type_dict, pred_list)
-                    # lifted_predicate_truth_value_log[lifted_pred['name']][task_id]
+                elif not step_id == 'init':
+                    
+                    # if no need to update, copy from previous state
+                    
+                    # NOTE: cannot lift from grounded log due to conflicting truth values, will directly log when scoring
                     
                 elif not step_id == 'init':
                     skill = items_per_step['skill']
