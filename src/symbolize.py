@@ -41,7 +41,27 @@ class PredicateState:
         """
         pred_key = self._keyify(grounded_pred)
         return self.pred_dict.get(pred_key, {}).get(key, None)
+    
+    def add_pred_list(self, new_pred_list):
+        """
+        Find and add new predicate dictionaries to the predicate state.
+        new_pred_list::dict:: A list of dictionary representing the new predicate [{'name': str, 'params': tuple/list, ...}]
+        """
+        for new_pred in new_pred_list:
+            pred_key = self._keyify(new_pred)
+            if pred_key not in self.pred_dict:
+                # ensure not to add repeated predicate because predicate has redundant parameters
+                # hardcoded
+                assert all(key in ["name", "params", "semantic"] for key in new_pred.keys())
+                self.pred_dict[pred_key] = new_pred
+            else:
+                print(f"Predicate {dict_to_string(new_pred)} already exists.")
 
+    def get_unevaluated_predicates(self):
+        """
+        Returns a list of predicates that do not have truth value evaluated.
+        """
+        return [pred for pred in self.pred_dict.values() if 'success' not in pred]
 
 # def set_pred_value(pred_list, grounded_pred, key, value):
 #     """
@@ -100,7 +120,7 @@ def possible_grounded_predicates(pred_list, type_dict):
     
     return grounded_predicates
 
-def pred_to_update(grounded_predicates, skill):
+def calculate_pred_to_update(grounded_predicates, skill):
     '''
     Given a skill and its parameters, find the set of predicates that need updates
     skill::dict:: {'name':str, 'params':list}
@@ -135,7 +155,7 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
+def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath='prompts/evaluate_pred_ai2thor.txt'):
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     grounded_skill::dict:: grounded skill with parameter type, e.g., {'name':'GoTo', "params":['location', 'location']}
@@ -167,12 +187,12 @@ def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_lis
         logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
         return False
     
-def eval_pred_init(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath='prompts/evaluate_pred_ai2thor_init.txt'):
+def eval_pred_init(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath='prompts/evaluate_pred_ai2thor_init.txt'):
     '''
     Evaluate the predicates in the initial state with multiple images, using a different prompt.
     '''
     # TODO: test and tune prompt for evaluate initial state
-    return eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, pred_list, prompt_fpath=prompt_fpath)
+    return eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath=prompt_fpath)
             
 # hard-coded eval function, will be replaced by the one above
 def eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img, prompt_fpath='prompts/evaluate_pred_ai2thor.txt', obj_ls = ['Book', 'Vase', 'TissueBox', 'Bowl'], loc_ls = ['DiningTable', 'Sofa']):
@@ -290,18 +310,19 @@ def generate_pred(model, skill, pred_dict, pred_type, tried_pred=[], prompt_fpat
     pred = pred.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])').replace(' ','')
     return pred, sem
 
-def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_truth_value_log, lifted_predicate_truth_value_log, type_dict):
+def update_missing_predicates(model, pred_list, tasks, grounded_predicate_truth_value_log, lifted_predicate_truth_value_log, type_dict):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
-    grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
-    grounded_predicate_truth_value_log::dict::{task:{step:PredicateState}}
-    lifted_predicate_truth_value_log::dict::(same as pred_dict before) {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+    pred_list::list(dict):: List of all possible grounded predicates
+    grounded_predicate_truth_value_log::dict:: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+    lifted_predicate_truth_value_log::dict:: (same as pred_dict before) {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
-    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    NOTE: step could be integer or string 'init', task is integer, init step doesn't have 'success' key
     '''
+    # NOTE: step is a integer ranging from 0-8, where 0 is the init step and success==None. 1-8 are states after executions
 
     # look for predicates that haven't been evaluated
     # The truth values could be missing if:
@@ -311,13 +332,27 @@ def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_t
 
     logging.info('looking for empty grounded predicates')
     for task_id, steps in tasks.items():
-        # task not added to log? Maybe don't need this
-        # tasks always get updated after every execution
+        # NOTE: might not be necessary. tasks always get updated after every execution
         if task_id not in grounded_predicate_truth_value_log:
-            grounded_predicate_truth_value_log[task_id] = {'init':pred_list_init}
+            grounded_predicate_truth_value_log[task_id] = {}
+            for step in steps:
+                grounded_predicate_truth_value_log[task_id][step] = PredicateState(pred_list)
+
         # for each step, iterate through all steps and find empty predicates and update them
         # calculate predicates to update based on the last action every step after init
         # init step is updated separately
+
+        # 1. update predicates for all states 
+        for step, state in steps.items():
+            grounded_predicate_truth_value_log[task_id][step].add_pred_list(pred_list)
+
+            # 2. find states need to be re-eval
+            pred_to_update = pred_list if step == 0 else calculate_pred_to_update(pred_list, skill)
+
+            # 3. re-eval
+            for pred in pred_to_update:
+                truth_value = eval_pred_new(model, img, grounded_skill, ground_pred, type_dict)
+
         for step_id, pred_list in grounded_predicate_truth_value_log[task_id].items():
             for pred in pred_list:
                 # pred is grounded
@@ -326,9 +361,7 @@ def update_missing_predicates(model, pred_list_init, tasks, grounded_predicate_t
                 if step_id == 'init' and pred['truth_value'] == None:
                     # evaluate the predicate
                     truth_value = eval_pred_init(model, items_per_step['image'], items_per_step['skill'], pred, type_dict, pred_list)
-                    set_pred_value(grounded_predicate_truth_value_log[task_id][step_id], pred, "truth_value", truth_value)
-                elif not step_id == 'init':
-                    
+                    set_pred_value(grounded_predicate_truth_value_log[task_id][step_id], pred, "truth_value", truth_value)                   
                     # if no need to update, copy from previous state
                     
                     # NOTE: cannot lift from grounded log due to conflicting truth values, will directly log when scoring
