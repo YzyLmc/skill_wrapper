@@ -2,7 +2,7 @@
 Get symbolic representation from skill semantic info and observation
 Data structures:
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    pred_list:: [{'name':str, 'params':list, 'semantic':str}]
+    lifted_pred_list:: [{'name':str, 'types':list, 'semantic':str}]
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
     # lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
@@ -183,14 +183,6 @@ def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, lifted_p
     else:
         logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
         return False
-    
-def eval_pred_init(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath='prompts/evaluate_pred_ai2thor_init.txt'):
-    '''
-    Evaluate the predicates in the initial state with multiple images
-    (using a different prompt.)
-    '''
-    # TODO: test and tune prompt for evaluate initial state
-    return eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath=prompt_fpath)
 
 def generate_pred_new(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
     '''
@@ -219,13 +211,13 @@ def generate_pred_new(model, skill, pred_list, pred_type, tried_pred=[], prompt_
     return new_pred
 
 # Adding to precondition or effect are different prompts
-def update_missing_predicates(model, tasks, grounded_pred_list, lifted_pred_list, type_dict,  grounded_predicate_truth_value_log, lifted_predicate_truth_value_log ):
+def update_empty_predicates(model, tasks, grounded_pred_list, lifted_pred_list, type_dict,  grounded_predicate_truth_value_log):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
-    pred_list::list(dict):: List of all possible grounded predicates
+    lifted_pred_list::list(dict):: List of all lifted predicates
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    # lifted_predicate_truth_value_log::dict:: (same as pred_dict before) {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
+    # lifted_predicate_truth_value_log::dict:: {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
     # skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
@@ -237,7 +229,8 @@ def update_missing_predicates(model, tasks, grounded_pred_list, lifted_pred_list
     #    1. the predicate is newly added (assuming all possible grounded predicates are added, including the init step)
     #    2. a task is newly executed
     # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the scoring function
-
+    
+    grounded_pred_list = possible_grounded_predicates(lifted_pred_list, type_dict)
     logging.info('looking for empty grounded predicates')
     for task_id, steps in tasks.items():
         # NOTE: might not be necessary. tasks always get updated after every execution
@@ -252,24 +245,21 @@ def update_missing_predicates(model, tasks, grounded_pred_list, lifted_pred_list
         # only empty predicates will be updated
         # init step is updated separately
 
-        # 1. update predicates for all states 
+        # update predicates for all states 
         for step, state in steps.items():
             grounded_predicate_truth_value_log[task_id][step].add_pred_list(lifted_pred_list)
-            # 1. copy from last state before updating if not init
-            # if not step==0:
-            #     grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
 
-            # 2. find states need to be re-eval
+            # 1. find states need to be re-eval
             pred_to_update = grounded_pred_list if step == 0 else calculate_pred_to_update(grounded_pred_list, state["skill"])
 
-            # 3. re-eval grounded predicates
+            # 2. re-eval grounded predicates
             for pred in pred_to_update:
                 # only update empty predicates
                 if not grounded_predicate_truth_value_log[task_id][step].get_truth_value(pred):
                     truth_value = eval_pred_new(model, state["image"], state["skill"], pred, type_dict, lifted_pred_list, init=step==0)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
             
-            # 4.copy all empty predicates from previous state
+            # 3.copy all empty predicates from previous state
                 elif not step==0: # non-init state, 
                     truth_value =  grounded_predicate_truth_value_log[task_id][step].get_pred_value(pred)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
@@ -332,9 +322,19 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
             failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
             if len(success_tasks) > 0 and len(failed_tasks) > 0:
                 mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
-    return pred_dict, mismatch_pairs
+    return mismatch_pairs
 
 ######################## NEW SYSTEM WITH PARTITIONING ##############################
+def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, pred_list, skill2triedpred={}, max_t=3):
+    '''
+    Main loop of generating predicates. It also evaluates empty predicates that introduced by new tasks or new predicates
+    '''
+    # TODO: number of if statements to create empty dicts or lists for on init
+    
+    # precondition
+    # update empty predicates
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, pred_list, type_dict, grounded_predicate_truth_value_log)
+    pass
 def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred={}, max_t=3):
     """
     New predicate refining function, will only add new predicates when there's a pair of mismatch states
