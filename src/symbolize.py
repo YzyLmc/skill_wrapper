@@ -150,7 +150,7 @@ def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evaluta
     prompt = construct_prompt(prompt, skill)
     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, lifted_pred_list, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
+def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, lifted_pred_list, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     init step and later steps use different prompts. harded coded.
@@ -184,7 +184,7 @@ def eval_pred_new(model, img, grounded_skill, grounded_pred, type_dict, lifted_p
         logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
         return False
 
-def generate_pred_new(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
+def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining'):
     '''
     propose new predicates based on the contrastive pair
     '''
@@ -325,16 +325,6 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     return mismatch_pairs
 
 ######################## NEW SYSTEM WITH PARTITIONING ##############################
-def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, pred_list, skill2triedpred={}, max_t=3):
-    '''
-    Main loop of generating predicates. It also evaluates empty predicates that introduced by new tasks or new predicates
-    '''
-    # TODO: number of if statements to create empty dicts or lists for on init
-    
-    # precondition
-    # update empty predicates
-    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, pred_list, type_dict, grounded_predicate_truth_value_log)
-    pass
 def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred={}, max_t=3):
     """
     New predicate refining function, will only add new predicates when there's a pair of mismatch states
@@ -544,6 +534,24 @@ def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/pre
                     unified_skill2operator[skill][pred_type][pred] = skill2operator[skill][pred_type][pred]
     return unified_skill2operator, equal_preds
 
+def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, pred_list, skill2triedpred={}, max_t=3):
+    '''
+    Main loop of generating predicates. It also evaluates empty predicates that introduced by new tasks or new predicates
+    '''
+    # TODO: number of if statements to create empty dicts or lists for on init
+    
+    # precondition first
+    # update empty predicates
+    t = 0
+    pred_type = "precond"
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, pred_list, type_dict, grounded_predicate_truth_value_log)
+    mismatch_tasks = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
+    new_p_added = False
+    logging.info("About to enter precondition refinement")
+    while skill in mismatch_tasks and t < max_t:
+        new_pred = generate_pred(model, skill, pred_list, pred_type, tried_pred=skill2triedpred[skill])
+        logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
+        logging.info(f"new predicate {new_pred}")
 def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
         "score of a predicate as one skill's precondition or effect"
         "type : {precond, eff}"
