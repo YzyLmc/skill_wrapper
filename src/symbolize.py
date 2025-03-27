@@ -1,11 +1,10 @@
 '''
-Get symbolic representation from skill semantic info and observation
+Get symbolic representation from skill semantic info and observation.
 Data structures:
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     lifted_pred_list:: [{'name':str, 'types':list, 'semantic':str}]
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
-    # lifted_predicate_truth_value_log::dict::{pred_name:{task: {id: [Bool, Bool]}, sem: str}}
 '''
 from utils import GPT4, load_from_file
 from collections import defaultdict
@@ -272,6 +271,8 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     pred_type :str: {"precond", "eff"}
+    returns:
+    skill2task2state::{skill_name: {task_step_name: {pred: bool}}}
     '''
     skill2task2state = defaultdict(dict)
     for task_name, steps in grounded_predicate_truth_value_log.items():
@@ -325,10 +326,9 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
             failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
             if len(success_tasks) > 0 and len(failed_tasks) > 0:
                 mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
-    return mismatch_pairs, skill2task2state
+    return mismatch_pairs
 
-######################## NEW SYSTEM WITH PARTITIONING ##############################
-def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred={}, threshold={"precond":0.5, "eff":0.5}):
+def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred={}, threshold={"precond":0.5, "eff":0.5}):
     """
     One iteration of predicate invention.
 
@@ -358,22 +358,21 @@ def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, t
     return lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted
 
 
-def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred={}, max_t=3):
+def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred={}, max_t=3):
     '''
     Main loop of generating predicates. It also evaluates empty predicates that introduced by new tasks or new predicates
     '''
     # TODO: number of if statements to create empty dicts or lists for on init
     
     # check precondition first
-    # update empty predicates
     t = 0
     pred_type = "precond"
     grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log)
-    mismatch_tasks, skill2task2state = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
+    mismatch_tasks = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
     logging.info("About to enter precondition check")
     logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
     while skill in mismatch_tasks and t < max_t:
-        lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted = invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred=skill2triedpred)
+        lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted = invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred=skill2triedpred)
         logging.info(f"Iteration {t} of predicate invention. {new_pred} is accepted: {new_pred_accepted}")
         t += 1
     
@@ -381,7 +380,7 @@ def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, typ
     t = 0
     pred_type = "eff"
     grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log)
-    mismatch_tasks, skill2task2state = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
+    mismatch_tasks = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
     logging.info("About to enter effect check")
     logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
     while skill in mismatch_tasks and t < max_t:
@@ -451,117 +450,138 @@ def partition_by_effect(pred_dict):
 
     return partitioned_tasks
 
-def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
-        "score of a predicate as one skill's precondition or effect"
-        "type : {precond, eff}"
-        tasks = skill2tasks[skill]
-        success_tasks = [id for id, t in tasks.items() if t['success']]
-        fail_tasks = [id for id, t in tasks.items() if not t['success']]
-        repeated = False
-        # TODO: precondition could be false
-        if type == 'precond':
-            t_p, t_d, f_n, f_d = 0, 0, 0, 0
-            for ps in equal_preds:
-                if pred in ps:
-                    repeated = True
-                    for p in ps:
-                        for t_suc in success_tasks:
-                            t_p += 1 if pred_dict[p]['task'][t_suc][0] == True else 0
-                            t_d += 1
-                        for t_fail in tasks:
-                            f_n += 1 if pred_dict[p]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
-                            f_d += 1 if pred_dict[p]['task'][t_fail][0] == False else 0
-            if repeated == False:
+def score(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type, equal_preds=None):
+    """
+    score of a predicate as one skill's precondition or effect
+    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
+    grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    type : {precond, eff}
+    """
+    # skill2task2state :: {skill_name: {task_step_name: {pred: bool}}}; task_step_name=(task_name)
+    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type)
+    task2state = skill2task2state[skill]
+    # step 0 will be skipped
+    # In t_score, ratio of either p = True or p = False has to > threshold
+    # but t_score and f_score need to agree with each other. i.e., if t_score has p=True f_score has to have p=False
+    for task_step_id, state in task2state.items():
+        task_name, step = task_step_id
+        
+
+def score(pred, skill, skill2tasks, pred_dict, type, equal_preds=None):
+    """
+    score of a predicate as one skill's precondition or effect
+    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
+    grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    type : {precond, eff}
+    """
+    tasks = skill2tasks[skill]
+    success_tasks = [id for id, t in tasks.items() if t['success']]
+    fail_tasks = [id for id, t in tasks.items() if not t['success']]
+    repeated = False
+    # TODO: precondition could be false
+    if type == 'precond':
+        t_p, t_d, f_n, f_d = 0, 0, 0, 0
+        for ps in equal_preds:
+            if pred in ps:
+                repeated = True
+                for p in ps:
                     for t_suc in success_tasks:
-                        t_p += 1 if pred_dict[pred]['task'][t_suc][0] == True else 0
+                        t_p += 1 if pred_dict[p]['task'][t_suc][0] == True else 0
                         t_d += 1
                     for t_fail in tasks:
-                        f_n += 1 if pred_dict[pred]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
-                        f_d += 1 if pred_dict[pred]['task'][t_fail][0] == False else 0
-            if not tasks:
-                return 0, 0
-            elif t_d == 0 or not success_tasks:
-                return 0, f_n/f_d
-            elif f_d == 0 or not fail_tasks:
-                return t_p/t_d, 0
-            else:
-                tscore_t = t_p/t_d
-                fscore_t = f_n/f_d
-            # calculate false score
-            t_p, t_d, f_n, f_d = 0, 0, 0, 0
-            for ps in equal_preds:
-                if pred in ps:
-                    repeated = True
-                    for p in ps:
-                        for t_suc in success_tasks:
-                            t_p += 1 if pred_dict[p]['task'][t_suc][0] == False else 0
-                            t_d += 1
-                        for t_fail in tasks:
-                            f_n += 1 if pred_dict[p]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
-                            f_d += 1 if pred_dict[p]['task'][t_fail][0] == True else 0
-            if repeated == False:
+                        f_n += 1 if pred_dict[p]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
+                        f_d += 1 if pred_dict[p]['task'][t_fail][0] == False else 0
+        if repeated == False:
+                for t_suc in success_tasks:
+                    t_p += 1 if pred_dict[pred]['task'][t_suc][0] == True else 0
+                    t_d += 1
+                for t_fail in tasks:
+                    f_n += 1 if pred_dict[pred]['task'][t_fail][0] == False and tasks[t_fail]['success'] == False else 0
+                    f_d += 1 if pred_dict[pred]['task'][t_fail][0] == False else 0
+        if not tasks:
+            return 0, 0
+        elif t_d == 0 or not success_tasks:
+            return 0, f_n/f_d
+        elif f_d == 0 or not fail_tasks:
+            return t_p/t_d, 0
+        else:
+            tscore_t = t_p/t_d
+            fscore_t = f_n/f_d
+        # calculate false score
+        t_p, t_d, f_n, f_d = 0, 0, 0, 0
+        for ps in equal_preds:
+            if pred in ps:
+                repeated = True
+                for p in ps:
                     for t_suc in success_tasks:
-                        t_p += 1 if pred_dict[pred]['task'][t_suc][0] == False else 0
+                        t_p += 1 if pred_dict[p]['task'][t_suc][0] == False else 0
                         t_d += 1
                     for t_fail in tasks:
-                        f_n += 1 if pred_dict[pred]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
-                        f_d += 1 if pred_dict[pred]['task'][t_fail][0] == True else 0
-            if not tasks:
+                        f_n += 1 if pred_dict[p]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
+                        f_d += 1 if pred_dict[p]['task'][t_fail][0] == True else 0
+        if repeated == False:
+                for t_suc in success_tasks:
+                    t_p += 1 if pred_dict[pred]['task'][t_suc][0] == False else 0
+                    t_d += 1
+                for t_fail in tasks:
+                    f_n += 1 if pred_dict[pred]['task'][t_fail][0] == True and tasks[t_fail]['success'] == False else 0
+                    f_d += 1 if pred_dict[pred]['task'][t_fail][0] == True else 0
+        if not tasks:
+            return 0, 0
+        elif t_d == 0 or not success_tasks:
+            return 0, f_n/f_d
+        elif f_d == 0 or not fail_tasks:
+            return t_p/t_d, 0
+        else:
+            tscore_f = t_p/t_d
+            fscore_f = f_n/f_d
+        if tscore_t * fscore_t > tscore_f * fscore_f:
+            tscore = tscore_t
+            fscore = fscore_t
+        else:
+            tscore = tscore_f
+            fscore = fscore_f
+    if type == 'eff':
+        # truth value change could be 1, 0, -1
+        # tscore and fscore should both be high and agree with each other
+        t, f, f_d = 0, 0, 0
+        for ps in equal_preds:
+            if pred in ps:
+                repeated = True
+                for p in ps:
+                    t += sum([int(pred_dict[p]['task'][t_suc][1]==True) - int(pred_dict[p]['task'][t_suc][0]==True) for t_suc in success_tasks])
+                break
+        
+        if repeated == False:
+            t = sum([int(pred_dict[pred]['task'][t_suc][1]==True) - int(pred_dict[pred]['task'][t_suc][0]==True) for t_suc in success_tasks])
+            # breakpoint()
+            if not success_tasks:
                 return 0, 0
-            elif t_d == 0 or not success_tasks:
-                return 0, f_n/f_d
-            elif f_d == 0 or not fail_tasks:
-                return t_p/t_d, 0
-            else:
-                tscore_f = t_p/t_d
-                fscore_f = f_n/f_d
-            if tscore_t * fscore_t > tscore_f * fscore_f:
-                tscore = tscore_t
-                fscore = fscore_t
-            else:
-                tscore = tscore_f
-                fscore = fscore_f
-        if type == 'eff':
-            # truth value change could be 1, 0, -1
-            # tscore and fscore should both be high and agree with each other
-            t, f, f_d = 0, 0, 0
-            for ps in equal_preds:
-                if pred in ps:
-                    repeated = True
-                    for p in ps:
-                        t += sum([int(pred_dict[p]['task'][t_suc][1]==True) - int(pred_dict[p]['task'][t_suc][0]==True) for t_suc in success_tasks])
-                    break
-            
-            if repeated == False:
-                t = sum([int(pred_dict[pred]['task'][t_suc][1]==True) - int(pred_dict[pred]['task'][t_suc][0]==True) for t_suc in success_tasks])
-                # breakpoint()
-                if not success_tasks:
-                    return 0, 0
-                tscore = t/len(success_tasks)
-            else:
-                if not success_tasks:
-                    return 0, 0
-                tscore = t/(len(ps)*len(success_tasks))
-            if t == 0:
+            tscore = t/len(success_tasks)
+        else:
+            if not success_tasks:
                 return 0, 0
-            sign = 1 if tscore > 0 else -1
-            # if has effect eff=1 on this predicate, eff={-1,0} must fail
-            if repeated == False:
+            tscore = t/(len(ps)*len(success_tasks))
+        if t == 0:
+            return 0, 0
+        sign = 1 if tscore > 0 else -1
+        # if has effect eff=1 on this predicate, eff={-1,0} must fail
+        if repeated == False:
+            for t in tasks:
+                f += 1 if int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True) in [0, -sign] and tasks[t]['success'] == False else 0
+                f_d += 1 if int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True) in [0, -sign] else 0
+            if f_d == 0:
+                return tscore, 0
+            fscore = f/f_d
+        else:
+            for p in ps:
                 for t in tasks:
-                    f += 1 if int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True) in [0, -sign] and tasks[t]['success'] == False else 0
-                    f_d += 1 if int(pred_dict[pred]['task'][t][1]==True) - int(pred_dict[pred]['task'][t][0]==True) in [0, -sign] else 0
+                    f += 1 if int(pred_dict[p]['task'][t][1]==True) - int(pred_dict[p]['task'][t][0]==True) in [0, -sign] and tasks[t]['success'] == False else 0
+                    f_d += 1 if int(pred_dict[p]['task'][t][1]==True) - int(pred_dict[p]['task'][t][0]==True) in [0, -sign] else 0
                 if f_d == 0:
                     return tscore, 0
                 fscore = f/f_d
-            else:
-                for p in ps:
-                    for t in tasks:
-                        f += 1 if int(pred_dict[p]['task'][t][1]==True) - int(pred_dict[p]['task'][t][0]==True) in [0, -sign] and tasks[t]['success'] == False else 0
-                        f_d += 1 if int(pred_dict[p]['task'][t][1]==True) - int(pred_dict[p]['task'][t][0]==True) in [0, -sign] else 0
-                    if f_d == 0:
-                        return tscore, 0
-                    fscore = f/f_d
-        return tscore, fscore
+    return tscore, fscore
 
 ############################# ORIGINAL REASSIGNMENT CODE ####################################
 def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, threshold=0.4):
@@ -644,7 +664,6 @@ if __name__ == '__main__':
     log_data = load_from_file('tasks/log/ai2thor_5_log_30.json')
     last_run_num = '5'
     skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
-    merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
     print(equal_preds)
     assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
     print(assigned_skill2operators)
