@@ -205,20 +205,18 @@ def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpat
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
     # separate the parameters from the predicate into dictionary
-    # e.g., "At(obj, loc)"" -> {"name":"At", "params": ["obj", "loc"]}
-    new_pred = {'name': pred.split("(")[0], 'params': pred.split("(")[1].strip(")").split(", ")}
+    # e.g., "At(obj, loc)"" -> {"name":"At", "types": ["obj", "loc"]}
+    new_pred = {'name': pred.split("(")[0], 'types': pred.split("(")[1].strip(")").split(", ")}
     new_pred['semantic'] = sem
     return new_pred
 
 # Adding to precondition or effect are different prompts
-def update_empty_predicates(model, tasks, grounded_pred_list, lifted_pred_list, type_dict,  grounded_predicate_truth_value_log):
+def update_empty_predicates(model, tasks, lifted_pred_list, type_dict,  grounded_predicate_truth_value_log):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
     lifted_pred_list::list(dict):: List of all lifted predicates
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    # lifted_predicate_truth_value_log::dict:: {pred_name:{task: {id: [Bool, Bool]}, sem: str}}
-    # skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     '''
@@ -230,6 +228,7 @@ def update_empty_predicates(model, tasks, grounded_pred_list, lifted_pred_list, 
     #    2. a task is newly executed
     # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the scoring function
     
+    # generate all possible grounded predicates that match object types
     grounded_pred_list = possible_grounded_predicates(lifted_pred_list, type_dict)
     logging.info('looking for empty grounded predicates')
     for task_id, steps in tasks.items():
@@ -256,7 +255,7 @@ def update_empty_predicates(model, tasks, grounded_pred_list, lifted_pred_list, 
             for pred in pred_to_update:
                 # only update empty predicates
                 if not grounded_predicate_truth_value_log[task_id][step].get_truth_value(pred):
-                    truth_value = eval_pred_new(model, state["image"], state["skill"], pred, type_dict, lifted_pred_list, init=step==0)
+                    truth_value = eval_pred(model, state["image"], state["skill"], pred, type_dict, lifted_pred_list, init=step==0)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
             
             # 3.copy all empty predicates from previous state
@@ -265,6 +264,28 @@ def update_empty_predicates(model, tasks, grounded_pred_list, lifted_pred_list, 
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
     logging.info('Done evaluation from mismatch_symbolic_state')
     return grounded_predicate_truth_value_log
+
+
+def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type):
+    '''
+    helper function to convert grounded predicate log into skill2task2state for predicate invention
+    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
+    pred_type :str: {"precond", "eff"}
+    '''
+    skill2task2state = defaultdict(dict)
+    for task_name, steps in grounded_predicate_truth_value_log.items():
+            for step, state in steps.items(): # state :: PredicateState class
+                if not step == 0: # init state has no skill
+                    skill = tasks[task_name][step]["skill"]
+                    task_name_stepped = (task_name, step)
+                    if pred_type == "precond":
+                        skill2task2state[skill][task_name_stepped] = state.pred_dict # all predicates should have truth value
+                    elif pred_type == "eff":
+                        skill2task2state[skill][task_name_stepped] = {pred: int(truth_value) - int(last_state.pred_dict[pred]['task']) for pred, truth_value in state.pred_dict.items()}
+                last_state = state
+
+    return skill2task2state
 
 def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     '''
@@ -286,27 +307,9 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     # represent all tasks using (task,step) tuple as a key and list of list.{(task,step): PredicateState}
     dup_tasks = {}
     # precondition cares only about s
-    if pred_type == "precond":
-        skill2task2state = defaultdict(dict)
-        for task_name, steps in grounded_predicate_truth_value_log.items():
-            for step, state in steps.items(): # state :: PredicateState class
-                if not step == 0: # init state has no skill
-                    skill = tasks[task_name][step]["skill"]
-                    task_name_stepped = (task_name, step) 
-                    skill2task2state[skill][task_name_stepped] = state.pred_dict # all predicates should have truth value
-        for skill, task_name_stepped2pred in skill2task2state.items():
-            dup_tasks[skill] = tasks_with_same_symbolic_states(task_name_stepped2pred)
-    elif pred_type == "eff":
-        skill2task2state = defaultdict(dict)
-        for task_name, steps in grounded_predicate_truth_value_log.items():
-            for step, state in steps.items():
-                if not step == 0:
-                    skill = tasks[task_name][step]["skill"]
-                    task_name_stepped = (task_name, step)
-                    skill2task2state[skill][task_name_stepped] = {pred: int(truth_value) - int(last_state.pred_dict[pred]['task']) for pred, truth_value in state.pred_dict.items()}
-                last_state = state
-        for skill, task_name_stepped2pred in skill2task2state.items():
-            dup_tasks[skill] = tasks_with_same_symbolic_states(task_name_stepped2pred)
+    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type)
+    for skill, task_name_stepped2pred in skill2task2state.items():
+        dup_tasks[skill] = tasks_with_same_symbolic_states(task_name_stepped2pred)
     
     # skill2task2state :: {skill_name: {task_step_name: {pred: bool}}}
     # dup_tasks:: {skill_name: [[task+step_name,...], []]}
@@ -322,236 +325,132 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
             failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
             if len(success_tasks) > 0 and len(failed_tasks) > 0:
                 mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
-    return mismatch_pairs
+    return mismatch_pairs, skill2task2state
 
 ######################## NEW SYSTEM WITH PARTITIONING ##############################
-def refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred={}, max_t=3):
+def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred={}, threshold={"precond":0.5, "eff":0.5}):
     """
-    New predicate refining function, will only add new predicates when there's a pair of mismatch states
-    Only one union predicates set shared by all skills
-    no skill2operators, only pred_dict is used
+    One iteration of predicate invention.
+
     """
-    if not pred_dict:
-        pred_dict = {}
-
-    if not skill2operators:
-        skill2operators = {}
-    if not skill in skill2operators:
-        skill2operators[skill] = [] # now a single list to hold all related predicates
-
-    if not skill2triedpred:
-        skill2triedpred = {}
-    if not skill in skill2triedpred:
-        skill2triedpred[skill] = [] # a list for tried predicates too
+    # TODO: try different predicate invention: e.g., images, comparisons. Now it's just blindly generating predicates
+    new_pred = generate_pred(model, skill, lifted_pred_list, pred_type, tried_pred=skill2triedpred[skill])
+    logging.info(f"new predicate {new_pred}")
+    new_pred_accepted = False
+    # evaluate the new predicate on all states
+    # suppose we add the new predicate to the current predicate set
+    hypothetical_pred_list = deepcopy(lifted_pred_list)
+    hypothetical_pred_list.append(new_pred)
+    hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
+    # TODO: Add skill option to update_empty_predicates() only update empty predicates for one skill to speed up and reduce cost
+    hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log)
+    hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, pred_type)
+    # TODO: modify the score function
+    t_score, f_score = score(new_pred, skill, hypothetical_skill2task2state, hypothetical_pred_list, [], pred_type)
+    logging.info(f"Precondition T score of predicate {dict_to_string(new_pred)}: {t_score}, F score: {f_score}")
+    if t_score >= threshold[pred_type] and  f_score >= threshold[pred_type]:
+        logging.info(f"Predicate {new_pred} added to predicate set by precondition check")
+        lifted_pred_list.append(new_pred)
+        new_pred_accepted = True
+    else:
+        skill2triedpred[skill].append(new_pred)
     
-    # check precondition first
-    t = 0
-    pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
-    new_p_added = False
-    # breakpoint()
-    logging.info("About to enter precondition refinement")
-    while skill in mismatch_tasks and t < max_t:
-        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()),  'precond', tried_pred=skill2triedpred[skill])
-        logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
-        logging.info(f"new predicate {new_p}, {sem}")
-        # evaluate the new predicate on all states
-        new_p_tv = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in skill2tasks[skill]}
-        pred_dict_tmp = deepcopy(pred_dict)
-        pred_dict_tmp[new_p] = {}
-        pred_dict_tmp[new_p]['task'] = new_p_tv
-        pred_dict_tmp[new_p]['semantic'] = sem
-        tscore_precond, fscore_precond = score(new_p, skill, skill2tasks, pred_dict_tmp, [], 'precond')
-        logging.info(f"Precond tscore: {tscore_precond}, fscore: {fscore_precond}")
-        # if new_p_mismatch[mismatch_tasks[skill][0]][0] != new_p_mismatch[mismatch_tasks[skill][1]][0]:
-            # skill2operators[skill]['precond'][new_p] = True if skill2tasks[skill][mismatch_tasks[skill][0]]['success'] == new_p_mismatch[mismatch_tasks[skill][0]][0] else False
+    return lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted
 
-        # use tscore and fscore to evaluate new_p
-        if tscore_precond >= 0.5 and  fscore_precond >= 0.5:
-            logging.info(f"Predicate {new_p} added to predicate set by precondition check")
-            new_p_added = True
-            if new_p_added and new_p not in pred_dict:
-                pred_dict[new_p] = {'task': {}}
-                if ('[LOC]' in new_p) and ('[OBJ]' not in new_p):
-                    new_p_goto_1 = new_p.replace('[LOC]', '[LOC_1]')
-                    new_p_goto_2 = new_p.replace('[LOC]', '[LOC_2]')
-                    if new_p_goto_1 not in pred_dict:
-                        pred_dict[new_p_goto_1] = {'task': {}}
-                        pred_dict[new_p_goto_1]['semantic'] = sem
-                    if new_p_goto_2 not in pred_dict:
-                        pred_dict[new_p_goto_2] = {'task': {}}
-                        pred_dict[new_p_goto_2]['semantic'] = sem
-                    # breakpoint()
-                elif ('[LOC_1]' in new_p) != ('[LOC_2]' in new_p): # only one loc in new predicate
-                    new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
-                    if new_p_not_goto not in pred_dict:
-                        pred_dict[new_p_not_goto] = {'task': {}}
-                        pred_dict[new_p_not_goto]['semantic'] = sem
-                    new_p_the_other = new_p.replace("[LOC_1]", '[LOC_2]') if "[LOC_1]" in new_p else new_p.replace("[LOC_2]", '[LOC_1]')
-                    if not new_p_the_other in pred_dict:
-                        pred_dict[new_p_the_other] = {'task': {}}
-                        pred_dict[new_p_the_other]['semantic'] = sem
-                    # breakpoint()
-                
-                logging.info('Evaluating for precond')
-                pred_dict[new_p]['task'] = new_p_tv
-                pred_dict[new_p]['semantic'] = sem
 
-            logging.info(f'Done evaluating predicate {new_p} for all tasks')
-            new_p_added = False
-            pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'precond')
-            logging.info(f'Done evaluating predicate {new_p} for all tasks')
-            skill2triedpred[skill] = []
-        else:
-            skill2triedpred[skill].append(new_p)
-        t += 1
-    
-    # check effect
-    t = 0
-    pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-    logging.info("About to enter effect refinement")
-    # breakpoint()
-    while skill in mismatch_tasks and t < max_t:
-        new_p, sem = generate_pred(model, skill, list(pred_dict.keys()), 'eff', tried_pred=[skill])
-        logging.info(f"mismatch state for effect generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
-        logging.info(f'new predicate {new_p}, {sem}')
-        new_p_tv = {idx: [eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s0']), eval_pred(model, skill, new_p, sem, skill2tasks[skill][idx]['obj'], skill2tasks[skill][idx]['loc'], skill2tasks[skill][idx]['loc_1'], skill2tasks[skill][idx]['loc_2'], skill2tasks[skill][idx]['s1'])] for idx in skill2tasks[skill]}
-        pred_dict_tmp = deepcopy(pred_dict)
-        pred_dict_tmp[new_p] = {}
-        pred_dict_tmp[new_p]['task'] = new_p_tv
-        pred_dict_tmp[new_p]['semantic'] = sem
-        tscore_eff, fscore_eff = score(new_p, skill, skill2tasks, pred_dict_tmp, [], 'eff')
-        logging.info(f"Effect tscore: {tscore_eff}, fscore: {fscore_eff}")
-        # eff representation might be wrong (s1-s2). The result value could be {-1, 0, 1}, 0 cases could be wrong?
-        if abs(tscore_eff) >= 0.2 and fscore_eff >= 0.2:
-            logging.info(f"Predicate {new_p} added to the predicate set by effect check")
-            new_p_added = True
-            if new_p_added and new_p not in pred_dict:
-                pred_dict[new_p] = {}
-                if ('[LOC]' in new_p) and ('[OBJ]' not in new_p):
-                    new_p_goto_1 = new_p.replace('[LOC]', '[LOC_1]')
-                    new_p_goto_2 = new_p.replace('[LOC]', '[LOC_2]')
-                    if new_p_goto_1 not in pred_dict:
-                        pred_dict[new_p_goto_1] = {'task': {}}
-                        pred_dict[new_p_goto_1]['semantic'] = sem
-                    if new_p_goto_2 not in pred_dict:
-                        pred_dict[new_p_goto_2] = {'task': {}}
-                        pred_dict[new_p_goto_2]['semantic'] = sem
-                    # breakpoint()
-                elif ('[LOC_1]' in new_p) != ('[LOC_2]' in new_p): # only one loc in new predicate
-                    new_p_not_goto = new_p.replace('[LOC_1]', '[LOC]').replace('[LOC_2]', '[LOC]')
-                    if new_p_not_goto not in pred_dict:
-                        pred_dict[new_p_not_goto] = {'task': {}}
-                        pred_dict[new_p_not_goto]['semantic'] = sem
-                    new_p_the_other = new_p.replace("[LOC_1]", '[LOC_2]') if "[LOC_1]" in new_p else new_p.replace("[LOC_2]", '[LOC_1]')
-                    if not new_p_the_other in pred_dict:
-                        pred_dict[new_p_the_other] = {'task': {}}
-                        pred_dict[new_p_the_other]['semantic'] = sem
-                    # breakpoint()   
-                pred_dict[new_p]['task'] = new_p_tv            
-                pred_dict[new_p]['semantic'] = sem
-            logging.info(f'Done evaluating predicate {new_p} for all tasks')
-            new_p_added = False
-            pred_dict, mismatch_tasks = mismatch_symbolic_state(model, pred_dict, skill2tasks, 'eff')
-            skill2triedpred[skill] = []
-        else:
-            skill2triedpred[skill].append(new_p)
-        t += 1
-    # breakpoint()
-    
-    # partitioning
-    partitioned_output = partition_by_effect(pred_dict)
-    grounded_skill_dictionary = defaultdict(dict)
-    for idx, operator in partitioned_output.items():
-        base_action_name = operator['task'][0].split('_')[0]
-        action_counter = 1
-
-        # hardcode skill name, will remove after workshop
-        if "PickUp" in base_action_name or "DropAt" in base_action_name:
-            action_name = f"{base_action_name}_{action_counter}(obj, loc)"
-        else:
-            action_name = f"{base_action_name}_{action_counter}(init, goal)"
-        while action_name in grounded_skill_dictionary:
-            action_counter += 1
-            if "PickUp" in base_action_name or "DropAt" in base_action_name:
-                action_name = f"{base_action_name}_{action_counter}(obj, loc)"
-            else:
-                action_name = f"{base_action_name}_{action_counter}(init, goal)"
-        grounded_skill_dictionary[action_name]['task'] = operator['task']
-        grounded_skill_dictionary[action_name]['precondition'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['precondition'].items()}
-        grounded_skill_dictionary[action_name]['effect'] = {p.replace('([OBJ]', '(obj').replace('[OBJ])', 'obj)').replace('([LOC_1]', '(init').replace('[LOC_2])', 'goal)').replace('([LOC]', '(loc').replace('[LOC])', 'loc)'):value for p, value in operator['effect'].items()}
-
-    return skill2operators, pred_dict, skill2triedpred, grounded_skill_dictionary
-
-############################# ORIGINAL REASSIGNMENT CODE ####################################
-def merge_predicates(model, skill2operator, pred_dict, prompt_fpath='prompts/predicate_unify.txt'):
-    '''
-    merge predicates based on their semantic meaning
-    skill2operator: {skill_name:{precond:{str:Bool}, eff:{str:int}}}
-    pred_dict: {pred_name:{task: [Bool, Bool]}, semantic:str}
-    '''
-    def construct_prompt(prompt, skill2operator):
-        for skill_name, operator in skill2operator.items():
-            pred_ls = list(operator['precond'].keys()) + list(operator['eff'].keys())
-            prompt += "\nSkill: " + skill_name
-            prompt += "\nPredicates:\n" + "\n".join([f"- {pred}:{pred_dict[pred]['semantic']}" for pred in pred_ls])
-            prompt += "\n"
-        while "[OBJ]" in prompt or "[LOC]" in prompt or "[LOC_1]" in prompt or "[LOC_2]" in prompt:
-            prompt = prompt.replace("[OBJ]", "obj")
-            prompt = prompt.replace("[LOC]", "loc")
-            prompt = prompt.replace("[LOC_1]", "init")
-            prompt = prompt.replace("[LOC_2]", "goal")
-        prompt += "\nEquivalent Predicates:"
-        return prompt
-    prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, skill2operator)
-
-    response = model.generate(prompt)[0].split("Equivalent Predicates:")[0]
-    equal_preds = response.split("\n\n")
-    equal_preds = [pred.replace("-","").replace(" ","").split('|') for pred in equal_preds]
-
-    unified_skill2operator = {}
-    for skill, operator in skill2operator.items():
-        unified_skill2operator[skill] = {}
-        for pred_type, preds in operator.items():
-            if not pred_type in unified_skill2operator[skill]:
-                unified_skill2operator[skill][pred_type] = {}
-            for pred in preds:
-                dup = False
-                for equal_pred in equal_preds:
-                    equal_pred = [ p.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for p in equal_pred]
-                    # _equal_pred = [p[:-10] for p in equal_pred] # remove [positive] and [negative] flag
-                    pred_flagged = [p for p in equal_pred if pred in p]
-                    # print(pred, equal_pred, pred_flagged)
-                    if pred_flagged:
-                        # check if the replaced predicate has same or opposite semantic
-                        # print(pred_flagged, pred)
-                        if pred_type == 'precond':
-                            unified_skill2operator[skill][pred_type][equal_pred[0][:-10]] = True if ('[positive]' in pred_flagged[0] and '[positive]' in equal_pred[0]) or ('[negative]' in pred_flagged[0] and '[negative]' in equal_pred[0]) else False
-                        elif pred_type == 'eff':
-                            unified_skill2operator[skill][pred_type][equal_pred[0][:-10]] = skill2operator[skill][pred_type][pred] if ('[positive]' in pred_flagged[0] and '[positive]' in equal_pred[0]) or ('[negative]' in pred_flagged[0] and '[negative]' in equal_pred[0]) else -skill2operator[skill][pred_type][pred]
-                        dup = True
-                if not dup:
-                    unified_skill2operator[skill][pred_type][pred] = skill2operator[skill][pred_type][pred]
-    return unified_skill2operator, equal_preds
-
-def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, pred_list, skill2triedpred={}, max_t=3):
+def refine_pred_new(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred={}, max_t=3):
     '''
     Main loop of generating predicates. It also evaluates empty predicates that introduced by new tasks or new predicates
     '''
     # TODO: number of if statements to create empty dicts or lists for on init
     
-    # precondition first
+    # check precondition first
     # update empty predicates
     t = 0
     pred_type = "precond"
-    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, pred_list, type_dict, grounded_predicate_truth_value_log)
-    mismatch_tasks = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
-    new_p_added = False
-    logging.info("About to enter precondition refinement")
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log)
+    mismatch_tasks, skill2task2state = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
+    logging.info("About to enter precondition check")
+    logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
     while skill in mismatch_tasks and t < max_t:
-        new_pred = generate_pred(model, skill, pred_list, pred_type, tried_pred=skill2triedpred[skill])
-        logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
-        logging.info(f"new predicate {new_pred}")
+        lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted = invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred=skill2triedpred)
+        logging.info(f"Iteration {t} of predicate invention. {new_pred} is accepted: {new_pred_accepted}")
+        t += 1
+    
+    # check effect
+    t = 0
+    pred_type = "eff"
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log)
+    mismatch_tasks, skill2task2state = detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type=pred_type)
+    logging.info("About to enter effect check")
+    logging.info(f"mismatch state for precondition generation {mismatch_tasks[skill][0]}, {mismatch_tasks[skill][1]}")
+    while skill in mismatch_tasks and t < max_t:
+        lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted = invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred=skill2triedpred)
+        logging.info(f"Iteration {t} of predicate invention. {new_pred} is accepted: {new_pred_accepted}")
+        t += 1
+    
+    # partitioning
+    # TODO: update partition_by_effect function
+    partitioned_output = partition_by_effect(grounded_predicate_truth_value_log)
+
+    skill2operators = {}
+    return skill2operators, pred_dict, skill2triedpred, skill2operators
+
+def partition_by_effect(pred_dict):
+    'calculate partitioned skill from pred_dict'
+    def convert_to_task2pred(pred_dict):
+        'Returns {task:{pred:[s_0, s_1]}}'
+        task2pred = {}
+        for pred, content in pred_dict.items():
+            tasks = content['task']
+            for t, values in tasks.items():
+                if not t in task2pred:
+                    task2pred[t] = {}
+                task2pred[t][pred] = values
+        return task2pred
+    def group_nested_dict(nested_dict):
+        'calculate precondition and effect based on task2pred'
+        'Effect is calculated as change of truth values'
+        'Preconddtion is the intersection of all abstract states before execution'
+        result = defaultdict(lambda: {'task': [], 'effect': {}, 'precondition': {}})
+
+        # effect
+        for outer_key, inner_dict in nested_dict.items():
+            value_dict = {k: v[1] - v[0] for k, v in inner_dict.items() if v[1] - v[0] != 0}
+            group_id = None
+            for gid, group in result.items():
+                if group['effect'] == value_dict:
+                    group_id = gid
+                    break
+            if group_id is None:
+                group_id = len(result)
+                result[group_id]['effect'] = value_dict
+            result[group_id]['task'].append(outer_key)
+
+        result = dict(result)
+        # precondition
+        for k, v in result.items():
+            cluster = v['task']
+            temp_dict = defaultdict(list)
+            for task in cluster:
+                for pred in nested_dict[task]:
+                    temp_dict[pred].append(nested_dict[task][pred][0])
+            for pred, v_list in temp_dict.items():
+                if len(set(v_list)) == 1:
+                    result[k]['precondition'][pred] = v_list[0]
+
+        return result
+    
+    task2pred = convert_to_task2pred(pred_dict)
+    suc_task2pred = {}
+    # only success tasks will be use to calculate precondition
+    for task, value in task2pred.items():
+        if not "False" in task:
+            suc_task2pred[task] = value
+    partitioned_tasks = group_nested_dict(suc_task2pred)
+
+    return partitioned_tasks
+
 def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
         "score of a predicate as one skill's precondition or effect"
         "type : {precond, eff}"
@@ -664,6 +563,7 @@ def score(pred, skill, skill2tasks, pred_dict, equal_preds, type):
                     fscore = f/f_d
         return tscore, fscore
 
+############################# ORIGINAL REASSIGNMENT CODE ####################################
 def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, threshold=0.4):
     '''
     Assign precondtions of all skills to effect of each skill
@@ -691,9 +591,6 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
             dict_list.append(new_dict)
         return dict_list
         
-
-    # all_pred = list(itertools.chain([list(skill2operator[skill]['precond'].keys()) for skill in skill2operator])) + list(itertools.chain([list(skill2operator[skill]['eff'].keys()) for skill in skill2operator]))
-    # all_pred = set(list(itertools.chain(*all_pred)))
     all_pred = list(pred_dict.keys())
 
     reassigned_skill2operator = deepcopy(skill2operator)
@@ -710,81 +607,6 @@ def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, t
             logging.info(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
             print(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
     return reassigned_skill2operator
-
-def partition_by_effect(pred_dict):
-    'calculate partitioned skill from pred_dict'
-    def convert_to_task2pred(pred_dict):
-        'Returns {task:{pred:[s_0, s_1]}}'
-        task2pred = {}
-        for pred, content in pred_dict.items():
-            tasks = content['task']
-            for t, values in tasks.items():
-                if not t in task2pred:
-                    task2pred[t] = {}
-                task2pred[t][pred] = values
-        return task2pred
-    def group_nested_dict(nested_dict):
-        'calculate precondition and effect based on task2pred'
-        'Effect is calculated as change of truth values'
-        'Preconddtion is the intersection of all abstract states before execution'
-        result = defaultdict(lambda: {'task': [], 'effect': {}, 'precondition': {}})
-
-        # effect
-        for outer_key, inner_dict in nested_dict.items():
-            value_dict = {k: v[1] - v[0] for k, v in inner_dict.items() if v[1] - v[0] != 0}
-            group_id = None
-            for gid, group in result.items():
-                if group['effect'] == value_dict:
-                    group_id = gid
-                    break
-            if group_id is None:
-                group_id = len(result)
-                result[group_id]['effect'] = value_dict
-            result[group_id]['task'].append(outer_key)
-
-        result = dict(result)
-        # precondition
-        for k, v in result.items():
-            cluster = v['task']
-            temp_dict = defaultdict(list)
-            for task in cluster:
-                for pred in nested_dict[task]:
-                    temp_dict[pred].append(nested_dict[task][pred][0])
-            for pred, v_list in temp_dict.items():
-                if len(set(v_list)) == 1:
-                    result[k]['precondition'][pred] = v_list[0]
-
-        return result
-    
-    task2pred = convert_to_task2pred(pred_dict)
-    suc_task2pred = {}
-    # only success tasks will be use to calculate precondition
-    for task, value in task2pred.items():
-        if not "False" in task:
-            suc_task2pred[task] = value
-    partitioned_tasks = group_nested_dict(suc_task2pred)
-
-    return partitioned_tasks
-
-# ### task proposing part below
-
-# def scoring_chain(task, operators):
-#     'returns the maximum steps that can be executed from the begining of a task'
-#     pass
-
-# def top_k_combo(coverage_table, k):
-#     'calculate top k skill combination with highest information gain'
-#     pass
-
-# def update_coverage(coverage_table, task):
-#     'update the coverage table with the task just been executed'
-#     pass
-
-# def task_proposing(skill, tasks):
-#     '''
-#     tasks::list(str):: previous tasks
-#     '''
-#     pass
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
@@ -819,29 +641,6 @@ if __name__ == '__main__':
     # response = generate_pred(model, skill, pred_dict, pred_type)
     # print(response)
     # breakpoint()
-
-    # # reassign
-    # skill2operators = cross_assignment(skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds, threshold=0.45)
-    # print(skill2operators)
-    # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1}}, 
-    #                    'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1, 'is_dropped_at([OBJ], [LOC])': -1}}, 
-    #                    'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
-    skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
-                       'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
-                       'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {'is_at([OBJ], [LOC])': 1}}}
-    # breakpoint()
-
-    # # # merge after
-    # unified_skill2operator, equal_preds = merge_predicates(model, skill2operators, pred_dict)
-    # print(unified_skill2operator, '\n\n', equal_preds)
-
-    # unified_skill2operator = {'PickUp([OBJ], [LOC])': {'precond': {'is_within_reach([OBJ], [LOC])': True}, 'eff': {'is_at_location([OBJ], [LOC])': -1, 'is_within_reach([OBJ], [LOC])': -1, 'is_at([OBJ], [LOC])': -1}}, 
-    #                           'DropAt([OBJ], [LOC])': {'precond': {'is_holding([OBJ])': True}, 'eff': {'is_at([OBJ], [LOC])': 1}}, 
-    #                           'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}} 
-
-    # skill2operators = {'PickUp([OBJ], [LOC])': {'precond': {}, 'eff': {}}, 'DropAt([OBJ], [LOC])': {'precond': {'isHolding([OBJ])': True}, 'eff': {}}, 'GoTo([LOC_1], [LOC_2])': {'precond': {}, 'eff': {}}}
-    # skill2tasks = {'DropAt([OBJ], [LOC])': {'DropAt_Vase_DiningTable_False_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Vase_DiningTable_False_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Vase_DiningTable_False_1.jpg'], 'success': False, 'obj': 'Vase', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}, 'DropAt_Bowl_CoffeeTable_True_1': {'s0': ['tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}}, 'GoTo([LOC_1], [LOC_2])': {'GoTo_DiningTable_CoffeeTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg'], 'success': True, 'loc_1': 'DiningTable', 'loc_2': 'CoffeeTable', 'obj': '', 'loc': ''}, 'GoTo_Sofa_DiningTable_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_Sofa_DiningTable_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_Sofa_DiningTable_True_1.jpg'], 'success': True, 'loc_1': 'Sofa', 'loc_2': 'DiningTable', 'obj': '', 'loc': ''}, 'GoTo_CoffeeTable_Sofa_True_1': {'s0': ['tasks/exps/GoTo/Before_GoTo_CoffeeTable_Sofa_True_1.jpg'], 's1': ['tasks/exps/GoTo/After_GoTo_CoffeeTable_Sofa_True_1.jpg'], 'success': True, 'loc_1': 'CoffeeTable', 'loc_2': 'Sofa', 'obj': '', 'loc': ''}}, 'PickUp([OBJ], [LOC])': {'PickUp_TissueBox_Sofa_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_TissueBox_Sofa_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_TissueBox_Sofa_True_1.jpg'], 'success': True, 'obj': 'TissueBox', 'loc': 'Sofa', 'loc_1': '', 'loc_2': ''}, 'PickUp_Vase_CoffeeTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg'], 'success': True, 'obj': 'Vase', 'loc': 'CoffeeTable', 'loc_1': '', 'loc_2': ''}, 'PickUp_Bowl_DiningTable_True_1': {'s0': ['tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_True_1.jpg'], 's1': ['tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_True_1.jpg'], 'success': True, 'obj': 'Bowl', 'loc': 'DiningTable', 'loc_1': '', 'loc_2': ''}}}
-    # pred_dict = {'isHolding([OBJ])': {'task': {'GoTo_DiningTable_CoffeeTable_True_1': [False, False], 'GoTo_Sofa_DiningTable_True_1': [False, False], 'GoTo_CoffeeTable_Sofa_True_1': [False, False], 'PickUp_TissueBox_Sofa_True_1': [False, False], 'PickUp_Vase_CoffeeTable_True_1': [True, False], 'PickUp_Bowl_DiningTable_True_1': [False, True], 'DropAt_Bowl_CoffeeTable_True_1': [True, False], 'DropAt_Vase_DiningTable_False_1': [False, False]}, 'semantic': 'The robot is currently holding the object.'}}
     log_data = load_from_file('tasks/log/ai2thor_5_log_30.json')
     last_run_num = '5'
     skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
