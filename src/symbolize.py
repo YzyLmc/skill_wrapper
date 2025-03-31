@@ -116,7 +116,7 @@ def possible_grounded_predicates(pred_list, type_dict):
 def calculate_pred_to_update(grounded_predicates, skill):
     '''
     Given a skill and its parameters, find the set of predicates that need updates
-    skill::dict:: {'name':str, 'params':list}
+    skill::dict:: {'name':str, 'types':list,'params':list}
     grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
     '''
     return [gp for gp in grounded_predicates if any([p in gp['params'] for p in skill['params']])]
@@ -137,17 +137,17 @@ def lift_grounded_predicate(grounded_pred, type_dict, lifted_pred_list):
     assert len(output_list) == 1
     return output_list[0]
 
-# Not used
-# evaluate an execution using foundation model. Expected acc to be ~ 70%
-def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
-    'Get successfulness of the execution given images and the skill name'
-    def construct_prompt(prompt, skill):
-        while "[SKILL]" in prompt:
-                prompt = prompt.replace("[SKILL]", skill)
-        return prompt
-    prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, skill)
-    return model.generate_multimodal(prompt, consecutive_pair)[0]
+# # Not used
+# # evaluate an execution using foundation model. Expected acc to be ~ 70%
+# def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
+#     'Get successfulness of the execution given images and the skill name'
+#     def construct_prompt(prompt, skill):
+#         while "[SKILL]" in prompt:
+#                 prompt = prompt.replace("[SKILL]", skill)
+#         return prompt
+#     prompt = load_from_file(prompt_fpath)
+#     prompt = construct_prompt(prompt, skill)
+#     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
 def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, lifted_pred_list, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
     '''
@@ -395,6 +395,13 @@ def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, t
     skill2operators = {}
     return skill2operators, pred_dict, skill2triedpred, skill2operators
 
+def partition_by_termination(grounded_predicate_truth_value_log):
+    '''
+    Partition the a set of trajectory using termination set. Will be used in scoring and final operators learning.
+    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+    '''
+    
+    pass
 def partition_by_effect(pred_dict):
     'calculate partitioned skill from pred_dict'
     def convert_to_task2pred(pred_dict):
@@ -457,14 +464,28 @@ def score(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type, equ
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
     type : {precond, eff}
     """
+    # TODO: decide whether this should be on grounded or lifted state. Right now on grounded
     # skill2task2state :: {skill_name: {task_step_name: {pred: bool}}}; task_step_name=(task_name)
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type)
     task2state = skill2task2state[skill]
     # step 0 will be skipped
     # In t_score, ratio of either p = True or p = False has to > threshold
     # but t_score and f_score need to agree with each other. i.e., if t_score has p=True f_score has to have p=False
+    
+    # t_score_t: if P = True is a precond, P must equal to True if the task is successful
+    # t_score_t = (Success & P=True)/Success
+    # f_score_t: if P = True is a precond, the task must fail if P is False
+    # f_score_t = (Fail & p=False)/p=False
+    # t_score_f: if P = False is a precond, P must equal to False if the task is successful 
+    # t_score_f = (Success & P=False)/Success
+    # f_score_f: if P = False is a precond, the task must fail if P is True
+    # f_score_f = (Fail & p=True)/p=True
+    t_score_t, f_score_t, t_score_f, f_score_f = 0, 0, 0, 0
     for task_step_id, state in task2state.items():
         task_name, step = task_step_id
+        tasks[task_name][step]["success"]
+        truth_value = state.get_pred_value(pred)
+    # the logic of the old scoring function is wrong. Equivalent predicates don't have to be considered at this stage.
         
 
 def score(pred, skill, skill2tasks, pred_dict, type, equal_preds=None):
@@ -478,7 +499,6 @@ def score(pred, skill, skill2tasks, pred_dict, type, equal_preds=None):
     success_tasks = [id for id, t in tasks.items() if t['success']]
     fail_tasks = [id for id, t in tasks.items() if not t['success']]
     repeated = False
-    # TODO: precondition could be false
     if type == 'precond':
         t_p, t_d, f_n, f_d = 0, 0, 0, 0
         for ps in equal_preds:
@@ -664,7 +684,7 @@ if __name__ == '__main__':
     log_data = load_from_file('tasks/log/ai2thor_5_log_30.json')
     last_run_num = '5'
     skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
-    print(equal_preds)
-    assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
-    print(assigned_skill2operators)
+    # print(equal_preds)
+    # assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
+    # print(assigned_skill2operators)
     breakpoint()
