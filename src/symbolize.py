@@ -346,7 +346,7 @@ def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log
     hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log)
     hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, pred_type)
     # TODO: modify the score function
-    t_score, f_score = score(new_pred, skill, hypothetical_skill2task2state, hypothetical_pred_list, [], pred_type)
+    t_score, f_score = score_by_partition(new_pred, skill, hypothetical_skill2task2state, hypothetical_pred_list, [], pred_type)
     logging.info(f"Precondition T score of predicate {dict_to_string(new_pred)}: {t_score}, F score: {f_score}")
     if t_score >= threshold[pred_type] and  f_score >= threshold[pred_type]:
         logging.info(f"Predicate {new_pred} added to predicate set by precondition check")
@@ -395,10 +395,23 @@ def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, t
     skill2operators = {}
     return skill2operators, pred_dict, skill2triedpred, skill2operators
 
-def partition_by_termination(grounded_predicate_truth_value_log):
+def score_by_partition(new_pred, skill, skill2task2state, pred_list, pred_type):
+    '''
+    Partition by effect and then score the predicates across each partition
+    skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
+    '''
+    task2state = skill2task2state[skill]
+    # 1. find all states after executing the same grounded skill
+    # 2. evaluate the score for each task2state dictionary, pick the best one
+    pass
+
+def partition_by_termination(task2state):
     '''
     Partition the a set of trajectory using termination set. Will be used in scoring and final operators learning.
+    Return a list of task2state?
+    task2state:: {(task,step):PredicateState}
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+    return:: [task2state]
     '''
     
     pass
@@ -457,7 +470,7 @@ def partition_by_effect(pred_dict):
 
     return partitioned_tasks
 
-def score(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type, equal_preds=None):
+def score_new(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type, equal_preds=None):
     """
     score of a predicate as one skill's precondition or effect
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
