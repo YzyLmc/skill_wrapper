@@ -18,13 +18,14 @@ class PredicateState:
     def __init__(self, predicates):
         """
         Initializes the predicate state.
-        predicates::list:: A list of predicate dictionaries {'name': str, 'params': tuple/list, ...}
+        Lifted predicates have empty 'params'
+        predicates::list:: A list of predicate dictionaries {'name': str, 'params': tuple/list, "types": tuple/list, "semantic":str}
         """
         self.pred_dict = {self._keyify(pred): None for pred in predicates}
 
     def _keyify(self, pred):
         """Generates a unique key from predicate name and parameters."""
-        return (pred["name"], tuple(pred["params"]))
+        return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
 
     def set_pred_value(self, grounded_pred, value):
         """
@@ -91,7 +92,6 @@ def ground_with_params(lifted, params, type_dict):
     grounded_pred["params"] = params
     return grounded_pred
 
-# TODO: revise data structure under tasks, record grounding parameters
 def possible_grounded_predicates(pred_list, type_dict):
     """
     Generate all possible grounded predicate using the combination of predicates and objects
@@ -391,9 +391,8 @@ def invent_predicates(model, skill, tasks, grounded_predicate_truth_value_log, t
     # partitioning
     # TODO: update partition_by_effect function
     partitioned_output = partition_by_effect(grounded_predicate_truth_value_log)
-
-    skill2operators = {}
-    return skill2operators, pred_dict, skill2triedpred, skill2operators
+    
+    return pred_list, skill2triedpred
 
 def score_by_partition(new_pred, skill, skill2task2state, pred_list, pred_type):
     '''
@@ -402,19 +401,29 @@ def score_by_partition(new_pred, skill, skill2task2state, pred_list, pred_type):
     '''
     task2state = skill2task2state[skill]
     # 1. find all states after executing the same grounded skill
+    state2partition = partition_by_termination(task2state)
     # 2. evaluate the score for each task2state dictionary, pick the best one
+    score()
     pass
 
 def partition_by_termination(task2state):
     '''
-    Partition the a set of trajectory using termination set. Will be used in scoring and final operators learning.
+    Partition the a set of trajectory using termination set. Will be used again in scoring and final operators learning.
     Return a list of task2state?
     task2state:: {(task,step):PredicateState}
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     return:: [task2state]
     '''
+    def states_are_equal(state_1, state_2):
+        return state_1.pred_dict == state_2.pred_dict
     
-    pass
+    state2partition: {PredicateState: list} = defaultdict(list)
+    for task_step_id, state in task2state.items():
+        for registered_state in state2partition:
+            if states_are_equal(state.pred_dict, registered_state):
+                state2partition[state.pred_dict].append(task_step_id)
+    return state2partition
+
 def partition_by_effect(pred_dict):
     'calculate partitioned skill from pred_dict'
     def convert_to_task2pred(pred_dict):
@@ -430,7 +439,7 @@ def partition_by_effect(pred_dict):
     def group_nested_dict(nested_dict):
         'calculate precondition and effect based on task2pred'
         'Effect is calculated as change of truth values'
-        'Preconddtion is the intersection of all abstract states before execution'
+        'Precondition is the intersection of all abstract states before execution'
         result = defaultdict(lambda: {'task': [], 'effect': {}, 'precondition': {}})
 
         # effect
@@ -477,7 +486,6 @@ def score_new(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type,
     grounded_predicate_truth_value_log::dict::{task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
     type : {precond, eff}
     """
-    # TODO: decide whether this should be on grounded or lifted state. Right now on grounded
     # skill2task2state :: {skill_name: {task_step_name: {pred: bool}}}; task_step_name=(task_name)
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type)
     task2state = skill2task2state[skill]
@@ -498,7 +506,6 @@ def score_new(pred, skill, tasks, grounded_predicate_truth_value_log, pred_type,
         task_name, step = task_step_id
         tasks[task_name][step]["success"]
         truth_value = state.get_pred_value(pred)
-    # the logic of the old scoring function is wrong. Equivalent predicates don't have to be considered at this stage.
         
 
 def score(pred, skill, skill2tasks, pred_dict, type, equal_preds=None):
@@ -669,17 +676,6 @@ if __name__ == '__main__':
     # # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
     # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
     # sem = "return true if the agent is near the location else false."
-    # # obj = 'KeyChain'
-    # obj = 'Book'
-    # loc = 'DiningTable'
-    # loc_1 = 'Sofa'
-    # # loc_2 = 'DiningTable'
-    # loc_2 = 'Book'
-    # img = ['Before_PickUp_2.jpg']
-    # # img = ['test_new.jpg']
-    # response = eval_pred(model, skill, pred, sem, obj, loc, loc_1, loc_2, img)
-    # print(response)
-    # breakpoint()
 
     # test predicate proposing for refining
 
@@ -693,11 +689,17 @@ if __name__ == '__main__':
     # # pred_type = 'precond'
     # response = generate_pred(model, skill, pred_dict, pred_type)
     # print(response)
-    # breakpoint()
-    log_data = load_from_file('tasks/log/ai2thor_5_log_30.json')
-    last_run_num = '5'
-    skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
-    # print(equal_preds)
-    # assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
-    # print(assigned_skill2operators)
+    example_lifted_predicates = [
+        {'name':"At", 'params':["object", "location"], 'types':[]},
+        {'name':"CloseTo", 'params':["robot", "location"], 'types':[]},
+        {'name':"HandOccupied", 'params':[], 'types':[]},
+
+    ]
+    add_predicates = [
+        {'name': "IsHolding", "types":["object"], 'params':[]},
+        {'name': "EnoughBattery", "types": [], 'params':[]}
+    ]
+    test_pred_ls = PredicateState(example_lifted_predicates)
+    test_pred = {'name':"At", 'types':["object", "location"], 'params':[]}
+    value = test_pred_ls.get_pred_value(test_pred)
     breakpoint()
