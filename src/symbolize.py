@@ -399,6 +399,7 @@ def score_by_partition(new_pred, skill, skill2task2state, pred_list, pred_type):
     Partition by effect and then score the predicates across each partition
     skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
     '''
+    # TODO: task2state should have two states: before and after
     task2state = skill2task2state[skill]
     # 1. find all states after executing the same grounded skill
     state2partition = partition_by_termination(task2state)
@@ -493,7 +494,7 @@ def score(pred, tasks, task2state, pred_type, equal_preds=None):
     # In t_score, ratio of either p = True or p = False has to > threshold
     # but t_score and f_score need to agree with each other. i.e., if t_score has p=True f_score has to have p=False
     
-    # PRECONDITION
+    # PRECONDITION (s)
     # t_score_t: if P = True is a precond, P must equal to True if the task is successful
     # t_score_t = (Success & P=True)/Success = a / b
     # f_score_t: if P = True is a precond, the task must fail if P is False
@@ -503,7 +504,7 @@ def score(pred, tasks, task2state, pred_type, equal_preds=None):
     # f_score_f: if P = False is a precond, the task must fail if P is True
     # f_score_f = (Fail & p=True)/p=True f / g
 
-    # EFFECT
+    # EFFECT (s')
     # t_score_t: if P is a eff+, P must equal to True if the task is successful
     # t_score_t = (Success & P=True)/Success = a / b
     # f_score_t: if P is in eff+, the task must fail if P is False
@@ -514,8 +515,11 @@ def score(pred, tasks, task2state, pred_type, equal_preds=None):
     # f_score_f = (Fail & p=True)/p=True f / g
     
     a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
-    for task_step_id, state in task2state.items():
+    for task_step_id in task2state:
         task_name, step = task_step_id
+        # Using init state (s) for precondition and next state (s') for effect
+        step = step if pred_type=="precond" else step + 1
+        state = task2state[(task_name, step)]
         success = tasks[task_name][step]["success"]
         pred_is_true = state.get_pred_value(pred)
         if step == 0:
@@ -536,51 +540,6 @@ def score(pred, tasks, task2state, pred_type, equal_preds=None):
     t_score_t, f_score_t, t_score_f, f_score_f = a/b, c/d, e/b, f/g
 
     return t_score_t, f_score_t, t_score_f, f_score_f
-
-############################# ORIGINAL REASSIGNMENT CODE ####################################
-def cross_assignment(skill2operator, skill2tasks, pred_dict, equal_preds=None, threshold=0.4):
-    '''
-    Assign precondtions of all skills to effect of each skill
-    
-    success execution -> precond == True, eff == 1
-    precond == False , eff != 1 -> failed execution : ?for eff really? There's no gurantee on independent factor
-
-    There should be a threshold for cross assignment, either if higher than it or lower than -1*threshold will be added
-    skill2operator:: {skill_name:{precond:{str:Bool}, eff:{str:int}}}
-    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
-    pred_dict:: {pred_name:{task: [Bool, Bool]}, semantic:str}
-    '''
-    def equal_pred_dict_list(equal_preds):
-        "input equal_preds has [postive] and [negative]"
-        "equal_preds:: list(list(str))"
-        "return: list(dict(str: bool))"
-        dict_list = []
-        for equal_pred in equal_preds:
-            new_dict = {}
-            for p in equal_pred:
-                if 'postive' in p:
-                    new_dict[p[:-10]] = True
-                else:
-                    new_dict[p[:-10]] = False
-            dict_list.append(new_dict)
-        return dict_list
-        
-    all_pred = list(pred_dict.keys())
-
-    reassigned_skill2operator = deepcopy(skill2operator)
-    for skill in skill2operator:
-        reassigned_skill2operator[skill] = {'precond':{}, 'eff':{}}
-        for pred in all_pred:
-            t_precond, f_precond = score(pred, skill, skill2tasks, pred_dict, equal_preds, 'precond')
-            
-            if t_precond > 0.5 and f_precond > 0.5:
-                reassigned_skill2operator[skill]['precond'][pred] = True
-            t_eff, f_eff = score(pred, skill, skill2tasks, pred_dict, equal_preds, 'eff')
-            if abs(t_eff) > 0.5 and f_eff > 0.5:
-                reassigned_skill2operator[skill]['eff'][pred] = 1 if t_eff > 0 else -1
-            logging.info(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
-            print(f"skill name:{skill}, predicate:{pred}, tscore(precond):{t_precond}, fscore(precond):{f_precond}, tscore(eff):{t_eff}, fscore(eff):{f_eff}")
-    return reassigned_skill2operator
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
