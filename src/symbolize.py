@@ -30,6 +30,25 @@ class PredicateState:
     def _keyify(self, pred):
         """Generates a unique key from predicate name and parameters."""
         return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
+    
+    def get_pred_list(self, lifted=False):
+        """
+        Restores and returns a list of unique predicate dictionaries in their original form.
+        """
+        pred_list = []
+        seen = set()
+        for name, types, params in self.pred_dict.keys():
+            key = (name, types, params)
+            if key not in seen:
+                pred_list.append({
+                    "name": name,
+                    "types": list(types),
+                    "params": [] if lifted else list(params),
+                    # Optional: include "semantic" as None since it's not stored in pred_dict
+                    "semantic": None  
+                })
+                seen.add(key)
+        return pred_list
 
     def set_pred_value(self, grounded_pred, value):
         """
@@ -58,9 +77,9 @@ class PredicateState:
                 # hardcoded
                 assert all(key in ["name", "types", "params", "semantic"] for key in new_pred.keys())
                 self.pred_dict[pred_key] = None
-            # remove this text after tested
-            else:
-                print(f"Predicate {dict_to_string(new_pred, lifted=True)} already exists.")
+            # # remove this text after tested
+            # else:
+            #     print(f"Predicate {dict_to_string(new_pred, lifted=True)} already exists.")
 
     def get_unevaluated_predicates(self):
         """
@@ -85,7 +104,7 @@ def ground_with_params(lifted, params, type_dict):
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     """
     # tuple is applicable to the lifted representation
-    assert len(lifted['types']) == len(params)
+    # assert len(lifted['types']) == len(params), f"number of types ({len(lifted['types'])}) not agree with number of params ({len(params)})"
     for i, p in enumerate(params):
         assert p in type_dict
         assert lifted['types'][i] in type_dict[p]
@@ -112,18 +131,18 @@ def possible_grounded_predicates(pred_list, type_dict):
     # generate all possible grounded predicates
     grounded_predicates = []
     for pred in pred_list:
-        for params in itertools.product(*[type_dict_inv[p] for p in pred['params']]):
-            grounded_predicates.append(ground_with_params(pred, params, type_dict))
-    
+        for params in itertools.product(*[type_dict_inv[p] for p in pred['types']]):
+            grounded_predicates.append(ground_with_params(pred, list(params), type_dict))
     return grounded_predicates
 
-def calculate_pred_to_update(grounded_predicates, skill):
+def calculate_pred_to_update(grounded_predicates, grounded_skill):
     '''
     Given a skill and its parameters, find the set of predicates that need updates
-    skill::dict:: {'name':str, 'types':list,'params':list}
+    grounded_skill::dict:: {'name':str, 'types':list,'params':list}
     grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
     '''
-    return [gp for gp in grounded_predicates if any([p in gp['params'] for p in skill['params']])]
+    # TODO: always include predicates that has 0 arity after every step
+    return [gp for gp in grounded_predicates if any([p in gp['params'] for p in grounded_skill['params']])]
 
 def lift_grounded_predicate(grounded_pred, type_dict, lifted_pred_list):
     """
@@ -199,7 +218,7 @@ def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpat
             # construct predicate list from pred_dict
             pred_list_str = '\n'.join([f'{dict_to_string(pred, lifted=True)}: {pred["semantic"]}' for pred in pred_list])
             prompt = prompt.replace("[PRED_LIST]", pred_list_str)
-            prompt = prompt.replace("[TRIED_PRED]", [dict_to_string(pred, lifted=True) for pred in tried_pred])
+            prompt = prompt.replace("[TRIED_PRED]", ", ".join([dict_to_string(pred, lifted=True) for pred in tried_pred]))
 
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
@@ -493,7 +512,7 @@ def partition_by_effect(pred_dict):
 
     return partitioned_tasks
 
-def score(pred, tasks, task2state, pred_type, equal_preds=None):
+def score(pred, tasks, task2state, pred_type):
     """
     score of a predicate as one skill's precondition or effect
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
@@ -528,11 +547,11 @@ def score(pred, tasks, task2state, pred_type, equal_preds=None):
     # f_score_f = (Fail & p=True)/p=True f / g
     
     a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
+    state_id = 0 if pred_type=="precond" else 1
     for task_step_id in task2state:
         # task_step_id is just for indexing purpose
         task_name, step = task_step_id
         # Using init state (s) for precondition and next state (s') for effect
-        state_id = 0 if pred_type=="precond" else 1
         state = task2state[(task_name, step)][state_id]
         success = tasks[task_name][step]["success"]
         pred_is_true = state.get_pred_value(pred)
@@ -567,23 +586,35 @@ if __name__ == '__main__':
     # test predicate proposing for refining
 
     # mock symbolic state
-    pred_dict = {'name':'handEmpty()', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}
-    skill = {'name': 'PickUp', 'types':['object'], 'params':[]}
+    pred_list = [{'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}]
+    type_dict = {"Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
+    skill_1 = {'name': 'PickUp', 'types':['object'], 'params':[]}
+    skill_2 = {"name": "GoTo", "types": ['location'], 'params':[]}
+    skill_3 = {"name": "PlaceAt", "types": ['object', 'location'], 'params':[]}
+    skill_list = [skill_1, skill_2, skill_3]
     # pred_type = 'eff'
-    # pred_type = 'precond'
-    # response = generate_pred(model, skill, pred_dict, pred_type)
+    pred_type = 'precond'
+    # response = generate_pred(model, skill, pred_list, pred_type)
     # print(response)
     example_lifted_predicates = [
         {'name':"At", 'types':["object", "location"], 'params':[]},
         {'name':"CloseTo", 'types':["robot", "location"], 'params':[]},
         {'name':"HandOccupied", 'types':[], 'params':[]},
-
     ]
     add_predicates = [
         {'name': "IsHolding", "types":["object"], 'params':[]},
-        {'name': "EnoughBattery", "types": [], 'params':[]}
+        {'name': "EnoughBattery", "types": [], 'params':[]},
+        {'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}
     ]
     test_pred_ls = PredicateState(example_lifted_predicates)
+    breakpoint()
     test_pred = {'name':"At", 'types':["object", "location"], 'params':[]}
     value = test_pred_ls.get_pred_value(test_pred)
+
+    test_pred_ls.add_pred_list(add_predicates)
+
+    possible_preds = possible_grounded_predicates(test_pred_ls.get_pred_list(lifted=True), type_dict)
+    
+    grounded_skill = {"name": "PlaceAt", "types": ['object', 'location'], 'params':['Banana', 'Couch']}
+    pred_to_update = calculate_pred_to_update(possible_preds, grounded_skill)
     breakpoint()

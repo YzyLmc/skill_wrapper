@@ -88,7 +88,7 @@ def prompt2msg(query_prompt, vision=False):
     :return: message used by chat completion API (gpt-3, gpt-3.5-turbo).
     """
     prompt_splits = query_prompt.split("\n\n") if type(query_prompt) == str else query_prompt
-    # breakpoint()
+    
     task_description = prompt_splits[0]
     examples = prompt_splits[1: -1]
     query = prompt_splits[-1]
@@ -97,7 +97,7 @@ def prompt2msg(query_prompt, vision=False):
     msg = [{"role": "system", tag: task_description}]
     if len(prompt_splits) > 1:
         msg.append({"role": "user", tag: "\n\n".join(prompt_splits[1:])})
-    # breakpoint()
+
     return msg
 
 class GPT4:
@@ -184,8 +184,9 @@ class GPT4:
             } if self.engine != "o1" else {
             "model": self.engine,
             "messages": [],
+            "logprobs": False
             }
-        assert not (logprobs and self.engine == "o1")
+        assert not (payload["logprobs"] and self.engine == "o1")
         if logprobs:
             payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
