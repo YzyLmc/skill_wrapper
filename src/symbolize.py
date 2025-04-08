@@ -11,7 +11,6 @@ Data structures:
 '''
 from utils import GPT4, load_from_file
 from collections import defaultdict
-import inspect
 from copy import deepcopy
 import random
 import itertools
@@ -144,22 +143,13 @@ def calculate_pred_to_update(grounded_predicates, grounded_skill):
     # TODO: always include predicates that has 0 arity after every step
     return [gp for gp in grounded_predicates if any([p in gp['params'] for p in grounded_skill['params']])]
 
-def lift_grounded_predicate(grounded_pred, type_dict, lifted_pred_list):
+def lift_grounded_pred(grounded_pred, type_dict):
     """
-    Lift a grounded predicate, e.g., {'name': 'At', 'params': ['Apple', 'Table']} to a {'name':"At", 'params':["object", "location"]}
+    Lift a grounded predicate, e.g., {'name': 'At', 'types': ["object", "location"], 'params': ['Apple', 'Table']} to a {'name':"At", 'types':["object", "location"], 'params':[]}
+    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     """
-    assert all([p in type_dict for p in grounded_pred['params']])
-    output_list = []
-    # iterate through the pred_list to find the lifted representation
-    for pred in lifted_pred_list:
-        if pred['name'] == grounded_pred['name']:
-            if all([p in type_dict for p in pred['params']]):
-                output_list.append(pred)
-    # cannot have more than one matched lifted predicate
-    # e.g., existing two predicates At(a, b) and At(a, c) while the grounded version At(apple, banana) has type(banana) = [b, c]
-    assert len(output_list) == 1
-    return output_list[0]
-
+    assert all([type in type_dict[param] for type, param in zip(grounded_pred['types'], grounded_pred['params'])])
+    return {'name':grounded_pred['name'], 'types':grounded_pred['types'], 'params':grounded_pred['params'], 'semantic':grounded_pred['semantic']}
 # # Not used
 # # evaluate an execution using foundation model. Expected acc to be ~ 70%
 # def eval_execution(model, skill, consecutive_pair, prompt_fpath='prompts/evalutate_task.txt'):
@@ -172,7 +162,7 @@ def lift_grounded_predicate(grounded_pred, type_dict, lifted_pred_list):
 #     prompt = construct_prompt(prompt, skill)
 #     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, lifted_pred_list, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
+def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     init step and later steps use different prompts. harded coded.
@@ -185,7 +175,7 @@ def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, lifted_pred_
         if not any([p in grounded_pred['params'] for p in grounded_skill['params']]):
             return None
         place_holders = ['[GROUNDED_SKILL]', '[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
-        lifted_pred = lift_grounded_predicate(grounded_pred, type_dict, lifted_pred_list)
+        lifted_pred = lift_grounded_pred(grounded_pred, type_dict)
         while any([p in prompt for p in place_holders]):
             prompt = prompt.replace('[GROUNDED_SKILL]', grounded_skill)
             prompt = prompt.replace('[GROUNDED_PRED]', grounded_pred)
@@ -277,7 +267,7 @@ def update_empty_predicates(model, tasks, lifted_pred_list, type_dict,  grounded
             for pred in pred_to_update:
                 # only update empty predicates
                 if not grounded_predicate_truth_value_log[task_id][step].get_truth_value(pred):
-                    truth_value = eval_pred(model, state["image"], state["skill"], pred, type_dict, lifted_pred_list, init=step==0)
+                    truth_value = eval_pred(model, state["image"], state["skill"], pred, type_dict, init=step==0)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
             
             # 3.copy all empty predicates from previous state
@@ -288,14 +278,16 @@ def update_empty_predicates(model, tasks, lifted_pred_list, type_dict,  grounded
     return grounded_predicate_truth_value_log
 
 
-def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type):
+def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks):
     '''
     helper function to convert grounded predicate log into skill2task2state for predicate invention
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     pred_type :str: {"precond", "eff"}
     returns:
-    skill2task2state::{skill_name: {task_step_name: [PredicateState, PredicateState]}}
+    skill2task2state::{skill_keyified: {task_step_name: [PredicateState, PredicateState]}}
+        skill_keyified :: (skill_name | str, skill_types | set(str), skill_params | set(str))
+        task_step_name :: (task_name | str, step | int)
     '''
     skill2task2state = defaultdict(dict)
     for task_name, steps in grounded_predicate_truth_value_log.items():
@@ -303,23 +295,20 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 if not step == 0: # init state has no skill, and thus won't be included in (task_name, step)
                     skill = tasks[task_name][step]["skill"]
                     task_name_stepped = (task_name, step)
+                    # skill in a dictionary so need keyifying
                     skill_keyified = PredicateState._keyify(skill)
-                    # if pred_type == "precond":
-                    #     skill2task2state[skill][task_name_stepped] = state.pred_dict # all predicates should have truth value
-                    # elif pred_type == "eff":
-                    #     skill2task2state[skill][task_name_stepped] = {pred: int(truth_value) - int(last_state.pred_dict[pred]['task']) for pred, truth_value in state.pred_dict.items()}
                     skill2task2state[skill_keyified][task_name_stepped] = [last_state, state]
                 last_state = deepcopy(state)
-
     return skill2task2state
 
+# TODO: change the criteria to the latest one
 def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     '''
     find mismatch *grounded* states.
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     pred_type::{'precond', 'eff'}
     '''
-    def tasks_with_same_symbolic_states(task2state):
+    def tasks_with_same_symbolic_states(task2state: dict):
         '''
         return:: {key:[duplicated_keys]}
         '''
@@ -333,25 +322,28 @@ def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     # represent all tasks using (task,step) tuple as a key and list of list.{(task,step): PredicateState}
     dup_tasks = {}
     # precondition cares only about s
-    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, pred_type)
-    for skill, task_name_stepped2pred in skill2task2state.items():
-        dup_tasks[skill] = tasks_with_same_symbolic_states(task_name_stepped2pred)
+    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
+    state_idx = 0 if pred_type==0 else 1
+    for skill_keyified, task_name_stepped2state in skill2task2state.items():
+        task2state = {task_name_stepped: state_tuple[state_idx] for task_name_stepped, state_tuple in task_name_stepped2state.items()}
+        dup_tasks[skill_keyified] = tasks_with_same_symbolic_states(task2state)
     
-    # skill2task2state :: {skill_name: {task_step_name: [PredicateState, PredicateState]}}
-    # dup_tasks:: {skill_name: [[task+step_name,...], []]}
+    # skill2task2state :: {skill_keyified: {task_name_stepped: [PredicateState, PredicateState]}}
+    # dup_tasks:: {skill_keyified: [{task_name_stepped:[task_name_stepped]}],...]}
 
     # TODO: fix this part
     # calculating mismatch
     mismatch_pairs = {}
-    for skill, pairs in dup_tasks.items():
-        if pairs:
-            # (?) for effect we have to make sure successful execution have state changes
-            tasks = {p: skill2tasks[skill][p] for p in list(pairs.values())[0]}
-            tasks[list(pairs.keys())[0]] = skill2tasks[skill][list(pairs.keys())[0]]
+    for skill_keyified, dups in dup_tasks.items():
+        if dups:
+            # (we do?) for effect we have to make sure successful execution have state changes
+            tasks = {p: skill2tasks[skill][p] for p in list(dups.values())[0]} # task to success/fail
+            tasks[list(dups.keys())[0]] = skill2tasks[skill_keyified][list(dups.keys())[0]] # ?
+            task2success = {}
             success_tasks = {id: t for id, t in tasks.items() if t['success']}
             failed_tasks = {id: t for id, t in tasks.items() if not t['success']}
             if len(success_tasks) > 0 and len(failed_tasks) > 0:
-                mismatch_pairs[skill] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
+                mismatch_pairs[skill_keyified] = [random.choice(list(success_tasks.keys())), random.choice(list(failed_tasks.keys()))]
     return mismatch_pairs
 
 def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred={}, threshold={"precond":0.5, "eff":0.5}):
@@ -438,7 +430,7 @@ def partition_by_termination(task2state):
     '''
     Partition the a set of trajectory using termination set. Will be used again in scoring and final operators learning.
     Return a list of task2state?
-    task2state:: {(task,step):PredicateState}
+    task2state:: {(task,step):[PredicateState, PredicateState]}
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     return:: [task2state]
     '''
@@ -547,12 +539,12 @@ def score(pred, tasks, task2state, pred_type):
     # f_score_f = (Fail & p=True)/p=True f / g
     
     a, b, c, d, e, f, g = 0, 0, 0, 0, 0, 0, 0
-    state_id = 0 if pred_type=="precond" else 1
+    state_idx = 0 if pred_type=="precond" else 1
     for task_step_id in task2state:
         # task_step_id is just for indexing purpose
         task_name, step = task_step_id
         # Using init state (s) for precondition and next state (s') for effect
-        state = task2state[(task_name, step)][state_id]
+        state = task2state[(task_name, step)][state_idx]
         success = tasks[task_name][step]["success"]
         pred_is_true = state.get_pred_value(pred)
         if step == 0:
@@ -576,18 +568,9 @@ def score(pred, tasks, task2state, pred_type):
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
-    # # test predicate evaluation function
-    # # pred = 'handEmpty()'
-    # # pred = 'IsObjectReachable([OBJ], [LOC])'
-    # # sem = "return true if the object is within the robot's reach at the given location, and false if it is not."
-    # # sem = "Indicates whether the object is currently being held by the robot after attempting to pick it up."
-    # sem = "return true if the agent is near the location else false."
-
-    # test predicate proposing for refining
-
     # mock symbolic state
     pred_list = [{'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}]
-    type_dict = {"Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
+    type_dict = {"Robot": ["robot"], "Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
     skill_1 = {'name': 'PickUp', 'types':['object'], 'params':[]}
     skill_2 = {"name": "GoTo", "types": ['location'], 'params':[]}
     skill_3 = {"name": "PlaceAt", "types": ['object', 'location'], 'params':[]}
@@ -618,3 +601,14 @@ if __name__ == '__main__':
     grounded_skill = {"name": "PlaceAt", "types": ['object', 'location'], 'params':['Banana', 'Couch']}
     pred_to_update = calculate_pred_to_update(possible_preds, grounded_skill)
     breakpoint()
+
+    # test partitioning and scoring
+    # construct multiple PredicateState instances
+    s_0 = deepcopy(test_pred_ls)
+    s_0.set_pred_value(
+
+    )
+    # manually construct grounded_predicate_truth_value_log ::dict:: {task:{step:PredicateState}}
+    grounded_predicate_truth_value_log = {
+        ('1',0): None
+    }
