@@ -26,9 +26,37 @@ class PredicateState:
         self.pred_dict = {self._keyify(pred): None for pred in predicates}
 
     @classmethod
-    def _keyify(self, pred):
+    def _keyify(cls, pred):
         """Generates a unique key from predicate name and parameters."""
         return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
+    
+    # TODO: figure out if semantic is needed
+    @classmethod
+    def restore_pred_from_key(cls, key_tuple):
+        """
+        Restores a predicate dictionary from a keyified tuple: (name, types, params).
+        'semantic' is set to None since it's not stored in the key.
+        """
+        name, types, params = key_tuple
+        return {
+            "name": name,
+            "types": list(types),
+            "params": list(params),
+            "semantic": None  # Default since semantic isn't stored in the key
+        }
+
+    def iter_predicates(self):
+        """
+        Generator that yields each grounded predicate as a dictionary in original format.
+        """
+        for name, types, params in self.pred_dict.keys():
+            yield {
+                "name": name,
+                "types": list(types),
+                "params": list(params),
+                # Optional: include semantic as None
+                "semantic": None
+            }
     
     def get_pred_list(self, lifted=False):
         """
@@ -94,7 +122,7 @@ def dict_to_string(dict, lifted=False):
     variable_string = ', '.join(dict['types']) if lifted else ', '.join(dict['params'])
     return f"{dict['name']}({variable_string})"
 
-def ground_with_params(lifted, params, type_dict):
+def ground_with_params(lifted, params, type_dict=None):
     """
     Grounded a skill or a predicate with parameters and their types.
     Basically add another key, value to it
@@ -103,10 +131,10 @@ def ground_with_params(lifted, params, type_dict):
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     """
     # tuple is applicable to the lifted representation
-    # assert len(lifted['types']) == len(params), f"number of types ({len(lifted['types'])}) not agree with number of params ({len(params)})"
-    for i, p in enumerate(params):
-        assert p in type_dict
-        assert lifted['types'][i] in type_dict[p]
+    if type_dict:
+        for i, p in enumerate(params):
+            assert p in type_dict
+            assert lifted['types'][i] in type_dict[p]
 
     # grounded skill/predicate
     # return {'name': lifted['name'], 'params': params}
@@ -304,12 +332,73 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
 def detect_mismatch(operators, grounded_predicate_truth_value_log, tasks, pred_type):
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
-    operators :: TBD
+    operators :: TBD :: [{"skill": skill_name | str, "precond": {lift_pred | tuple : bool}, "eff+":{}, "eff-":{}}]
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
+    tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
     pred_type::{'precond', 'eff'}
     """
-# TODO: change the criteria to the latest one
+    # TODO: doublecheck operator structure
+    # TODO: compatibility with empty precond and eff, and empty operator
+    def in_alpha(state, grounded_skill, operators, pred_type):
+        """
+        If a state is within the union set of precond/eff of learned operators.
+        The predicates need to be grounded with the same params as the skill so that we can evaluate over grounded states
+        state :: PredicateState
+        """
+        skill_params = grounded_skill['params']
+        if pred_type == 'precond':
+            for operator in operators:
+                # if truth values of precond are all satisfied by state
+                # massive line but basically saying truth value in PredicateState should agree with predicate grounded with skill params
+                if any([state.get_pred_value(ground_with_params(PredicateState.restore_pred_from_key(lift_pred_tuple), skill_params))!=value for lift_pred_tuple, value in operator['precond'].items()]):
+                    return False
+            return True
+
+        # effect is a bit tricky
+        # if not specified by precond:
+        #   if not specified by eff: no care
+        #   if specified by eff:
+        #       if specified by eff+: final value has to be true
+        #       if specified by eff-: final value has to be false
+        # if specified by precond:
+        #   if not specified by eff: final value has to agree with precond
+        #   if specified by precond and eff:
+        #       if specified by eff+: final value has to be true
+        #       if specified by eff-: final value has to be false
+
+        elif pred_type == "eff":
+            for operator in operators:
+                # construct grounded predicate with skill params
+                for lifted_pred_tuple, value in operator["eff+"].items():
+                    grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                    if not state.get_pred_value(grounded_pred) == value:
+                        return False
+                for lifted_pred_tuple, value in operator["eff-"].items():
+                    grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                    if not state.get_pred_value(grounded_pred) == value:
+                        return False
+                # predicates in precond but not in eff+/- have to remain the same
+                for lifted_pred_tuple, value in operator["precond"].items():
+                    if (lifted_pred_tuple not in operator["eff+"]) and (lifted_pred_tuple not in operator["eff-"]):
+                        grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                        if not state.get_pred_value(grounded_pred) == value:
+                            return False
+            return True
+                
+    state2in_alpha = {} # {state: in_alpha | bool}
+    state2success = {} # {state: success | bool}
+    
+    keys = list(state2in_alpha.keys())
+    mismatched_pairs = []
+
+    for i in range(len(keys)):
+        for j in range(i + 1, len(keys)):
+            k1, k2 = keys[i], keys[j]
+            if state2in_alpha[k1] == state2in_alpha[k2] and state2success[k1] != state2success[k2]:
+                mismatched_pairs.append([k1, k2])
+    
+    return mismatched_pairs
+
 def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     '''
     find mismatch *grounded* states.
@@ -457,6 +546,9 @@ def partition_by_termination(task2state):
             find_partition = False
     return state2partition
 
+def create_operator_from_partition():
+    pass
+
 def partition_by_effect(pred_dict):
     'calculate partitioned skill from pred_dict'
     def convert_to_task2pred(pred_dict):
@@ -598,8 +690,11 @@ if __name__ == '__main__':
         {'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}
     ]
     test_pred_ls = PredicateState(example_lifted_predicates)
-    breakpoint()
+
     test_pred = {'name':"At", 'types':["object", "location"], 'params':[]}
+    test_pred_keyified = PredicateState._keyify(test_pred)
+    test_pred_restored = PredicateState.restore_pred_from_key(test_pred_keyified)
+
     value = test_pred_ls.get_pred_value(test_pred)
 
     test_pred_ls.add_pred_list(add_predicates)
