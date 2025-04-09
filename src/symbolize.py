@@ -165,7 +165,7 @@ def lift_grounded_pred(grounded_pred, type_dict):
 def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath=['prompts/evaluate_pred_ai2thor.txt','prompts/evaluate_pred_ai2thor_init.txt'], init=False):
     '''
     evaluate truth value of a predicate using a dictionary of parameters
-    init step and later steps use different prompts. harded coded.
+    init step and later steps use different prompts. hardcoded.
     grounded_skill::dict:: grounded skill with parameter type, e.g., {'name':'GoTo', "params":['location', 'location']}
     grounded_pred::dict:: grounded predicate with parameter type, e.g., {'name':"At", 'params':["location"]}
     '''
@@ -301,6 +301,14 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 last_state = deepcopy(state)
     return skill2task2state
 
+def detect_mismatch(operators, grounded_predicate_truth_value_log, tasks, pred_type):
+    """
+    Find mismatch state pairs where they both belong to Union Precondition or Effect.
+    operators :: TBD
+    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+    tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
+    pred_type::{'precond', 'eff'}
+    """
 # TODO: change the criteria to the latest one
 def detect_mismatch(grounded_predicate_truth_value_log, tasks, pred_type):
     '''
