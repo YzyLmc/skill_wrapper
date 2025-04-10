@@ -358,6 +358,9 @@ def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks,
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
     pred_type::{'precond', 'eff'}
+
+    Returns:
+    mismatch_pairs :: [[task_name_stepped, task_name_stepped]...]
     """
     # TODO: doublecheck operator structure
     # TODO: compatibility with empty precond and eff, and empty operator
@@ -411,16 +414,16 @@ def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks,
         
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
     task2state = skill2task2state[PredicateState._keyify(skill)]
-    state2in_alpha = {task_name_stepped: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: in_alpha | bool}
-    state2success = {task_name_stepped: state_meta['success'] for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: success | bool}
-    assert len(state2in_alpha) == len(state2success), "length of both dictionaries state2in_alpha and state2success must equal"
-    keys = list(state2in_alpha.keys())
+    task2in_alpha = {task_name_stepped: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: in_alpha | bool}
+    task2success = {task_name_stepped: state_meta['success'] for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: success | bool}
+    assert len(task2in_alpha) == len(task2success), "length of both dictionaries state2in_alpha and state2success must equal"
+    keys = list(task2in_alpha.keys())
     mismatched_pairs = []
     # looking for pairs of state where truth value of s1 and s2 agree in state2in_alpha but conflict in state2success
     for i in range(len(keys)):
         for j in range(i + 1, len(keys)):
             k1, k2 = keys[i], keys[j]
-            if state2in_alpha[k1] == state2in_alpha[k2] and state2success[k1] != state2success[k2]:
+            if task2in_alpha[k1] == task2in_alpha[k2] and task2success[k1] != task2success[k2]:
                 mismatched_pairs.append([k1, k2])
     
     return mismatched_pairs
@@ -445,13 +448,14 @@ def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log
     hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, pred_type)
     # TODO: modify the score function
     # NOTE: effect score will be different now due to the new partition
-    add_new_pred, t_score, f_score = score_by_partition(new_pred, skill, hypothetical_skill2task2state, pred_type, threshold)
-    logging.info(f"Precondition T score of predicate {dict_to_string(new_pred)}: {t_score}, F score: {f_score}")
-    if t_score >= threshold[pred_type] and  f_score >= threshold[pred_type]:
-        logging.info(f"Predicate {new_pred} added to predicate set by precondition check")
+    add_new_pred = score_by_partition(new_pred, skill, hypothetical_skill2task2state, pred_type, threshold)
+    # logging.info(f"Precondition T score of predicate {dict_to_string(new_pred)}: {t_score}, F score: {f_score}")
+    if add_new_pred:
+        logging.info(f"Predicate {new_pred} added to predicate set by {pred_type} check")
         lifted_pred_list.append(new_pred)
         new_pred_accepted = True
     else:
+        logging.info(f"Predicate {new_pred} is NOT added to predicate set by {pred_type} check")
         skill2triedpred[skill].append(new_pred)
     
     return lifted_pred_list, skill2triedpred, new_pred, new_pred_accepted
@@ -492,24 +496,41 @@ def invent_predicates(model, skill, operators, tasks, grounded_predicate_truth_v
     partitioned_output = partition_by_termination(grounded_predicate_truth_value_log)
     # 2. create one operator for each partition
     operators = create_operators_from_partitions(partitioned_output)
-    
+    # 3. merge operators
+    # NOTE: We use a mutable dictionary to represent operators, so they can by merged just using '='
     return operators, lifted_pred_list, skill2triedpred
 
-def score_by_partition(new_pred, skill, skill2task2state, pred_type):
+def score_by_partition(new_pred, skill, skill2task2state, pred_type, threshold):
     '''
     Partition by effect and then score the predicates across each partition
     skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
+    threshold={"precond":float, "eff":float}
     '''
-    task2state = skill2task2state[skill]
+    # TODO: when evaluating, also consider all transitions by other grounded skill with a same name,
+    # and ground the new predicate with the params of those skills
+    skill_keyified = PredicateState._keyify(skill)
+    task2state = skill2task2state[skill_keyified]
     # 1. find all states after executing the same grounded skill
     skill2state2partition = partition_by_termination(task2state)
-    state2partition = skill2state2partition[PredicateState._keyify(skill)]
+    state2partition = skill2state2partition[skill_keyified]
 
     # 2. evaluate the score for each task2state dictionary, pick the best one
     for state, partition in state2partition.items():
-        t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred, task2state, pred_type)
-    pass
-    # NOTE: effect score will be different now due to the new partition method
+        for task_name_stepped_list in partition.values():
+            partitioned_task2state = {task_name_stepped: skill2task2state[skill_keyified] for task_name_stepped in task_name_stepped_list}
+            t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred, partitioned_task2state, pred_type)
+            if pred_type == "precond":
+                if (t_score_t > threshold[pred_type] and f_score_t > threshold[pred_type]) \
+                or (t_score_f > threshold[pred_type] and f_score_f > threshold[pred_type]):
+                    return True
+                
+            # NOTE: effect score will be different now due to the new partition method
+            elif pred_type == "eff":
+                if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
+                or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
+                    return True
+                
+    return False
 
 def partition_by_termination(skill2task2state):
     '''
@@ -539,7 +560,7 @@ def partition_by_termination(skill2task2state):
         skill2partition[skill_keyified] = partition
     return skill2partition
 
-def create_operators_from_partition(task2state, task_name_stepped_list):
+def create_operators_from_one_partition(task2state, task_name_stepped_list):
     """
     Create operators from one partition.
     One partition should have only one operator since they have same termination set
@@ -547,7 +568,7 @@ def create_operators_from_partition(task2state, task_name_stepped_list):
     task2state :: {task_name_stepped: {"states": [PredicateState, PredicateState], "success": bool}}
     task_name_stepped_list :: [str]
     Return:
-    effect2precond :: {(eff+: set, eff-: set): precond: []}
+    effect2precond :: [{eff+: list, eff-: list}: precond: {PredicateState: bool} ]
     """
     def calculate_effect(s_1: PredicateState, s_2: PredicateState):
         """
@@ -567,7 +588,7 @@ def create_operators_from_partition(task2state, task_name_stepped_list):
             if val1 != val2:
                 eff_type = 'eff+' if val1 == True else 'eff-'
                 effect[eff_type].append(grounded_pred)
-        return (set(sorted(effect['eff+'])), set(sorted(effect['eff-'])))
+        return effect
     
     def calculate_precondition(state_list):
         """
@@ -595,23 +616,36 @@ def create_operators_from_partition(task2state, task_name_stepped_list):
     for task_name_stepped in task_name_stepped_list:
         state_tuple = task2state[task_name_stepped]['state']
         effect = calculate_effect(state_tuple[0], state_tuple[1])
-        effect2task_name_stepped_list[effect].append(task_name_stepped)
+        effect_keified = (set(sorted(effect['eff+'])), set(sorted(effect['eff-'])))
+        effect2task_name_stepped_list[effect_keified].append(task_name_stepped)
     
     # 2. calculate precondition for each different effect
-    effect2precond = {}
+    precond_n_effect = []
     for effect, task_name_stepped_list in effect2task_name_stepped_list.items():
         state_list = [task2state[task_name_stepped]['state'][0] for task_name_stepped in task_name_stepped_list]
-        effect2precond[effect] = calculate_precondition(state_list)
+        precond_n_effect.append((calculate_precondition(state_list), effect))
 
-    return effect2precond
+    return precond_n_effect
 
 def create_operators_from_partitions(skill2task2state, skill2partition):
     """
-    Calculate operators using the partitions by termination set
+    Calculate operators using the partitions by termination set.
+
     Returns:
-    operators :: [{"skill": skill_name | str, "precond": {lift_pred | tuple : bool}, "eff+":{...}, "eff-":{...}}]
+    operators :: [{"skill": lifted_skill | str, "precond": {lift_pred | tuple : bool}, "eff+":{...}, "eff-":{...}}]
+        lifted_skill :: {'name':str, 'types':list,'params':list} # params is empty
     """
-        
+    def lift_operator(grounded_operator, params, type_dict):
+        """
+        Lift a grounded predicate by replacing its parameters with typed arguments
+        """
+        pass
+    operators = []
+    # create operators for each grounded skill
+    for skill_keyified, task2state in skill2task2state.items():
+        precond_n_effect = create_operators_from_one_partition(task2state, skill2partition[skill_keyified])
+        # lift the variables in precondition and effect if agree with params of the skill
+
     pass
 
 def score(pred, task2state, pred_type):
