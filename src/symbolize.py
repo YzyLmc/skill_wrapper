@@ -24,7 +24,7 @@ class PredicateState:
         predicates::list:: A list of predicate dictionaries {'name': str, 'params': tuple/list, "types": tuple/list, "semantic":str}
         """
         self.pred_dict = {self._keyify(pred): None for pred in predicates}
-        # TODO: this will re-save sematic for each new grounding of the predicates
+        # NOTE: this will re-save sematic for each new grounding of the predicates
         self.semantic_dict = {self._keyify(pred): pred["semantic"] for pred in predicates}
     
     def __eq__(self, other):
@@ -51,7 +51,6 @@ class PredicateState:
         """Generates a unique key from predicate name and parameters."""
         return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
     
-    # TODO: figure out if semantic is needed
     @classmethod
     def restore_pred_from_key(cls, key_tuple, semantic_dict=None):
         """
@@ -66,6 +65,7 @@ class PredicateState:
             "params": list(params),
             "semantic": semantic
         }
+    
     def iter_predicates(self):
         """
         Generator that yields each grounded predicate as a dictionary in original format.
@@ -93,7 +93,7 @@ class PredicateState:
                     "types": list(types),
                     "params": [] if lifted else list(params),
                     # Optional: include "semantic" as None since it's not stored in pred_dict
-                    "semantic": None  
+                    "semantic": self.semantic_dict[key]
                 })
                 seen.add(key)
         return pred_list
@@ -198,7 +198,7 @@ def lift_grounded_pred(grounded_pred, type_dict=None):
     """
     if type_dict:
         assert all([type in type_dict[param] for type, param in zip(grounded_pred['types'], grounded_pred['params'])])
-    return {'name':grounded_pred['name'], 'types':grounded_pred['types'], 'params':grounded_pred['params'], 'semantic':grounded_pred['semantic']}
+    return {'name':grounded_pred['name'], 'types':grounded_pred['types'], 'params':[], 'semantic':grounded_pred['semantic']}
 
 # # Not used
 # # evaluate an execution using foundation model. Expected acc to be ~ 70%
@@ -420,14 +420,14 @@ def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks,
     task2in_alpha = {task_name_stepped: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: in_alpha | bool}
     task2success = {task_name_stepped: state_meta['success'] for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: success | bool}
     assert len(task2in_alpha) == len(task2success), "length of both dictionaries state2in_alpha and state2success must equal"
-    keys = list(task2in_alpha.keys())
+    task_name_stepped_list = list(task2in_alpha.keys())
     mismatched_pairs = []
     # looking for pairs of state where truth value of s1 and s2 agree in state2in_alpha but conflict in state2success
-    for i in range(len(keys)):
-        for j in range(i + 1, len(keys)):
-            k1, k2 = keys[i], keys[j]
-            if task2in_alpha[k1] == task2in_alpha[k2] and task2success[k1] != task2success[k2]:
-                mismatched_pairs.append([k1, k2])
+    for i in range(len(task_name_stepped_list)):
+        for j in range(i + 1, len(task_name_stepped_list)):
+            task_name_stepped_1, task_name_stepped_2 = task_name_stepped_list[i], task_name_stepped_list[j]
+            if task2in_alpha[task_name_stepped_1] == task2in_alpha[task_name_stepped_2] and task2success[task_name_stepped_1] != task2success[task_name_stepped_2]:
+                mismatched_pairs.append([task_name_stepped_1, task_name_stepped_2])
     
     return mismatched_pairs
 
@@ -523,13 +523,13 @@ def score_by_partition(new_pred, skill, skill2task2state, pred_type, threshold) 
             t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred, partitioned_task2state, pred_type)
             if pred_type == "precond":
                 if (t_score_t > threshold[pred_type] and f_score_t > threshold[pred_type]) \
-                or (t_score_f > threshold[pred_type] and f_score_f > threshold[pred_type]):
+                    or (t_score_f > threshold[pred_type] and f_score_f > threshold[pred_type]):
                     return True
                 
             # NOTE: effect score will be different now due to the new partition method
             elif pred_type == "eff":
                 if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
-                or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
+                    or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
                     return True
                 
     return False
