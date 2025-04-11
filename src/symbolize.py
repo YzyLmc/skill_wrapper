@@ -46,13 +46,13 @@ class PredicateState:
         items = tuple(sorted(self.pred_dict.items()))
         return hash(items)
 
-    @classmethod
-    def _keyify(cls, pred):
+    @staticmethod
+    def _keyify(pred):
         """Generates a unique key from predicate name and parameters."""
         return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
     
-    @classmethod
-    def restore_pred_from_key(cls, key_tuple, semantic_dict=None):
+    @staticmethod
+    def restore_pred_from_key(key_tuple, semantic_dict=None):
         """
         Restores a predicate dictionary from a keyified tuple: (name, types, params).
         'semantic' is set to None since it's not stored in the key.
@@ -365,7 +365,6 @@ def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks,
     Returns:
     mismatch_pairs :: [[task_name_stepped, task_name_stepped]...]
     """
-    # TODO: doublecheck operator structure
     # TODO: compatibility with empty precond and eff, and empty operator
     def in_alpha(state_tuple, grounded_skill, operators, pred_type):
         """
@@ -508,8 +507,8 @@ def score_by_partition(new_pred, skill, skill2task2state, pred_type, threshold) 
     skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
     threshold={"precond":float, "eff":float}
     '''
-    # TODO: when evaluating, also consider all transitions by other grounded skill with a same name,
-    # and ground the new predicate with the params of those skills
+
+    skill_keyified_list = skill2task2state.keys()
     skill_keyified = PredicateState._keyify(skill)
     task2state = skill2task2state[skill_keyified]
     # 1. find all states after executing the same grounded skill
@@ -519,18 +518,21 @@ def score_by_partition(new_pred, skill, skill2task2state, pred_type, threshold) 
     # 2. evaluate the score for each task2state dictionary, pick the best one
     for state, partition in state2partition.items():
         for task_name_stepped_list in partition.values():
-            partitioned_task2state = {task_name_stepped: skill2task2state[skill_keyified] for task_name_stepped in task_name_stepped_list}
-            t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred, partitioned_task2state, pred_type)
-            if pred_type == "precond":
-                if (t_score_t > threshold[pred_type] and f_score_t > threshold[pred_type]) \
-                    or (t_score_f > threshold[pred_type] and f_score_f > threshold[pred_type]):
-                    return True
-                
-            # NOTE: effect score will be different now due to the new partition method
-            elif pred_type == "eff":
-                if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
-                    or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
-                    return True
+            for skill_keyified in skill_keyified_list:
+                partitioned_task2state = {task_name_stepped: skill2task2state[skill_keyified] for task_name_stepped in task_name_stepped_list}
+                # TODO: check if this yields good result
+                new_pred_grounded = ground_with_params(new_pred, skill_keyified[2])
+                t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred_grounded, partitioned_task2state, pred_type)
+                if pred_type == "precond":
+                    if (t_score_t > threshold[pred_type] and f_score_t > threshold[pred_type]) \
+                        or (t_score_f > threshold[pred_type] and f_score_f > threshold[pred_type]):
+                        return True
+                    
+                # NOTE: effect score will be different now due to the new partition method
+                elif pred_type == "eff":
+                    if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
+                        or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
+                        return True
                 
     return False
 
