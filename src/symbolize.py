@@ -8,6 +8,8 @@ Data structures:
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
         step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     grounded_predicate_truth_value_log :: dict :: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+
+TODO: make Predicates and skills all hashable
 '''
 from utils import GPT4, load_from_file
 from collections import defaultdict
@@ -15,6 +17,55 @@ from copy import deepcopy
 import random
 import itertools
 import logging
+
+class Skill:
+    def __init__(self, name, types, params=[]):
+        self.name = name
+        self.types = tuple(types)
+        self.params = tuple(params)
+    
+    def __str__(self):
+        param_str = ", ".join(map(str, self.params))
+        type_str = ", ".join(map(str, self.types))
+        return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
+    
+    def __hash__():
+        pass
+    
+    def __eq__():
+        pass
+
+class Predicate:
+    def __init__(self, name, types, params=None, semantic=None):
+        self.name = name
+        self.types = tuple(types)
+        self.params = tuple(params) if params else ()
+        self.semantic = semantic
+        self.truth_value = None
+
+    def __str__(self):
+        param_str = ", ".join(map(str, self.params))
+        type_str = ", ".join(map(str, self.types))
+        return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
+
+    def __hash__(self):
+        # Use name, types, and params as hash — exclude semantic & truth value
+        return hash((self.name, self.types, self.params))
+
+    def __eq__(self, other):
+        if not isinstance(other, Predicate):
+            return False
+        return (self.name, self.types, self.params) == (other.name, other.types, other.params)
+
+    def is_grounded(self):
+        return bool(self.params)
+    
+    def set_truth_value(self, value: bool):
+        self.truth_value = value
+
+    def get_truth_value(self) -> bool:
+        return self.truth_value
+
 
 class PredicateState:
     def __init__(self, predicates):
@@ -134,6 +185,18 @@ class PredicateState:
         """
         return [pred for pred,truth_value in self.pred_dict.items() if not truth_value]
 
+class Precondition():
+    def __init__():
+        pass
+
+class Effect():
+    def __init__():
+        pass
+
+class Operator():
+    def __init__():
+        pass
+    
 def dict_to_string(dict, lifted=False):
     """
     Assembly a dictionary of grounded/lifted representation to string
@@ -337,7 +400,7 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     pred_type :str: {"precond", "eff"}
-    returns:
+    Returns:
     skill2task2state::{skill_keyified: {task_step_name: {"states": [PredicateState, PredicateState], "success": bool}}}
         skill_keyified :: (skill_name | str, skill_types | set(str), skill_params | set(str))
         task_step_name :: (task_name | str, step | int)
@@ -582,7 +645,7 @@ def create_operators_from_one_partition(task2state, task_name_stepped_list) -> l
         effect_keyified :: (eff+, eff-)
             effect :: {'eff+': [Predicate: dict], 'eff-': [Predicate: dict]}
         """
-        # TODO: consider invariants in effect?
+        # TODO: consider invariants in effect? No
         assert s_1.pred_dict.keys() == s_2.pred_dict.keys(), "PredicateStates must have identical keys."
 
         effect = defaultdict(list)
@@ -639,10 +702,19 @@ def create_operators_from_partitions(skill2task2state, skill2partition):
     operators :: [{"skill": lifted_skill | str, "precond": {lift_pred | tuple : bool}, "eff+":{...}, "eff-":{...}}]
         lifted_skill :: {'name':str, 'types':list,'params':list} # params is empty
     """
-    def lift_operator(grounded_operator, params, type_dict):
+    def lift_operator(skill_keyified, precond_n_effect, type_dict) -> dict:
         """
         Lift a grounded predicate by replacing its parameters with typed arguments
+        Returns:
+        lifted_operator :: dict :: {"skill": lifted_skill | str, "precond": {lift_pred | tuple : bool}, "eff+":{...}, "eff-":{...}}
         """
+        operator = {"skill": {},"precond": defaultdict(list), "eff": {}}
+        
+        # precondition
+        for pred in precond_n_effect[0]:
+            operator["precond"].append()
+            
+
         pass
     operators = []
     # create operators for each grounded skill
