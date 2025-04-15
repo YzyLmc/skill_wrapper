@@ -69,7 +69,7 @@ class Predicate:
         return bool(self.params)
     
     @staticmethod
-    def ground_with_params(lifted_pred, params: list[str], type_dict=None):
+    def ground_with_params(lifted_pred, params: list[str] | tuple, type_dict=None):
         """
         Grounded a skill or a predicate with parameters and their types.
         lifted_pred :: Predicate object
@@ -262,6 +262,7 @@ class Operator:
         """
         skill_params = grounded_skill.params
         # put skill parameters at the begining
+        # TODO: this is wrong
         type_list = skill_params + self.additional_types
         possible_groundings = generate_possible_groundings(type_list, type_dict, fixed_grounding=skill_params)
         possible_grounded_predicate_states_precond: list[PredicateState]= [PredicateState(self.precondition.ground(grounding)) for grounding in possible_groundings]

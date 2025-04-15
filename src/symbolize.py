@@ -419,6 +419,7 @@ def partition_by_termination(skill2task2state) -> dict[tuple, list[dict[Predicat
         skill2partition[skill_keyified] = partition
     return skill2partition
 
+# TODO: modified it with new data structure
 def create_operators_from_one_partition(task2state, task_step_tuple_list) -> list[tuple[dict[PredicateState, bool], dict[str, list[PredicateState]]]]:
     """
     Create operators from one partition.
@@ -437,7 +438,7 @@ def create_operators_from_one_partition(task2state, task_step_tuple_list) -> lis
         effect_keyified :: (eff+, eff-)
             effect :: {'eff+': [Predicate: dict], 'eff-': [Predicate: dict]}
         """
-        # TODO: consider invariants in effect? No
+        # TODO: consider invariants in effect across all partitions
         assert s_1.pred_dict.keys() == s_2.pred_dict.keys(), "PredicateStates must have identical keys."
 
         effect = defaultdict(list)
@@ -459,10 +460,10 @@ def create_operators_from_one_partition(task2state, task_step_tuple_list) -> lis
 
         for ps in state_list[1:]:
             new_precond = {}
-            for pred_keyified in precond:
-                assert pred_keyified in ps.pred_dict, "all state should have same predicates"
-                if ps.pred_dict[pred_keyified] == precond[pred_keyified]:
-                    new_precond[pred_keyified] = precond[pred_keyified]
+            for pred in precond:
+                assert pred in ps.pred_dict, "all state should have same predicates"
+                if ps.pred_dict[pred] == precond[pred]:
+                    new_precond[pred] = precond[pred]
             precond = new_precond  # Narrow down to only shared + matching predicates
 
             if not precond:
