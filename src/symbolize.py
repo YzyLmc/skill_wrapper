@@ -8,206 +8,14 @@ Data structures:
 
 TODO: make hashable classes jsonable
     '''
-from utils import GPT4, load_from_file
 from collections import defaultdict
 from copy import deepcopy
 import random
 import itertools
 import logging
 
-class Skill:
-    def __init__(self, name, types, params=[]):
-        self.name = name
-        self.types = tuple(types)
-        self.params = tuple(params)
-    
-    def __str__(self):
-        param_str = ", ".join(map(str, self.params))
-        type_str = ", ".join(map(str, self.types))
-        return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
-    
-    def __hash__(self):
-        return hash((self.name, self.types, self.params))
-    
-    def __eq__(self, other):
-        if not isinstance(other, Predicate):
-            return False
-        return (self.name, self.types, self.params) == (other.name, other.types, other.params)
-
-    def is_grounded(self):
-        return bool(self.params)
-    
-    @staticmethod
-    def ground_with_params(lifted_skill, params: list[str], type_dict=None):
-        """
-        Grounded a skill or a predicate with parameters and their types.
-        lifted_skill :: Skill object
-        params :: list:: list of parameters, e.g., ["Apple", "Table"]
-        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-        """
-        # tuple is applicable to the lifted representation
-        if type_dict:
-            for i, p in enumerate(params):
-                assert p in type_dict
-                assert lifted_skill.types[i] in type_dict[p]
-
-        # grounded skill/predicate
-        grounded_pred = deepcopy(lifted_skill)
-        grounded_pred.params = tuple(params)
-
-        return grounded_pred
-
-class Predicate:
-    def __init__(self, name, types, params=None, semantic=None):
-        self.name = name
-        self.types = tuple(types)
-        self.params = tuple(params) if params else ()
-        self.semantic = semantic
-        # self.truth_value = None
-
-    def __str__(self):
-        param_str = ", ".join(map(str, self.params))
-        type_str = ", ".join(map(str, self.types))
-        return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
-
-    def __hash__(self):
-        # Use name, types, and params as hash — exclude semantic & truth value
-        return hash((self.name, self.types, self.params))
-
-    def __eq__(self, other):
-        if not isinstance(other, Predicate):
-            return False
-        return (self.name, self.types, self.params) == (other.name, other.types, other.params)
-
-    def is_grounded(self):
-        return bool(self.params)
-    
-    @staticmethod
-    def ground_with_params(lifted_pred, params: list[str], type_dict=None):
-        """
-        Grounded a skill or a predicate with parameters and their types.
-        lifted_pred :: Predicate object
-        params :: list:: list of parameters, e.g., ["Apple", "Table"]
-        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-        """
-        assert not grounded_pred.is_grounded(), "Cannot ground an already grounded predicate"
-        # tuple is applicable to the lifted representation
-        if type_dict:
-            for i, p in enumerate(params):
-                assert p in type_dict
-                assert lifted_pred.types[i] in type_dict[p]
-
-        # grounded predicate
-        grounded_pred = deepcopy(lifted_pred)
-        grounded_pred.params = tuple(params)
-
-        return grounded_pred
-
-    @staticmethod
-    def lift_grounded_pred(grounded_pred, type_dict=None):
-        """
-        Lift a grounded predicate, e.g., {'name': 'At', 'types': ["object", "location"], 'params': ['Apple', 'Table']} to a {'name':"At", 'types':["object", "location"], 'params':[]}
-        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-        """
-        assert grounded_pred.is_grounded(), "Cannot lift an ungrounded predicate"
-        if type_dict:
-            assert all([type in type_dict[param] for type, param in zip(grounded_pred.types, grounded_pred.params)])
-        
-                # grounded predicate
-        grounded_pred = deepcopy(grounded_pred)
-        grounded_pred.params = []
-
-        return grounded_pred
-
-class PredicateState:
-    def __init__(self, predicates):
-        """
-        Initializes the predicate state.
-        Accepts a list of Predicate objects.
-        """
-        self.pred_dict = {pred: pred.truth_value for pred in predicates}
-
-    def __eq__(self, other):
-        if not isinstance(other, PredicateState):
-            return False
-        return self.pred_dict == other.pred_dict
-
-    def __hash__(self):
-        items = tuple(sorted(self.pred_dict.items(), key=lambda x: hash(x[0])))
-        return hash(items)
-
-    def set_pred_value(self, pred_obj, value):
-        if pred_obj in self.pred_dict:
-            pred_obj.set_truth_value(value)
-            self.pred_dict[pred_obj] = value
-        else:
-            raise Exception("Predicate not found!")
-
-    def get_pred_value(self, pred_obj):
-        return self.pred_dict.get(pred_obj, {})
-
-    def add_pred_list(self, new_pred_list):
-        """
-        Adds new Predicate objects to the state if they don't already exist.
-        """
-        for pred in new_pred_list:
-            if pred not in self.pred_dict:
-                self.pred_dict[pred] = pred.truth_value
-
-    def get_unevaluated_predicates(self):
-        return [pred for pred, value in self.pred_dict.items() if value is None]
-
-    def iter_predicates(self):
-        """
-        Generator that yields each predicate object.
-        """
-        for pred in self.pred_dict:
-            yield pred
-
-    def get_pred_list(self, lifted=False):
-        """
-        Returns a list of predicate dictionaries in original form.
-        If lifted=True, params are emptied.
-        """
-        pred_list = []
-        seen = set()
-        for pred in self.pred_dict:
-            if pred not in seen:
-                pred_list.append({
-                    "name": pred.name,
-                    "types": list(pred.types),
-                    "params": [] if lifted else list(pred.params),
-                    "semantic": pred.semantic
-                })
-                seen.add(pred)
-        return pred_list
-
-
-class Precondition:
-    def __init__(self, precond: list[Predicate]):
-        self.precond = precond
-
-
-    def in_precondition(self, grounded_state: PredicateState, grounded_skill: Skill, additional_types: list[str]):
-        # for grounded_predicate in grounded_state:
-        #     if any([grounded_state[grounded_predicate]!=value \
-        #             for lift_pred_tuple, value in self.precond.items()]):
-        pass
-
-class Effect:
-    def __init__(self, effect_pos: list[Predicate], effect_neg: list[Predicate]):
-        self.effect_pos = effect_pos
-        self.effect_neg = effect_neg
-
-    def in_effect(self, grounded_state: PredicateState, grounded_skill: Skill):
-        pass
-
-class Operator:
-    def __init__(self, skill, additional_types, precondition: Precondition, effect: Effect):
-        self.skill = skill
-        self.additional_types = additional_types
-        self.precondition = precondition
-        self.effect = effect
+from utils import GPT4, load_from_file
+from data_structure import Skill, Predicate, PredicateState, Precondition, Effect, Operator
 
 # TODO: change this to the new data structure
 def dict_to_string(dict, lifted=False):
@@ -388,7 +196,7 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     pred_type :str: {"precond", "eff"}
     Returns:
-    skill2task2state::{grounded_skill: {task_step_name: {"states": [PredicateState, PredicateState], "success": bool}}}
+    skill2task2state::{grounded_skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
         task_step_tuple :: (task_name : str, step : int)
     '''
     skill2task2state = defaultdict(dict)
@@ -401,6 +209,7 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 last_state = deepcopy(state)
     return skill2task2state
 
+# TODO: modify with new data structure
 def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_value_log, tasks, pred_type) -> list[list[str, str]]:
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
@@ -410,7 +219,7 @@ def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_v
     pred_type::{'precond', 'eff'}
 
     Returns:
-    mismatch_pairs :: [[task_name_stepped, task_name_stepped]...]
+    mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]
     """
     # TODO: compatibility with empty precond and eff, and empty operator
     def in_alpha(state_tuple, grounded_skill, operators, pred_type):
@@ -446,34 +255,34 @@ def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_v
             for operator in operators:
                 # construct grounded predicate with skill params
                 for lifted_pred_tuple, value in operator["eff+"].items():
-                    grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                    grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
                     if not state.get_pred_value(grounded_pred) == value:
                         return False
                 for lifted_pred_tuple, value in operator["eff-"].items():
-                    grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                    grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
                     if not state.get_pred_value(grounded_pred) == value:
                         return False
                 # predicates in precond but not in eff+/- have to remain the same
                 for lifted_pred_tuple, value in operator["precond"].items():
                     if (lifted_pred_tuple not in operator["eff+"]) and (lifted_pred_tuple not in operator["eff-"]):
-                        grounded_pred = ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
+                        grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
                         if not state.get_pred_value(grounded_pred) == value:
                             return False
             return True
         
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
     task2state = skill2task2state[PredicateState._keyify(skill)]
-    task2in_alpha = {task_name_stepped: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: in_alpha | bool}
-    task2success = {task_name_stepped: state_meta['success'] for task_name_stepped, state_meta in task2state.items()} # {task_name_stepped: success | bool}
+    task2in_alpha = {task_step_tuple: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_step_tuple, state_meta in task2state.items()} # {task_step_tuple: in_alpha | bool}
+    task2success = {task_step_tuple: state_meta['success'] for task_step_tuple, state_meta in task2state.items()} # {task_step_tuple: success | bool}
     assert len(task2in_alpha) == len(task2success), "length of both dictionaries state2in_alpha and state2success must equal"
-    task_name_stepped_list = list(task2in_alpha.keys())
+    task_step_tuple_list = list(task2in_alpha.keys())
     mismatched_pairs = []
     # looking for pairs of state where truth value of s1 and s2 agree in state2in_alpha but conflict in state2success
-    for i in range(len(task_name_stepped_list)):
-        for j in range(i + 1, len(task_name_stepped_list)):
-            task_name_stepped_1, task_name_stepped_2 = task_name_stepped_list[i], task_name_stepped_list[j]
-            if task2in_alpha[task_name_stepped_1] == task2in_alpha[task_name_stepped_2] and task2success[task_name_stepped_1] != task2success[task_name_stepped_2]:
-                mismatched_pairs.append([task_name_stepped_1, task_name_stepped_2])
+    for i in range(len(task_step_tuple_list)):
+        for j in range(i + 1, len(task_step_tuple_list)):
+            task_step_tuple_1, task_step_tuple_2 = task_step_tuple_list[i], task_step_tuple_list[j]
+            if task2in_alpha[task_step_tuple_1] == task2in_alpha[task_step_tuple_2] and task2success[task_step_tuple_1] != task2success[task_step_tuple_2]:
+                mismatched_pairs.append([task_step_tuple_1, task_step_tuple_2])
     
     return mismatched_pairs
 
@@ -548,27 +357,26 @@ def invent_predicates(model, skill, operators, tasks, grounded_predicate_truth_v
     # NOTE: We use a mutable dictionary to represent operators, so they can by merged just using '='
     return operators, lifted_pred_list, skill2triedpred
 
-def score_by_partition(new_pred, skill, skill2task2state, pred_type, threshold) -> bool:
+def score_by_partition(new_pred: Predicate, groudned_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
     '''
     Partition by effect and then score the predicates across each partition
     skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
     threshold={"precond":float, "eff":float}
     '''
 
-    skill_keyified_list = skill2task2state.keys()
-    skill_keyified = PredicateState._keyify(skill)
-    task2state = skill2task2state[skill_keyified]
+    skill_list = skill2task2state.keys()
+    task2state = skill2task2state[grounded_skill]
     # 1. find all states after executing the same grounded skill
     skill2state2partition = partition_by_termination(task2state)
-    state2partition = skill2state2partition[skill_keyified]
+    state2partition = skill2state2partition[grounded_skill]
 
     # 2. evaluate the score for each task2state dictionary, pick the best one
     for state, partition in state2partition.items():
-        for task_name_stepped_list in partition.values():
-            for skill_keyified in skill_keyified_list:
-                partitioned_task2state = {task_name_stepped: skill2task2state[skill_keyified] for task_name_stepped in task_name_stepped_list}
+        for task_step_tuple_list in partition.values():
+            for skill in skill_list:
+                partitioned_task2state = {task_step_tuple: skill2task2state[skill] for task_step_tuple in task_step_tuple_list}
                 # TODO: check if this yields good result
-                new_pred_grounded = ground_with_params(new_pred, skill_keyified[2])
+                new_pred_grounded = Predicate.ground_with_params(new_pred, grounded_skill.params)
                 t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred_grounded, partitioned_task2state, pred_type)
                 if pred_type == "precond":
                     if (t_score_t > threshold[pred_type] and f_score_t > threshold[pred_type]) \
@@ -587,10 +395,10 @@ def partition_by_termination(skill2task2state) -> dict[tuple, list[dict[Predicat
     '''
     Partition the a set of trajectory using termination set. Will be used again in scoring and final operators learning.
     Only successful execution will be used for partitioning
-    skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
-    skill2task2state::{skill_keyified: {task_name_stepped: {"states": [PredicateState, PredicateState], "success": bool}}}
-    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    return:: {skill: [{PredicateState: [task_name_stepped]} , ...]}
+    skill2task2state::{skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
+        skill :: grounded skill
+    Returns:
+    {skill: [{PredicateState: [task_step_tuple]} , ...]}
     '''
     def states_are_equal(state_1, state_2):
         return state_1.pred_dict == state_2.pred_dict
@@ -598,26 +406,26 @@ def partition_by_termination(skill2task2state) -> dict[tuple, list[dict[Predicat
     skill2partition = defaultdict(dict)
     for skill_keyified, task2state in skill2task2state.items():
         partition = defaultdict(list) # {task_step}
-        for task_name_stepped, state_meta in task2state.items():
+        for task_step_tuple, state_meta in task2state.items():
             find_partition = False
             state = state_meta['state'][1] # s1 for next state
             for registered_state in partition:
                 if states_are_equal(state, registered_state):
-                    partition[state].append(task_name_stepped)
+                    partition[state].append(task_step_tuple)
                     find_partition = True
             if not find_partition:
-                partition[state].append(task_name_stepped)
+                partition[state].append(task_step_tuple)
                 find_partition = False
         skill2partition[skill_keyified] = partition
     return skill2partition
 
-def create_operators_from_one_partition(task2state, task_name_stepped_list) -> list[tuple[dict[PredicateState, bool], dict[str, list[PredicateState]]]]:
+def create_operators_from_one_partition(task2state, task_step_tuple_list) -> list[tuple[dict[PredicateState, bool], dict[str, list[PredicateState]]]]:
     """
     Create operators from one partition.
     One partition should have only one operator since they have same termination set
     and from a same skill, but not guaranteed.
-    task2state :: {task_name_stepped: {"states": [PredicateState, PredicateState], "success": bool}}
-    task_name_stepped_list :: [str]
+    task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
+    task_step_tuple_list :: [str]
     Return:
     precond_n_effect :: [({PredicateState: bool}, {eff+: [PredicateState], eff-: [PredicateState]})]
     """
@@ -663,21 +471,22 @@ def create_operators_from_one_partition(task2state, task_name_stepped_list) -> l
         return precond
     
     # 1. calculate different effect in the partition
-    effect2task_name_stepped_list = defaultdict(list)
-    for task_name_stepped in task_name_stepped_list:
-        state_tuple = task2state[task_name_stepped]['state']
+    effect2task_step_tuple_list = defaultdict(list)
+    for task_step_tuple in task_step_tuple_list:
+        state_tuple = task2state[task_step_tuple]['state']
         effect = calculate_effect(state_tuple[0], state_tuple[1])
         effect_keified = (set(sorted(effect['eff+'])), set(sorted(effect['eff-'])))
-        effect2task_name_stepped_list[effect_keified].append(task_name_stepped)
+        effect2task_step_tuple_list[effect_keified].append(task_step_tuple)
     
     # 2. calculate precondition for each different effect
     precond_n_effect = []
-    for effect, task_name_stepped_list in effect2task_name_stepped_list.items():
-        state_list = [task2state[task_name_stepped]['state'][0] for task_name_stepped in task_name_stepped_list]
+    for effect, task_step_tuple_list in effect2task_step_tuple_list.items():
+        state_list = [task2state[task_step_tuple]['state'][0] for task_step_tuple in task_step_tuple_list]
         precond_n_effect.append((calculate_precondition(state_list), effect))
 
     return precond_n_effect
 
+# TODO
 def create_operators_from_partitions(skill2task2state, skill2partition):
     """
     Calculate operators using the partitions by termination set.
@@ -712,11 +521,11 @@ def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:
     """
     score of a predicate as one skill's precondition or effect
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
-    task2state :: {task_name_stepped: {"states": [PredicateState, PredicateState], "success": bool}}
+    task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
     type : {precond, eff}
     """
-    # skill2task2state :: {skill_name: {task_step_name: [PredicateState, PredicateState]}}
-    # task_step_name=(task_name, step)
+    # skill2task2state :: {skill_name: {task_step_tuple: [PredicateState, PredicateState]}}
+    # task_step_tuple=(task_name, step)
 
     # step 0 will be skipped
     # In t_score, ratio of either p = True or p = False has to > threshold
