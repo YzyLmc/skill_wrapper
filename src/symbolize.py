@@ -2,15 +2,12 @@
 Get symbolic representation from skill semantic info and observation.
 Data structures:
     type_dict :: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    skill :: dict :: {'name':str, 'types':list,'params':list}
-    predicate :: dict :: {'name':str, 'types':list, 'params':list, 'semantic':str}
-    lifted_pred_list :: [{'name':str, 'types':list, 'params':list, 'semantic':str}] ::
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
         step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     grounded_predicate_truth_value_log :: dict :: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
 
-TODO: make Predicates and skills all hashable
-'''
+TODO: make hashable classes jsonable
+    '''
 from utils import GPT4, load_from_file
 from collections import defaultdict
 from copy import deepcopy
@@ -29,11 +26,36 @@ class Skill:
         type_str = ", ".join(map(str, self.types))
         return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
     
-    def __hash__():
-        pass
+    def __hash__(self):
+        return hash((self.name, self.types, self.params))
     
-    def __eq__():
-        pass
+    def __eq__(self, other):
+        if not isinstance(other, Predicate):
+            return False
+        return (self.name, self.types, self.params) == (other.name, other.types, other.params)
+
+    def is_grounded(self):
+        return bool(self.params)
+    
+    @staticmethod
+    def ground_with_params(lifted_skill, params: list[str], type_dict=None):
+        """
+        Grounded a skill or a predicate with parameters and their types.
+        lifted_skill :: Skill object
+        params :: list:: list of parameters, e.g., ["Apple", "Table"]
+        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+        """
+        # tuple is applicable to the lifted representation
+        if type_dict:
+            for i, p in enumerate(params):
+                assert p in type_dict
+                assert lifted_skill.types[i] in type_dict[p]
+
+        # grounded skill/predicate
+        grounded_pred = deepcopy(lifted_skill)
+        grounded_pred.params = tuple(params)
+
+        return grounded_pred
 
 class Predicate:
     def __init__(self, name, types, params=None, semantic=None):
@@ -41,7 +63,7 @@ class Predicate:
         self.types = tuple(types)
         self.params = tuple(params) if params else ()
         self.semantic = semantic
-        self.truth_value = None
+        # self.truth_value = None
 
     def __str__(self):
         param_str = ", ".join(map(str, self.params))
@@ -60,143 +82,134 @@ class Predicate:
     def is_grounded(self):
         return bool(self.params)
     
-    def set_truth_value(self, value: bool):
-        self.truth_value = value
+    @staticmethod
+    def ground_with_params(lifted_pred, params: list[str], type_dict=None):
+        """
+        Grounded a skill or a predicate with parameters and their types.
+        lifted_pred :: Predicate object
+        params :: list:: list of parameters, e.g., ["Apple", "Table"]
+        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+        """
+        assert not grounded_pred.is_grounded(), "Cannot ground an already grounded predicate"
+        # tuple is applicable to the lifted representation
+        if type_dict:
+            for i, p in enumerate(params):
+                assert p in type_dict
+                assert lifted_pred.types[i] in type_dict[p]
 
-    def get_truth_value(self) -> bool:
-        return self.truth_value
+        # grounded predicate
+        grounded_pred = deepcopy(lifted_pred)
+        grounded_pred.params = tuple(params)
 
+        return grounded_pred
+
+    @staticmethod
+    def lift_grounded_pred(grounded_pred, type_dict=None):
+        """
+        Lift a grounded predicate, e.g., {'name': 'At', 'types': ["object", "location"], 'params': ['Apple', 'Table']} to a {'name':"At", 'types':["object", "location"], 'params':[]}
+        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+        """
+        assert grounded_pred.is_grounded(), "Cannot lift an ungrounded predicate"
+        if type_dict:
+            assert all([type in type_dict[param] for type, param in zip(grounded_pred.types, grounded_pred.params)])
+        
+                # grounded predicate
+        grounded_pred = deepcopy(grounded_pred)
+        grounded_pred.params = []
+
+        return grounded_pred
 
 class PredicateState:
     def __init__(self, predicates):
         """
         Initializes the predicate state.
-        Lifted predicates have empty 'params'
-        predicates::list:: A list of predicate dictionaries {'name': str, 'params': tuple/list, "types": tuple/list, "semantic":str}
+        Accepts a list of Predicate objects.
         """
-        self.pred_dict = {self._keyify(pred): None for pred in predicates}
-        # NOTE: this will re-save sematic for each new grounding of the predicates
-        self.semantic_dict = {self._keyify(pred): pred["semantic"] for pred in predicates}
-    
+        self.pred_dict = {pred: pred.truth_value for pred in predicates}
+
     def __eq__(self, other):
-        """
-        Checks if two PredicateState instances are equal.
-        Two PredicateState instances are considered equal if they contain the same predicates
-        with the same truth values.
-        Requried for making the class hashable
-        """
         if not isinstance(other, PredicateState):
             return False
         return self.pred_dict == other.pred_dict
-    
+
     def __hash__(self):
-        """
-        Generates a hash based on the predicate dictionary.
-        """
-        # Sort keys for deterministic order, and convert to a tuple of key-value pairs
-        items = tuple(sorted(self.pred_dict.items()))
+        items = tuple(sorted(self.pred_dict.items(), key=lambda x: hash(x[0])))
         return hash(items)
 
-    @staticmethod
-    def _keyify(pred):
-        """Generates a unique key from predicate name and parameters."""
-        return (pred["name"], tuple(pred["types"]),tuple(pred["params"]))
-    
-    @staticmethod
-    def restore_pred_from_key(key_tuple, semantic_dict=None):
-        """
-        Restores a predicate dictionary from a keyified tuple: (name, types, params).
-        'semantic' is set to None since it's not stored in the key.
-        """
-        name, types, params = key_tuple
-        semantic = semantic_dict.get(key_tuple, None) if semantic_dict else None
-        return {
-            "name": name,
-            "types": list(types),
-            "params": list(params),
-            "semantic": semantic
-        }
-    
-    def iter_predicates(self):
-        """
-        Generator that yields each grounded predicate as a dictionary in original format.
-        """
-        for name, types, params in self.pred_dict.keys():
-            yield {
-                "name": name,
-                "types": list(types),
-                "params": list(params),
-                # Optional: include semantic as None
-                "semantic": None
-            }
-    
-    def get_pred_list(self, lifted=False):
-        """
-        Restores and returns a list of unique predicate dictionaries in their original form.
-        """
-        pred_list = []
-        seen = set()
-        for name, types, params in self.pred_dict.keys():
-            key = (name, types, params)
-            if key not in seen:
-                pred_list.append({
-                    "name": name,
-                    "types": list(types),
-                    "params": [] if lifted else list(params),
-                    # Optional: include "semantic" as None since it's not stored in pred_dict
-                    "semantic": self.semantic_dict[key]
-                })
-                seen.add(key)
-        return pred_list
-
-    def set_pred_value(self, grounded_pred, value):
-        """
-        Sets the predicate value efficiently using dictionary lookup.
-        """
-        pred_key = self._keyify(grounded_pred)
-        if pred_key in self.pred_dict:
-            self.pred_dict[pred_key] = value
+    def set_pred_value(self, pred_obj, value):
+        if pred_obj in self.pred_dict:
+            pred_obj.set_truth_value(value)
+            self.pred_dict[pred_obj] = value
         else:
             raise Exception("Predicate not found!")
 
-    def get_pred_value(self, grounded_pred):
-        """
-        Retrieves the predicate value.
-        """
-        pred_key = self._keyify(grounded_pred)
-        return self.pred_dict.get(pred_key, {})
-    
+    def get_pred_value(self, pred_obj):
+        return self.pred_dict.get(pred_obj, {})
+
     def add_pred_list(self, new_pred_list):
         """
-        Find and add new predicate dictionaries to the predicate state.
-        new_pred_list::dict:: A list of dictionary representing the new predicate [{'name': str, 'params': tuple/list, ...}]
+        Adds new Predicate objects to the state if they don't already exist.
         """
-        for new_pred in new_pred_list:
-            pred_key = self._keyify(new_pred)
-            if pred_key not in self.pred_dict:
-                # ensure not to add repeated predicate because predicate has redundant parameters
-                assert all(key in ["name", "types", "params", "semantic"] for key in new_pred.keys())
-                self.pred_dict[pred_key] = None
-                self.semantic_dict[pred_key] = new_pred["semantic"]
+        for pred in new_pred_list:
+            if pred not in self.pred_dict:
+                self.pred_dict[pred] = pred.truth_value
 
     def get_unevaluated_predicates(self):
+        return [pred for pred, value in self.pred_dict.items() if value is None]
+
+    def iter_predicates(self):
         """
-        Returns a list of predicates that do not have truth value evaluated.
+        Generator that yields each predicate object.
         """
-        return [pred for pred,truth_value in self.pred_dict.items() if not truth_value]
+        for pred in self.pred_dict:
+            yield pred
 
-class Precondition():
-    def __init__():
+    def get_pred_list(self, lifted=False):
+        """
+        Returns a list of predicate dictionaries in original form.
+        If lifted=True, params are emptied.
+        """
+        pred_list = []
+        seen = set()
+        for pred in self.pred_dict:
+            if pred not in seen:
+                pred_list.append({
+                    "name": pred.name,
+                    "types": list(pred.types),
+                    "params": [] if lifted else list(pred.params),
+                    "semantic": pred.semantic
+                })
+                seen.add(pred)
+        return pred_list
+
+
+class Precondition:
+    def __init__(self, precond: list[Predicate]):
+        self.precond = precond
+
+
+    def in_precondition(self, grounded_state: PredicateState, grounded_skill: Skill, additional_types: list[str]):
+        # for grounded_predicate in grounded_state:
+        #     if any([grounded_state[grounded_predicate]!=value \
+        #             for lift_pred_tuple, value in self.precond.items()]):
         pass
 
-class Effect():
-    def __init__():
+class Effect:
+    def __init__(self, effect_pos: list[Predicate], effect_neg: list[Predicate]):
+        self.effect_pos = effect_pos
+        self.effect_neg = effect_neg
+
+    def in_effect(self, grounded_state: PredicateState, grounded_skill: Skill):
         pass
 
-class Operator():
-    def __init__():
-        pass
-    
+class Operator:
+    def __init__(self, skill, additional_types, precondition: Precondition, effect: Effect):
+        self.skill = skill
+        self.additional_types = additional_types
+        self.precondition = precondition
+        self.effect = effect
+
+# TODO: change this to the new data structure
 def dict_to_string(dict, lifted=False):
     """
     Assembly a dictionary of grounded/lifted representation to string
@@ -205,30 +218,10 @@ def dict_to_string(dict, lifted=False):
     variable_string = ', '.join(dict['types']) if lifted else ', '.join(dict['params'])
     return f"{dict['name']}({variable_string})"
 
-def ground_with_params(lifted, params, type_dict=None):
-    """
-    Grounded a skill or a predicate with parameters and their types.
-    Basically add another key, value to it
-    lifted::dict:: lifted skill/predicate with parameter type, e.g., {'name':"GoTo", 'types':["[ROBOT]", "[LOC]", "[LOC]"]}/{'name':"At", 'types':["[LOC]"]}
-    params::list:: list of parameters, e.g., ["Apple", "Table"]
-    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    """
-    # tuple is applicable to the lifted representation
-    if type_dict:
-        for i, p in enumerate(params):
-            assert p in type_dict
-            assert lifted['types'][i] in type_dict[p]
-
-    # grounded skill/predicate
-    # return {'name': lifted['name'], 'params': params}
-    grounded_pred = deepcopy(lifted)
-    grounded_pred["params"] = params
-    return grounded_pred
-
-def possible_grounded_predicates(pred_list, type_dict):
+def possible_grounded_preds(pred_list: list[Predicate], type_list: dict[str, list[str] ]) -> list[Predicate]:
     """
     Generate all possible grounded predicate using the combination of predicates and objects
-    pred_list:: [{'name':str, 'types':list, 'params':list, 'semantic':str}]
+    pred_list:: [Predicate]
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
     return:: list:: list of possible grounded predicates
     """
@@ -241,27 +234,17 @@ def possible_grounded_predicates(pred_list, type_dict):
     # generate all possible grounded predicates
     grounded_predicates = []
     for pred in pred_list:
-        for params in itertools.product(*[type_dict_inv[p] for p in pred['types']]):
-            grounded_predicates.append(ground_with_params(pred, list(params), type_dict))
+        for params in itertools.product(*[type_dict_inv[p] for p in pred.types]):
+            grounded_predicates.append(Predicate.ground_with_params(pred, params, type_dict))
     return grounded_predicates
 
-def calculate_pred_to_update(grounded_predicates, grounded_skill):
+def calculate_pred_to_update(grounded_predicates: list[Predicate], grounded_skill: Skill):
     '''
     Given a skill and its parameters, find the set of predicates that need updates
-    grounded_skill::dict:: {'name':str, 'types':list,'params':list}
+    grounded_skill :: skill :: grounded skill
     grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
     '''
-    # TODO: always include predicates that has 0 arity after every step
-    return [gp for gp in grounded_predicates if any([p in gp['params'] for p in grounded_skill['params']])]
-
-def lift_grounded_pred(grounded_pred, type_dict=None):
-    """
-    Lift a grounded predicate, e.g., {'name': 'At', 'types': ["object", "location"], 'params': ['Apple', 'Table']} to a {'name':"At", 'types':["object", "location"], 'params':[]}
-    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    """
-    if type_dict:
-        assert all([type in type_dict[param] for type, param in zip(grounded_pred['types'], grounded_pred['params'])])
-    return {'name':grounded_pred['name'], 'types':grounded_pred['types'], 'params':[], 'semantic':grounded_pred['semantic']}
+    return [gp for gp in grounded_predicates if any([p in gp.params for p in grounded_skill.params]) or len(gp.types) == 0]
 
 # # Not used
 # # evaluate an execution using foundation model. Expected acc to be ~ 70%
@@ -288,12 +271,12 @@ def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath
         if not any([p in grounded_pred['params'] for p in grounded_skill['params']]):
             return None
         place_holders = ['[GROUNDED_SKILL]', '[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
-        lifted_pred = lift_grounded_pred(grounded_pred, type_dict)
+        lifted_pred = Predicate.lift_grounded_pred(grounded_pred, type_dict)
         while any([p in prompt for p in place_holders]):
-            prompt = prompt.replace('[GROUNDED_SKILL]', grounded_skill)
-            prompt = prompt.replace('[GROUNDED_PRED]', grounded_pred)
-            prompt = prompt.replace('[LIFTED_PRED]', dict_to_string(lifted_pred, lifted=True))
-            prompt = prompt.replace('[SEMANTIC]', lifted_pred['semantic'])
+            prompt = prompt.replace('[GROUNDED_SKILL]', str(grounded_skill))
+            prompt = prompt.replace('[GROUNDED_PRED]', str(grounded_pred))
+            prompt = prompt.replace('[LIFTED_PRED]', str(lifted_pred))
+            prompt = prompt.replace('[SEMANTIC]', lifted_pred.semantic)
         return prompt
     
     prompt = load_from_file(prompt_fpath[0]) if not init else load_from_file(prompt_fpath[1])
@@ -306,10 +289,10 @@ def eval_pred(model, img, grounded_skill, grounded_pred, type_dict, prompt_fpath
         logging.info(f'{grounded_pred} evaluated to {result}')
         return result
     else:
-        logging.info(f"mismatch skill and predicate: return False\n{grounded_skill} / {grounded_pred}")
+        logging.info(f"mismatch skill and predicate: return False\n{str(grounded_skill)} & {str(grounded_pred)}")
         return False
 
-def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpath='prompts/predicate_refining') -> dict:
+def generate_pred(model, skill: Skill, lifted_pred_list: list[Predicate], pred_type: str, tried_pred=[], prompt_fpath='prompts/predicate_refining') -> Predicate:
     '''
     propose new predicates based on the contrastive pair
 
@@ -317,14 +300,17 @@ def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpat
     new_pred :: {'name':str, 'types':list, 'params':list, 'semantic':str}
     '''
     # TODO: add tried_pred back to the prompt
-    def construct_prompt(prompt, grounded_skill, pred_list):
-        "replace placeholders in the prompt"
+    def construct_prompt(prompt: str, grounded_skill: Skill, lifted_pred_list: list[Predicate]):
+        """
+        replace placeholders in the prompt
+        pred_list :: list of lifted predicates
+        """
         while "[SKILL]" in prompt or "[PRED_DICT]" in prompt or "[TRIED_PRED]" in prompt:
-            prompt = prompt.replace("[SKILL]",  dict_to_string(grounded_skill))
+            prompt = prompt.replace("[SKILL]",  str(grounded_skill))
             # construct predicate list from pred_dict
-            pred_list_str = '\n'.join([f'{dict_to_string(pred, lifted=True)}: {pred["semantic"]}' for pred in pred_list])
+            pred_list_str = '\n'.join([f'{str(pred): {pred["semantic"]}}' for pred in lifted_pred_list])
             prompt = prompt.replace("[PRED_LIST]", pred_list_str)
-            prompt = prompt.replace("[TRIED_PRED]", ", ".join([dict_to_string(pred, lifted=True) for pred in tried_pred]))
+            prompt = prompt.replace("[TRIED_PRED]", ", ".join([str(pred) for pred in tried_pred]))
 
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
@@ -332,18 +318,19 @@ def generate_pred(model, skill, pred_list, pred_type, tried_pred=[], prompt_fpat
     logging.info('Generating predicate')
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
-    # separate the parameters from the predicate into dictionary
+    # parse the parameters from the output string into predicate parameters
     # e.g., "At(obj, loc)"" -> {"name":"At", "types": ["obj", "loc"]}
-    new_pred = {'name': pred.split("(")[0], 'types': pred.split("(")[1].strip(")").split(", ")}
-    new_pred['semantic'] = sem
+    # new_pred = {'name': pred.split("(")[0], 'types': pred.split("(")[1].strip(")").split(", ")}
+    new_pred = Predicate(pred.split("(")[0], pred.split("(")[1].strip(")").split(", "))
+    new_pred.semantic = sem
     return new_pred
 
 # Adding to precondition or effect are different prompts
-def update_empty_predicates(model, tasks, lifted_pred_list, type_dict,  grounded_predicate_truth_value_log):
+def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate], type_dict,  grounded_predicate_truth_value_log):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
-    lifted_pred_list::list(dict):: List of all lifted predicates
+    lifted_pred_list::list(Predicate):: List of all lifted predicates
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
@@ -357,7 +344,7 @@ def update_empty_predicates(model, tasks, lifted_pred_list, type_dict,  grounded
     # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the scoring function
     
     # generate all possible grounded predicates that match object types
-    grounded_pred_list = possible_grounded_predicates(lifted_pred_list, type_dict)
+    grounded_pred_list = possible_grounded_preds(lifted_pred_list, type_dict)
     logging.info('looking for empty grounded predicates')
     for task_id, steps in tasks.items():
         # NOTE: might not be necessary. tasks always get updated after every execution
@@ -401,26 +388,23 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
     tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
     pred_type :str: {"precond", "eff"}
     Returns:
-    skill2task2state::{skill_keyified: {task_step_name: {"states": [PredicateState, PredicateState], "success": bool}}}
-        skill_keyified :: (skill_name | str, skill_types | set(str), skill_params | set(str))
-        task_step_name :: (task_name | str, step | int)
+    skill2task2state::{grounded_skill: {task_step_name: {"states": [PredicateState, PredicateState], "success": bool}}}
+        task_step_tuple :: (task_name : str, step : int)
     '''
     skill2task2state = defaultdict(dict)
     for task_name, steps in grounded_predicate_truth_value_log.items():
             for step, state in steps.items(): # state :: PredicateState class
                 if not step == 0: # init state has no skill, and thus won't be included in (task_name, step)
-                    skill = tasks[task_name][step]["skill"]
-                    task_name_stepped = (task_name, step)
-                    # skill in a dictionary so need keyifying
-                    skill_keyified = PredicateState._keyify(skill)
-                    skill2task2state[skill_keyified][task_name_stepped] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
+                    grounded_skill = tasks[task_name][step]["skill"]
+                    task_step_tuple = (task_name, step)
+                    skill2task2state[grounded_skill][task_step_tuple] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
                 last_state = deepcopy(state)
     return skill2task2state
 
-def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks, pred_type) -> list[list[str, str]]:
+def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_value_log, tasks, pred_type) -> list[list[str, str]]:
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
-    operators :: [{"skill": skill_name | str, "precond": {lift_pred | tuple : bool}, "eff+":{...}, "eff-":{...}}]
+    operators :: operator
     grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
     pred_type::{'precond', 'eff'}
@@ -441,7 +425,7 @@ def detect_mismatch(skill, operators, grounded_predicate_truth_value_log, tasks,
             for operator in operators:
                 # if truth values of precond are all satisfied by state
                 # massive line but basically saying truth value in PredicateState should agree with predicate grounded with skill params
-                if any([state.get_pred_value(ground_with_params(PredicateState.restore_pred_from_key(lift_pred_tuple), skill_params))!=value for lift_pred_tuple, value in operator['precond'].items()]):
+                if any([state.get_pred_value(Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_pred_tuple), skill_params))!=value for lift_pred_tuple, value in operator['precond'].items()]):
                     return False
             return True
 
