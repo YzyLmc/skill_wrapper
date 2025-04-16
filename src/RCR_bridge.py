@@ -1,16 +1,8 @@
-# from src.data_structures.ParameterizedLiftedRelation import ParameterizedLiftedRelation
-# from src.data_structures.Parameter import Parameter
-# from src.data_structures.Link import Link
-# from src.data_structures.PDDLPrecondition import LiftedPDDLPrecondition
-# from src.data_structures.PDDLEffect import LiftedPDDLEffect
 import copy
 from copy import deepcopy
-# import Config
 import numpy as np
 from itertools import product
-# from src.useful_functions import print_set
 import functools
-# from openravepy.misc import DrawAxes
 
 @functools.total_ordering
 class Link(object):
@@ -109,11 +101,6 @@ class ParameterizedLiftedRelation(object):
         return self.parent_relation.get_grounded_relation(grounded_param1, grounded_param2)    
 
     def __str__(self):
-        # if self.parent_relation.parameter1_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     return "({}_{}_{} {} ?{})".format(self.parent_relation.parameter1_type, self.parent_relation.parameter2_type,self.parent_relation.cr, self.pid1, self.pid2)
-        # elif self.parent_relation.parameter2_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     return "({}_{}_{} ?{} {})".format(self.parent_relation.parameter1_type, self.parent_relation.parameter2_type,self.parent_relation.cr, self.pid1, self.pid2)
-        
         return "({}_{}_{} ?{} ?{})".format(self.parent_relation.parameter1_type, self.parent_relation.parameter2_type,self.parent_relation.cr, self.pid1, self.pid2)
     
     def __hash__(self):
@@ -204,9 +191,6 @@ class LiftedPDDLPrecondition(object):
             if a_prop.id <= 2:
                 auxillary_string += "\t({}) \n".format(str(a_prop))
             else:
-                # if str(a_prop).split()[1].split("_")[0] in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-                #     s_ap = str(a_prop).split()[0] + " " + str(a_prop).split()[1]
-                # else:
                 s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
 
                 auxillary_string += "\t({}) \n".format(s_ap)
@@ -215,9 +199,6 @@ class LiftedPDDLPrecondition(object):
             if a_prop.id <= 2:
                 auxillary_string += "\t({}) \n".format(str(a_prop))
             else:
-                # if str(a_prop).split()[1].split("_")[0] in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-                #     s_ap = str(a_prop).split()[0] + " " + str(a_prop).split()[1]
-                # else:
                 s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
 
                 auxillary_string += "\t(not ({})) \n".format(s_ap)
@@ -299,9 +280,6 @@ class LiftedPDDLEffect(object):
             if a_prop.id <= 2:
                 auxillary_string += "\t({}) \n".format(str(a_prop))
             else:
-                # if str(a_prop).split()[1].split("_")[0] in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-                #     s_ap = str(a_prop).split()[0] + " " + str(a_prop).split()[1]
-                # else:
                 s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
 
                 auxillary_string += "\t({}) \n".format(s_ap)
@@ -310,9 +288,6 @@ class LiftedPDDLEffect(object):
             if a_prop.id <= 2:
                 auxillary_string += "\t(not ({})) \n".format(str(a_prop))
             else:
-                # if str(a_prop).split()[1].split("_")[0] in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-                #     s_ap = str(a_prop).split()[0] + " " + str(a_prop).split()[1]
-                # else:
                 s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
 
                 auxillary_string += "\t(not ({})) \n".format(s_ap)
@@ -473,7 +448,6 @@ class Relation(object):
         return self.__str__() < o.__str__()
         
     def __hash__(self):
-        # return hash(self.__str__())
         if self.cr != 0:
             return hash("({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(self.region), self.parameter1_type, self.parameter2_type ))
         else:
@@ -492,7 +466,7 @@ class GroundedRelation(Relation):
         self.p2 = parameter2
         self.parameter1 = parameter1.name
         self.parameter2 = parameter2.name
-        self.relational = True if parameter1.type != "world" else False
+        self.relational = True if parameter1.type and parameter2.type else False # <-
         self.region_generator = None 
         self.sample_fn = None 
         self.env_state = None 
@@ -553,101 +527,6 @@ class GroundedRelation(Relation):
     def get_lifted_relation(self):
         return Relation(self.parameter1_type,self.parameter2_type,self.cr, self.region,self.discretizer)
 
-    # def evaluate_in_ll_state(self,ll_state):
-        link1_relative_pose, link2_relative_pose = self.get_relative_pose(ll_state)
-        link1_relative_discretized_pose = self.discretizer.get_discretized_pose(link1_relative_pose,is_relative = self.relational)
-        link2_relative_discretized_pose = self.discretizer.get_discretized_pose(link2_relative_pose,is_relative = self.relational)
-        grab_flag = 0
-        grabbed = False
-        for n in range(1,ll_state.num_robots+1):
-            grabbed = (grabbed or getattr(ll_state,"grabbed_flag_{}".format(n)))
-
-        if grabbed:
-            grabbed_object_flag = False
-            for r in range(1,ll_state.num_robots+1):
-                if (self.parameter1 == getattr(ll_state,"grabbed_object_{}".format(r)) or self.parameter2 == getattr(ll_state,"grabbed_object_{}".format(r))):
-                    grabbed_object_flag = True
-
-            if (self.parameter1_type == Config.GRIPPER_NAME or self.parameter2_type == Config.GRIPPER_NAME) and grabbed_object_flag:
-                grab_flag = 0
-                if (self.parameter1_type == Config.GRIPPER_NAME) and (self.parameter2_type in Config.OBJECT_NAME):
-                    id = self.parameter1.split("_")[1]
-
-                    if grabbed:
-                        if self.parameter2 == getattr(ll_state,"grabbed_object_{}".format(id)):
-                            grab_flag = 1
-                        else:
-                            grab_flag = 2
-                    else:
-                        grab_flag = 0
-
-                elif (self.parameter2_type == Config.GRIPPER_NAME) and (self.parameter1_type in Config.OBJECT_NAME):
-                    id = self.parameter2.split("_")[1]
-                    
-                    if grabbed:
-                        if self.parameter1 == getattr(ll_state,"grabbed_object_{}".format(id)):
-                            grab_flag = 1
-                        else:
-                            grab_flag = 2
-                    else:
-                        grab_flag = 0                  
-
-        link1_relative_discretized_pose.append(grab_flag)
-        link2_relative_discretized_pose.append(grab_flag)
-        if self.cr == 0: 
-            if self.parameter1_type == self.parameter2_type:
-                return not (link2_relative_discretized_pose in self.region) #or (link1_relative_discretized_pose in self.region)
-            else:
-                return not (link1_relative_discretized_pose in self.region or link2_relative_discretized_pose in self.region)
-        else:
-            if self.parameter1_type == self.parameter2_type:
-                return (link2_relative_discretized_pose in self.region) #or (link1_relative_discretized_pose in self.region)
-            else:
-                return (link1_relative_discretized_pose in self.region or link2_relative_discretized_pose in self.region)
-
-    # def get_grounded_pose(self,lifted_transform, env_state,switch=False):
-        object_dic = env_state.object_dict
-        if switch:
-            object_name = self.parameter2
-            if "Const" in self.parameter2:
-                object_name = self.parameter2_type + "_" + self.parameter1.split("_")[-1]
-
-        else:
-            object_name = self.parameter1
-            if "Const" in self.parameter1:
-                object_name = self.parameter1_type + "_" + self.parameter2.split("_")[-1]
-        
-        current_link1_pose = object_dic[object_name]
-        if object_name.split("_")[0] in Config.ROBOT_TYPES.keys():
-            current_link1_pose = object_dic[object_name][1]
-        current_link1_transform = transform_from_pose(current_link1_pose)
-        return current_link1_transform.dot(lifted_transform)
-    
-    # def get_relative_pose(self, env_state):
-        object_dic = env_state.object_dict
-        parameter1 = self.parameter1
-        parameter2 = self.parameter2
-
-        if self.parameter1_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-            parameter1 = deepcopy(self.parameter1_type + "_" + parameter2.split("_")[-1])
-
-        if self.parameter2_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-            parameter2 = deepcopy(self.parameter2_type + "_" + parameter1.split("_")[-1])
-
-        if self.parameter1_type in Config.ROBOT_TYPES.keys():
-            link1_pose = object_dic[parameter1][1]
-        else:
-            link1_pose = object_dic[parameter1]
-
-        if self.parameter2_type in Config.ROBOT_TYPES.keys():
-            link2_pose = object_dic[parameter2][1]
-        else:
-            link2_pose = object_dic[parameter2]
-
-        relative_pose_1 = env_state.get_relative_pose(link2_pose,link1_pose)
-        relative_pose_2 = env_state.get_relative_pose(link1_pose,link2_pose)
-        return relative_pose_1,relative_pose_2
-
     def get_next_region(self):
         if self.cr!= 0: 
             for region in self.region: 
@@ -693,135 +572,6 @@ class GroundedRelation(Relation):
         else:
             return sample 
 
-    # def sample_config(self,action_info):
-        env_state = self.env_state 
-        sim_object = self.sim_object 
-        region = self.region_to_use
-        switch = False
-        object_with_transform = self.parameter2
-        static_object = self.parameter1
-        static_param_num = 1
-        obj_list = []
-
-        action_type, action_axis, action_order = action_info
-
-        if self.switch_check(object_with_transform=object_with_transform,env_state=env_state):
-            object_with_transform = self.parameter1
-            static_object = self.parameter2
-            static_param_num = 2
-            switch = True
-
-        static_list = [static_object,static_param_num]
-
-        t_robot=None
-        for obj in env_state.object_dict.keys():
-            if (self.parameter1_type == Config.BASE_NAME or self.parameter2_type == Config.BASE_NAME) and (self.parameter1_type != Config.GRIPPER_NAME and self.parameter2_type != Config.GRIPPER_NAME):
-                if Config.BASE_NAME in obj:
-                    t_robot = env_state.transform_from_pose(env_state.object_dict[obj][1])
-                    robot_type = Config.BASE_NAME          
-                    rob_id = obj.split("_")[1]
-                    
-            if obj == object_with_transform:
-                pose = env_state.object_dict[obj]
-                if object_with_transform.split("_")[0] in Config.ROBOT_TYPES.keys():
-                    pose = env_state.object_dict[obj][1]
-                t_obj = env_state.transform_from_pose(pose)
-        
-        if t_robot is None:
-            if Config.GRIPPER_NAME in object_with_transform:
-                rob_id = int(object_with_transform.split("_")[1])
-            
-            else:
-                obj = object_with_transform
-                for r in range(1,env_state.num_robots + 1):
-                    if obj == getattr(env_state,"grabbed_object_{}".format(r)):
-                        rob_id = r
-                        break                                      
-        
-            for obj in env_state.object_dict.keys():
-                if Config.GRIPPER_NAME in obj and int(obj.split("_")[1]) == rob_id:
-                    t_robot = env_state.transform_from_pose(env_state.object_dict[obj][1])
-                    break
-            
-            robot_type = Config.GRIPPER_NAME
-        
-        for rob in sim_object.robots:
-            if rob.id == rob_id:
-                break
-
-        if self.cr == 0:
-            current_dof = env_state.object_dict[robot_type+"_{}".format(rob.id)][0]
-            sampled_config,sampled_end_effector_transform = sim_object.random_config_robot(robot=rob,current_dof=current_dof,exp=True) #TODO: set "exp" to False again
-            sampled_config.append(0)
-            sampled_lifted_region = np.zeros(shape=Config.BIN_COUNT.shape[0]+1)
-            sampled_refined_grounded_region = sampled_config[:-1]
-            object_with_transform = robot_type+"_{}".format(rob.id)
-            delta_mp = None
-            # robot = rob
-        
-        else:
-            sampled_lifted_region = region 
-
-            grab_flag = sampled_lifted_region[-1]
-            if ( not switch and "Loc" in self.parameter1 ) or (switch and "Loc" in self.parameter2): 
-                sampled_refined_lifted_region = np.eye(4)
-            else: 
-                sampled_refined_lifted_region = transform_from_pose(self.discretizer.convert_sample(sampled_lifted_region[:6], is_relative = True))
-
-            if switch:
-                sampled_refined_lifted_region = np.linalg.pinv(sampled_refined_lifted_region)
-
-            sampled_refined_grounded_region = self.get_grounded_pose(sampled_refined_lifted_region,env_state,switch=switch)
-
-            relative_t = np.linalg.pinv(t_obj).dot(t_robot)
-            sampled_end_effector_transform = sampled_refined_grounded_region.dot(relative_t)
-            sampled_config = []
-            ik_count = 0
-
-            while ik_count < Config.MAX_IK_ATTEMPTS and len(sampled_config) == 0:
-                sampled_config = rob.get_ik_solutions(sampled_end_effector_transform,robot_param=object_with_transform.split("_")[0],collision_fn = sim_object.collision_check)
-                ik_count += 1
-
-            delta_mp = None
-            obj_list = []
-            
-            sampled_config = list(sampled_config)
-            sampled_config.append(grab_flag)
-
-        return sampled_config,sampled_lifted_region,object_with_transform,sampled_refined_grounded_region,rob, static_list, sampled_end_effector_transform, obj_list, delta_mp
-        
-    # def switch_check(self,object_with_transform,env_state):
-        if (object_with_transform.split("_")[0] in Config.IMMOVABLE_OBJECTS):
-            return True
-        else:
-            if ((self.parameter1_type == self.parameter2_type) and (self.parameter1_type in Config.ROBOT_TYPES)):
-                return False
-            else:
-                grabbed_object_flag = False
-                for r in range(1,env_state.num_robots+1):
-                    if getattr(env_state,"grabbed_object_{}".format(r)) in [self.parameter1, self.parameter2]:
-                        grabbed_object_flag = True
-                        grabbed_object = getattr(env_state,"grabbed_object_{}".format(r))
-                        break
-
-                if grabbed_object_flag:
-                    if Config.GRIPPER_NAME in self.parameter1_type:
-                        id = self.parameter1.split("_")[1]
-                        if object_with_transform == getattr(env_state,"grabbed_object_{}".format(id)):
-                            return True
-                        else:
-                            return False                    
-                    elif grabbed_object == self.parameter1:
-                        return True
-                    else:
-                        return False
-
-                else:
-                    if self.parameter1_type in Config.ROBOT_TYPES.keys() and self.parameter2_type not in Config.ROBOT_TYPES.keys():
-                        return True
-                    else:
-                        return False
-                    
 @functools.total_ordering
 class LiftedPDDLAction(object): 
     action_id  = 0
@@ -832,17 +582,6 @@ class LiftedPDDLAction(object):
         self.effects = effects 
         self.required_planks = required_planks
         self.states_to_neglect = states_to_neglect
-
-    # @staticmethod
-    # def get_robot_id_set(relation):
-    #     id_set = set([])
-    #     if relation.parameter1_type in Config.ROBOT_TYPES:
-    #         id_set.add(int(relation.parameter1.split("_")[1]))
-
-    #     if relation.parameter2_type in Config.ROBOT_TYPES:
-    #         id_set.add(int(relation.parameter2.split("_")[1]))
-
-    #     return id_set
     
     @staticmethod
     def get_param_objects(param_objects_set,additional_param_objects_dict):
@@ -857,12 +596,9 @@ class LiftedPDDLAction(object):
 
         # cluster: List[PDDLGroundedState], List[PDDLGroundedState]
 
-
         cluster_e_add = set()
         cluster_e_delete = set()
         changed_relations = set()
-
-
 
         temp_added = set()
         temp_deleted = set()
@@ -899,13 +635,6 @@ class LiftedPDDLAction(object):
             else: 
                 relation_param_mapping[lr].append([param_mapping[relation.parameter1], param_mapping[relation.parameter2]])
 
-        # robot_id_set = set([])
-        # for relation in cluster[0][0].true_set:
-        #     if relation in changed_relations:
-        #         id_set = LiftedPDDLAction.get_robot_id_set(relation)
-        #         if len(id_set) > 0:
-        #             robot_id_set = robot_id_set.union(id_set)
-            
         for relation in temp_added:
             lr = relation.get_lifted_relation()
             pid1 = param_mapping[relation.parameter1]
@@ -927,14 +656,11 @@ class LiftedPDDLAction(object):
                     pa = param_mapping[p.parameter1]
                     pb = param_mapping[p.parameter2]
                     lifted_relation = p.get_lifted_relation()
-                    parameteirzed_relation = ParameterizedLiftedRelation(pa,pb,lifted_relation)
                     cluster_e_delete.add(parameterized_relation)
         
 
         common_relations = set()
-        additional_param_mappings = { }
-        additional_param_ids = { }
-        extra_robot_id_set = set()        
+        additional_param_mappings = { }    
         param_objects = set([])
 
         additional_param_objects = {}
@@ -979,29 +705,11 @@ class LiftedPDDLAction(object):
                     if relation.parameter2 not in additional_param_objects[relation.parameter2_type]: 
                         additional_param_objects[relation.parameter2_type].append(relation.parameter2)
                 
-
-        # if len(extra_robot_id_set) > 0:
-        #     for relation in sorted_true_set:
-        #         lr = relation.get_lifted_relation()
-        #         if (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in extra_robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in extra_robot_id_set)) and relation.cr != 0) or (relation.parameter1_type in Config.ROBOT_TYPES and relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set):
-        #             if relation.parameter1 not in param_mapping: 
-        #                 if relation.parameter1_type not in additional_param_objects:
-        #                     additional_param_objects[relation.parameter1_type] = []
-        #                 if relation.parameter1 not in additional_param_objects[relation.parameter1_type]:
-        #                     additional_param_objects[relation.parameter1_type].append(relation.parameter1)
-
-        #             if relation.parameter2 not in param_mapping:
-        #                 if relation.parameter2_type not in additional_param_objects: 
-        #                     additional_param_objects[relation.parameter2_type] = []
-        #                 if relation.parameter2 not in additional_param_objects[relation.parameter2_type]: 
-        #                     additional_param_objects[relation.parameter2_type].append(relation.parameter2)
-        
         param_objects = set(param_mapping.keys())
         param_objects = LiftedPDDLAction.get_param_objects(param_objects,additional_param_objects)
         for relation in cluster[0][0].true_set: 
             lr = relation.get_lifted_relation()
             if relation not in changed_relations:
-                # if (((relation.parameter1 in param_mapping and relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter2_type not in Config.OBJECT_NAME)) or ((relation.parameter2 in param_mapping and relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]) and (relation.parameter1_type not in Config.OBJECT_NAME))) and (relation.parameter1 != relation.parameter2)) or (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set)) and relation.cr != 0): #CANDIDATE
                 if set([relation.parameter1,relation.parameter2]).issubset(param_objects):
                     if relation.parameter1 in param_mapping: 
                         pid1 = param_mapping[relation.parameter1]
@@ -1010,11 +718,7 @@ class LiftedPDDLAction(object):
                             pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
                             additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
                         pid1 = additional_param_mappings[relation.parameter1]
-                        # if len(robot_id_set) > 0:
-                        #     if (relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set):
-                        #         if "extra" in pid1:
-                        #             pid1 = pid1.split("_")[0] + "_" + pid1.split("_")[-1]
-
+                        
                     if relation.parameter2 in param_mapping:
                         pid2 = param_mapping[relation.parameter2]
                     else:
@@ -1022,37 +726,9 @@ class LiftedPDDLAction(object):
                             pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
                             additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
                         pid2 = additional_param_mappings[relation.parameter2]
-                        # if len(robot_id_set) > 0:
-                        #     if (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set):
-                        #         if "extra" in pid2:
-                        #             pid2 = pid2.split("_")[0] + "_" + pid2.split("_")[-1]
-
+                        
                     parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
                     common_relations.add(parameterized_relation)
-
-        # if len(extra_robot_id_set) > 0:
-        #     for relation in cluster[0][0].true_set:
-        #         lr = relation.get_lifted_relation()
-        #         # if (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in extra_robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in extra_robot_id_set)) and relation.cr != 0) or (relation.parameter1_type in Config.ROBOT_TYPES and relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set): #CANDIDATE
-        #         if set([relation.parameter1,relation.parameter2]).issubset(param_objects):
-        #             if relation.parameter1 in param_mapping: 
-        #                 pid1 = param_mapping[relation.parameter1]
-        #             else:
-        #                 if relation.parameter1 not in additional_param_mappings:
-        #                     pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
-        #                     additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
-        #                 pid1 = additional_param_mappings[relation.parameter1]
-
-        #             if relation.parameter2 in param_mapping:
-        #                 pid2 = param_mapping[relation.parameter2]
-        #             else:
-        #                 if relation.parameter2 not in additional_param_mappings: 
-        #                     pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
-        #                     additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
-        #                 pid2 = additional_param_mappings[relation.parameter2]
-
-        #             parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
-        #             common_relations.add(parameterized_relation)
 
         for transition in cluster[1:]:
             state1, state2 = transition
@@ -1066,11 +742,8 @@ class LiftedPDDLAction(object):
                     local_changed.add(r1)
 
             local_additional_param_mappings = { }
-            additional_param_ids = { }
             relation_set = set()
             local_param_mapping = { }
-            robot_id_set = set([])
-            extra_robot_id_set = set([])
             local_param_objects = set([])
                 
             local_additional_param_objects = {}
@@ -1083,7 +756,6 @@ class LiftedPDDLAction(object):
 
             lifted_local_changed_set = set() 
             for relation in local_changed: 
-                # if relation.cr != 0: 
                 lr = relation.get_lifted_relation()
                 if len(relation_param_mapping[lr]) == 1:
                     lr_index = 0
@@ -1133,7 +805,6 @@ class LiftedPDDLAction(object):
             for relation in local_sorted_true_set:
                 if relation not in local_changed:
                     lr = relation.get_lifted_relation()
-                    # if (((relation.parameter1 in local_param_mapping and relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter2_type not in Config.OBJECT_NAME)) or (relation.parameter2 in local_param_mapping and relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter1_type not in Config.OBJECT_NAME))) and relation.parameter1 != relation.parameter2) or (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set)) and relation.cr != 0):
                     if relation.parameter1 not in local_param_mapping:
                         if relation.parameter1_type not in local_additional_param_objects:
                             local_additional_param_objects[relation.parameter1_type] = []
@@ -1146,28 +817,11 @@ class LiftedPDDLAction(object):
                         if relation.parameter2 not in local_additional_param_objects[relation.parameter2_type]:
                             local_additional_param_objects[relation.parameter2_type].append(relation.parameter2)
 
-            # if len(extra_robot_id_set) > 0:
-            #     for relation in local_sorted_true_set:
-            #         lr = relation.get_lifted_relation()
-            #         if (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in extra_robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in extra_robot_id_set)) and relation.cr != 0) or (relation.parameter1_type in Config.ROBOT_TYPES and relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set and int(relation.parameter1.split("_")[-1]) in extra_robot_id_set):
-            #             if relation.parameter1 not in local_param_mapping: 
-            #                 if relation.parameter1_type not in local_additional_param_objects:
-            #                     local_additional_param_objects[relation.parameter1_type] = []
-            #                 if relation.parameter1 not in local_additional_param_objects[relation.parameter1_type]:
-            #                     local_additional_param_objects[relation.parameter1_type].append(relation.parameter1)
-
-            #             if relation.parameter2 not in local_param_mapping:
-            #                 if relation.parameter2_type not in local_additional_param_objects: 
-            #                     local_additional_param_objects[relation.parameter2_type] = []
-            #                 if relation.parameter2 not in local_additional_param_objects[relation.parameter2_type]: 
-            #                     local_additional_param_objects[relation.parameter2_type].append(relation.parameter2)
-
             local_param_objects = set(local_param_mapping.keys())            
             local_param_objects = LiftedPDDLAction.get_param_objects(local_param_objects,local_additional_param_objects)
             for relation in state1.true_set:
                 if relation not in local_changed:
                     lr = relation.get_lifted_relation()
-                    # if (((relation.parameter1 in local_param_mapping and relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter2_type not in Config.OBJECT_NAME)) or (relation.parameter2 in local_param_mapping and relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter1_type not in Config.OBJECT_NAME))) and relation.parameter1 != relation.parameter2) or (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set)) and relation.cr != 0): #CANDIDATE
                     if set([relation.parameter1,relation.parameter2]).issubset(local_param_objects):
                         if relation.parameter1 in local_param_mapping:
                             pid1 = local_param_mapping[relation.parameter1]
@@ -1201,8 +855,7 @@ class LiftedPDDLAction(object):
             extra_flag = (("extra" in re.pid1) or ("extra" in re.pid2))
             if extra_flag:
                 pid1 = re.pid1
-                # if re.pid1.split("_")[0] in Config.ROBOT_TYPES:
-                #     pid1 = re.pid1.split("_")[0] + "_extra_" + re.pid1.split("_")[-1]
+
                 if pid1 in additional_param_mappings.values(): 
                     for o in additional_param_mappings.keys():
                         if additional_param_mappings[o] == pid1:
@@ -1215,8 +868,7 @@ class LiftedPDDLAction(object):
                             break
                 
                 pid2 = re.pid2
-                # if re.pid2.split("_")[0] in Config.ROBOT_TYPES:
-                #     pid2 = re.pid2.split("_")[0] + "_extra_" + re.pid2.split("_")[-1]
+
                 if re.pid2 in additional_param_mappings.values(): 
                     for o in additional_param_mappings.keys():
                         if additional_param_mappings[o] == pid2:
@@ -1243,38 +895,27 @@ class LiftedPDDLAction(object):
         lifted_changed_relations = set([a.get_lifted_relation() for a in changed_relations])
         parameterized_changed_relations = set([a for a in common_relations.union(cluster_e_add) if a.parent_relation in lifted_changed_relations])
 
-        # aux_to_add = set()
-        # for re in common_relations:
-        #     for ax in all_aux:
-        #         if re.parameter1_type == ax.parameter1_type and re.parameter2_type == ax.parameter2_type and re.cr != ax.cr:
-        #             aux_to_add.add(re)
-    
         param_set = set()
         for relation in common_relations: 
-            # if relation.parent_relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
             param1 = Parameter(relation.pid1,relation.parent_relation.parameter1_type)
             param_set.add(param1)
 
-            # if relation.parent_relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
 
         
         for relation in cluster_e_add:
-            # if relation.parent_relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
+
             param1 = Parameter(relation.pid1,relation.parent_relation.parameter1_type)
             param_set.add(param1)
 
-            # if relation.parent_relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
 
         for relation in cluster_e_delete:
-            # if relation.parent_relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
             param1 = Parameter(relation.pid1,relation.parent_relation.parameter1_type)
             param_set.add(param1)
 
-            # if relation.parent_relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]:
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
 
@@ -1299,10 +940,6 @@ class LiftedPDDLAction(object):
         precondition_string+=str(self.preconditions)
 
         required_parameter_str = ""
-        # for re in self.effects.add_set:
-        #     if "goalLoc" in str(re.pid1) and re.parent_relation.cr == 1:
-        #         required_parameter_str = str(re.pid2)
-        #         break
 
         required_planks_str = ""
         for p1,p2 in self.required_planks:
@@ -1372,285 +1009,7 @@ class GroundedPDDLAction(object):
                 changed_relations.append(rel)
 
         return changed_relations
-        
-    # def compute_refinement(self,env_state,sim_object,previous_instances,action_info,compute_motion_plan=True): 
-        traj = None
-        flag = 0
-        current_grab_flag = 0
-        grab_relation = None
-        sim_object.set_env_state(env_state)
-
-        grabbed = False
-        for r in range(1,env_state.num_robots+1):
-            grabbed = (grabbed or getattr(env_state,"grabbed_flag_{}".format(r)))
-                                            
-        if grabbed:
-            for re in self.changed_relations:
-                grabbed_object_flag = False
-                for r in range(1,env_state.num_robots+1):
-                    if (re.parameter1 == getattr(env_state,"grabbed_object_{}".format(r)) or re.parameter2 == getattr(env_state,"grabbed_object_{}".format(r))):
-                        grabbed_object_flag = True
-                if (Config.GRIPPER_NAME in re.parameter1 or Config.GRIPPER_NAME in re.parameter2) and grabbed_object_flag:
-                    grab_relation = re
-                    if (re.parameter1_type == Config.GRIPPER_NAME):
-                        id = re.parameter1.split("_")[1]
-                        # grabbed = False
-                        # for n in range(1,env_state.num_robots+1):
-                        #     grabbed = (grabbed or getattr(env_state,"grabbed_flag_{}".format(n)))
-                        
-                        if grabbed:
-                            if re.parameter2 == getattr(env_state,"grabbed_object_{}".format(id)):
-                                current_grab_flag = 1
-                            else:
-                                current_grab_flag = 2
-                        else:
-                            current_grab_flag = 0
-
-                    elif (re.parameter2_type == Config.GRIPPER_NAME):
-                        id = re.parameter2.split("_")[1]
-                        # grabbed = False
-                        # for n in range(1,env_state.num_robots+1):
-                        #     grabbed = (grabbed or getattr(env_state,"grabbed_flag_{}".format(n)))
-                        
-                        if grabbed:
-                            if re.parameter1 == getattr(env_state,"grabbed_object_{}".format(id)):
-                                current_grab_flag = 1
-                            else:
-                                current_grab_flag = 2
-                        else:
-                            current_grab_flag = 0                  
-
-                    break
-        grab_bool = None 
-        used_relations = set([])
-        relation_selected = False
-        objects_in_collision_list = []
-        objects_in_collision_flag = False
-        while not (relation_selected or objects_in_collision_flag):
-            relation_options = self.effect.add_set.difference(used_relations)
-            if len(relation_options) == 0:
-                break
-
-            relation_to_use = None
-            robot_re_flag = False
-            grabbed = False
-            for r in range(1,env_state.num_robots+1):
-                grabbed = (grabbed or getattr(env_state,"grabbed_flag_{}".format(r)))
-            
-            for re in relation_options:
-                if re.parameter1.split("_")[0] in Config.IMMOVABLE_OBJECTS or re.parameter2.split("_")[0] in Config.IMMOVABLE_OBJECTS: 
-                    relation_to_use = re
-                    break
-                
-                if grabbed:
-                    grabbed_object_flag = False
-                    for r in range(1,env_state.num_robots+1):
-                        if (re.parameter1 == getattr(env_state,"grabbed_object_{}".format(r)) or re.parameter2 == getattr(env_state,"grabbed_object_{}".format(r))):
-                            grabbed_object_flag = True
-
-                    if (Config.GRIPPER_NAME in re.parameter1 or Config.GRIPPER_NAME in re.parameter2): #and grabbed_object_flag:
-                        relation_to_use = re
-                        break
-                    if grabbed_object_flag:
-                        relation_to_use = re
-
-                else:
-                    if re.parameter1.split("_")[0] in Config.ROBOT_TYPES.keys() or re.parameter2.split("_")[0] in Config.ROBOT_TYPES.keys():
-                        relation_to_use = re
-                        robot_re_flag = True
-                        break
-
-            if relation_to_use is None:
-                relation_to_use = np.random.choice(list(relation_options))
-
-            valid_sample_found = False
-            try_new_region = False
-
-            while True: 
-                sim_object.set_env_state(env_state)
-                if self.sampling_region is None or try_new_region: 
-                    try: 
-                        self.sampling_region = relation_to_use.sample_region()
-                    except StopIteration: 
-                        # relation out of regions. move to different relation
-                        valid_sample_found = False
-                        try_new_region = False
-                        break 
-                    else: 
-                        relation_to_use.init_sample_generator(env_state, sim_object, self.sampling_region,action_info)
-                while True: 
-                    objects_in_collision_flag = False
-                    try: 
-                        next_sample,lifted_region_used,object_with_transform,sampled_refined_grounded_pose,rob, static_list, eef_transform,objects_in_collision_list, delta_mp = relation_to_use.get_next_sample()
-                    except StopIteration: 
-                        # region out of samples. move to different region 
-                        valid_sample_found = False
-                        try_new_region = True
-                        if len(objects_in_collision_list) > 0:
-                            objects_in_collision_flag = True
-                        break
-                    
-                    grab_bool = None 
-                    static_object = static_list[0]
-                    if len(next_sample) == 1:
-                        if len(objects_in_collision_list) == 0:
-                            continue
-                        else:
-                            objects_in_collision_flag = True
-                            valid_sample_found = False
-                            break
-
-                    #jayesh's some book keeping
-                    if static_list[0].split("_")[0] in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-                        static_object,static_num = static_list
-                        param_index = 2-static_num
-                        param_list = [relation_to_use.parameter1,relation_to_use.parameter2]
-                        other_param = param_list[param_index]
-                        static_object = static_object.split("_")[0] + "_" +other_param.split("_")[1]
-                    
-                    if grab_relation is None:
-                        next_grab_flag = next_sample[-1]
-                    else:
-                        if len(relation_to_use.region)==1:
-                            sampled_lifted_region = relation_to_use.region[0]
-                        else:
-                            index = np.random.randint(len(relation_to_use.region))
-                            sampled_lifted_region = relation_to_use.region[index]
-                        next_grab_flag = sampled_lifted_region[-1]         
-                    if (not (bool(current_grab_flag and next_grab_flag))) and (2 not in [current_grab_flag,next_grab_flag]):
-                        grab_action = current_grab_flag - next_grab_flag
-
-                        if grab_action >0:
-                            grab_bool=False
-                        elif grab_action <0:
-                            grab_bool=True
-                        else:
-                            grab_bool = None                  
-                    else:
-                        grab_bool = None
-
-                    # check if this sample is valid or not 
-
-                    satisfactory_flag,new_env_state,failed_relation = self.satisfactory_sample(object_with_transform,sampled_refined_grounded_pose,env_state,grab_bool,sim_object,rob,next_sample,delta_mp)
-
-                    if satisfactory_flag: 
-                        valid_sample_found = True 
-                        break 
-                
-                if valid_sample_found: 
-                    break 
-                else:
-                    if objects_in_collision_flag:
-                        break
-            
-            if valid_sample_found: 
-                if self.motion_plan_flag_check(env_state,relation_to_use,current_grab_flag):
-                    counter = 0
-                    while traj is None:
-                        if compute_motion_plan:
-                            index = len(next_sample) - 1 
-                            traj = sim_object.compute_motion_plan(goal=next_sample[:index],robot=rob.robot)
-                        else:
-                            traj = next_sample
-
-                        counter+=1
-                        if counter >= Config.MP_MAX_COUNT and traj is None:
-                            flag = 1
-                            # relation_selected = True
-                            break
-                # found valid sample.. try motion planning 
-
-            else: 
-                if not objects_in_collision_flag:
-                    used_relations.add(relation_to_use)
-
-            if traj is not None or grab_bool is not None:
-                relation_selected = True
-                break
-            
-        if len(relation_options) == 0:
-            return None, None, (None, None, None), None, None, None, None, []
-        
-        lifted_region_used_sampling_count = 1
-        if relation_to_use in previous_instances.keys():
-            for (prev_region,region_sampling_count) in previous_instances[relation_to_use]:
-                if prev_region == tuple(lifted_region_used):
-                    region_sampling_count+=1
-                    lifted_region_used_sampling_count = region_sampling_count
-                    break
-                    
-        prev_instance_tuple = (relation_to_use,lifted_region_used,lifted_region_used_sampling_count)
-        
-        if (traj is not None or flag == 1) and grab_bool is not None:
-            return None, None, prev_instance_tuple, rob, sampled_refined_grounded_pose, static_object, eef_transform, objects_in_collision_list
-        
-        if list(action_info) != [None,None,None]:
-            if traj is not None:
-                traj_list = [traj,delta_mp]
-                grab_list = None
-            if grab_bool is not None:
-                grab_list = [grab_bool,delta_mp]
-                traj_list = None
-        
-        else:
-            traj_list = traj
-            grab_list = grab_bool
-
-        return traj_list,grab_list,prev_instance_tuple, rob, sampled_refined_grounded_pose, static_object, eef_transform, objects_in_collision_list
-    
-    # def satisfactory_sample(self,object_with_transform,sampled_refined_grounded_pose,env_state,grab_bool,sim_object,rob,robot_dof_vals,delta_mp=None):        
-        grabbed_obj_name = None
-        if grab_bool is not None:
-            if grab_bool:
-                for relation in self.effect.add_set:
-                    if Config.GRIPPER_NAME in relation.parameter1:
-                        if relation.parameter2.split("_")[0] not in Config.IMMOVABLE_OBJECTS and relation.parameter2.split("_")[0] != Config.GRIPPER_NAME:
-                            grabbed_obj_name = relation.parameter2
-                            id = relation.parameter1.split("_")[1]
-            else:
-                grabbed_obj_name = getattr(env_state,"grabbed_object_{}".format(rob.id))
-            
-            traj = grab_bool
-        else:
-            traj = robot_dof_vals[:-1]
-        
-        new_env_state = sim_object.execute_refinement(traj=traj,robot=rob,obj_name=grabbed_obj_name)
-        if delta_mp is not None and type(traj) != bool:
-            new_env_state = sim_object.execute_refinement(traj=delta_mp,robot=rob,obj_name=grabbed_obj_name)
-
-        # if (self.check_collisions_in_env_state(sim_object=sim_object,env_state=new_env_state)):
-        #     return False, new_env_state, None
-
-        for relation in self.effect.add_set:
-            if relation.evaluate_in_ll_state(new_env_state) is not True:
-                sim_object.set_env_state(env_state)
-                return False,new_env_state,relation
-            # else:
-            #     print("debug")
-        
-        sim_object.set_env_state(env_state)
-        return True,new_env_state,None
-
-    # def motion_plan_flag_check(self,env_state,relation_to_use,current_grab_flag):
-        new_region_list = []
-        new_relation = copy.deepcopy(relation_to_use)
-        for re in new_relation.region:
-            new_region = re[:-1]
-            new_region.append(int(current_grab_flag))
-            new_region_list.append(new_region)
-
-        new_relation.region = new_region_list
-
-        return not (new_relation.evaluate_in_ll_state(env_state))
-
-    # def check_collisions_in_env_state(self,sim_object,env_state):
-        current_env_state = sim_object.get_current_state()
-        sim_object.set_env_state(env_state)
-        collision_flag = sim_object.collision_check(env_state.object_dict.keys())
-
-        sim_object.set_env_state(current_env_state)
-        return collision_flag
-        
+      
     def __str__(self):
         add_string = "adding -> "
         if len(self.effect.add_set) > 0:
@@ -1676,6 +1035,9 @@ if __name__ == "__main__":
     # start with the base one
 
     # lifted relation
+    is_red_relation = Relation("object", None, "IsRed")
+
+    light_room_relation = Relation(None, None, "LightRoom")
     at_relation = Relation("object", "location", "At")
     close_to_relation = Relation("robot", "location", "CloseTo")
     # ground relation
@@ -1690,6 +1052,10 @@ if __name__ == "__main__":
     apple_param = Parameter(obj2pid["Apple"], "object", "Apple")
     table_param = Parameter(obj2pid["Table"], "location", "Table")
     banana_param = Parameter(obj2pid["Banana"], "object", "Banana")
+    none_param = Parameter(None, "", None)
+
+    is_red_relation_grounded_apple = is_red_relation.get_grounded_relation(apple_param, none_param)
+    light_room_relation_grounded = light_room_relation.get_grounded_relation(none_param, none_param)
 
     at_relation_grounded_apple_table = at_relation.get_grounded_relation(apple_param, table_param)
     at_relation_grounded_banana_table = at_relation.get_grounded_relation(banana_param, table_param)
@@ -1697,22 +1063,22 @@ if __name__ == "__main__":
     close_to_relation_grounded_robot_table = close_to_relation.get_grounded_relation(robot_param, table_param)
     # transition 0
     # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_banana_table}
+    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, light_room_relation_grounded}
     false_set  = {at_relation_grounded_apple_table}
     grounded_state_0 = PDDLState(true_set, false_set)
     # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table}
+    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, light_room_relation_grounded}
     false_set  = {}
     grounded_state_1 = PDDLState(true_set, false_set)
     transition_0 = [grounded_state_0, grounded_state_1]
 
     # transition 1
     # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table}
+    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, light_room_relation_grounded}
     false_set  = {at_relation_grounded_apple_table,  at_relation_grounded_banana_table}
     grounded_state_0 = PDDLState(true_set, false_set)
     # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table}
+    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple, light_room_relation_grounded}
     false_set  = {at_relation_grounded_banana_table}
     grounded_state_1 = PDDLState(true_set, false_set)
     transition_1 = [grounded_state_0, grounded_state_1]
