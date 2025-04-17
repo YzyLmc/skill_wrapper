@@ -69,7 +69,7 @@ class Predicate:
         return bool(self.params)
     
     @staticmethod
-    def ground_with_params(lifted_pred, params: list[str] | tuple, type_dict=None):
+    def ground_with_params(lifted_pred, params: list[str], type_dict=None):
         """
         Grounded a skill or a predicate with parameters and their types.
         lifted_pred :: Predicate object
@@ -285,7 +285,7 @@ class Operator:
         possible_grounded_predicate_states_eff: list[PredicateState]= [PredicateState(self.effect.ground(grounding)) for grounding in possible_groundings]
         for grounded_predicate in grounded_state:
 
-        pass
+            pass
 
 def generate_possible_groundings(type_list: list[str], type_dict: dict[str, list[str]], fixed_grounding=None) -> list[list[object: str]]:
     """

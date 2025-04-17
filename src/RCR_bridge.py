@@ -1,6 +1,4 @@
 import copy
-from copy import deepcopy
-import numpy as np
 from itertools import product
 import functools
 
@@ -103,7 +101,11 @@ class ParameterizedLiftedRelation(object):
         return self.parent_relation.get_grounded_relation(grounded_param1, grounded_param2)    
 
     def __str__(self):
-        return "({}_{}_{} ?{} ?{})".format(self.parent_relation.parameter1_type, self.parent_relation.parameter2_type,self.parent_relation.cr, self.pid1, self.pid2)
+        t1 = f"{self.parent_relation.parameter1_type}_" if not self.pid1.startswith("_") else ""
+        t2 = f"{self.parent_relation.parameter2_type}_" if not self.pid2.startswith("_") else ""
+        p1 = f"?{self.pid1}" if not self.pid1[0] == "_" else ""
+        p2 = f"?{self.pid2}" if not self.pid2[0] == "_" else ""
+        return "({}{}{} {} {})".format(t1, t2,self.parent_relation.cr, p1, p2)
     
     def __hash__(self):
         return hash(self.__str__())
@@ -545,9 +547,9 @@ class LiftedPDDLAction(object):
         return param_objects
 
     @staticmethod
-    def get_action_from_cluster(cluster):
+    def get_action_from_cluster(cluster, param_ids={}):
 
-        # cluster: List[PDDLGroundedState], List[PDDLGroundedState]
+        # cluster: List[PDDLState], List[PDDLState]
 
         cluster_e_add = set()
         cluster_e_delete = set()
@@ -565,8 +567,8 @@ class LiftedPDDLAction(object):
                 changed_relations.add(r1)
                 temp_added.add(r1)
 
-        param_ids = {}
-        param_mapping = { }
+        param_ids = param_ids
+        param_mapping = {}
         relation_param_mapping = {}
 
         for relation in changed_relations: 
@@ -575,12 +577,18 @@ class LiftedPDDLAction(object):
             if relation.parameter2_type not in param_ids: 
                 param_ids[relation.parameter2_type] = 1
             if relation.parameter1 not in param_mapping:
-                pid1 = param_ids[relation.parameter1_type]
-                param_ids[relation.parameter1_type] += 1
+                if relation.parameter1 in param_ids:
+                    pid1 = param_ids[relation.parameter1]
+                else:
+                    pid1 = param_ids[relation.parameter1_type]
+                    param_ids[relation.parameter1_type] += 1
                 param_mapping[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
             if relation.parameter2 not in param_mapping:
-                pid2 = param_ids[relation.parameter2_type]
-                param_ids[relation.parameter2_type] += 1
+                if relation.parameter2 in param_ids:
+                    pid2 = param_ids[relation.parameter2]
+                else:
+                    pid2 = param_ids[relation.parameter2_type]
+                    param_ids[relation.parameter2_type] += 1
                 param_mapping[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
             lr = relation.get_lifted_relation()
             if lr not in relation_param_mapping:
@@ -668,16 +676,24 @@ class LiftedPDDLAction(object):
                         pid1 = param_mapping[relation.parameter1]
                     else:
                         if relation.parameter1 not in additional_param_mappings: 
-                            pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
-                            additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                            if relation.parameter1 in param_ids:
+                                pid1 = param_ids[relation.parameter1]
+                            else:
+                                pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
+                            # additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                            additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                         pid1 = additional_param_mappings[relation.parameter1]
                         
                     if relation.parameter2 in param_mapping:
                         pid2 = param_mapping[relation.parameter2]
                     else:
                         if relation.parameter2 not in additional_param_mappings: 
-                            pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
-                            additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                            if relation.parameter2 in param_ids:
+                                pid2 = param_ids[relation.parameter2]
+                            else:
+                                pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
+                            # additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                            additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                         pid2 = additional_param_mappings[relation.parameter2]
                         
                     parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
@@ -694,9 +710,9 @@ class LiftedPDDLAction(object):
                 if r1 not in state1.true_set: 
                     local_changed.add(r1)
 
-            local_additional_param_mappings = { }
+            local_additional_param_mappings = { } if not param_ids else additional_param_mappings | param_mapping
             relation_set = set()
-            local_param_mapping = { }
+            local_param_mapping = { } if not param_ids else additional_param_mappings | param_mapping
             local_param_objects = set([])
                 
             local_additional_param_objects = {}
@@ -781,7 +797,8 @@ class LiftedPDDLAction(object):
                         else:
                             if relation.parameter1 not in local_additional_param_mappings:
                                 pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
-                                local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                                # local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                                local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                             pid1 = local_additional_param_mappings[relation.parameter1]
                             
                         if relation.parameter2 in local_param_mapping:
@@ -789,7 +806,8 @@ class LiftedPDDLAction(object):
                         else:
                             if relation.parameter2 not in local_additional_param_mappings:
                                 pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
-                                local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                                # local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                                local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                             pid2 = local_additional_param_mappings[relation.parameter2]
                             
                         parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
@@ -803,108 +821,7 @@ class LiftedPDDLAction(object):
                         break
             common_relations = copy.deepcopy(new_set)
 
-        common_relations_to_remove = set()
-        for re in common_relations:
-            extra_flag = (("extra" in re.pid1) or ("extra" in re.pid2))
-            if extra_flag:
-                pid1 = re.pid1
-
-                if pid1 in additional_param_mappings.values(): 
-                    for o in additional_param_mappings.keys():
-                        if additional_param_mappings[o] == pid1:
-                            o1 = o 
-                            break
-                else:
-                    for o in param_mapping.keys():
-                        if param_mapping[o] == re.pid1:
-                            o1 = o 
-                            break
-                
-                pid2 = re.pid2
-
-                if re.pid2 in additional_param_mappings.values(): 
-                    for o in additional_param_mappings.keys():
-                        if additional_param_mappings[o] == pid2:
-                            o2 = o 
-                            break
-                else:
-                    for o in param_mapping.keys():
-                        if param_mapping[o] == re.pid2:
-                            o2 = o 
-                            break
-
-                # TODO: check this two lines    
-                l1 = Link(o1,re.parent_relation.parameter1_type)
-                l2 = Link(o2,re.parent_relation.parameter2_type)
-                gr = re.parent_relation.get_grounded_relation(l1,l2)
-
-                # if gr not in added_relations[cluster[0][0]]:
-                #     common_relations_to_remove.add(re)
-                # common_relations_to_remove.add(re)
-
-        for re in common_relations_to_remove:
-            common_relations.remove(re)
-
-        # lifted_changed_relations = set([a.get_lifted_relation() for a in changed_relations])
-        # parameterized_changed_relations = set([a for a in common_relations.union(cluster_e_add) if a.parent_relation in lifted_changed_relations])
-
         ########## NEGATIVE PRECONDITION
-
-        # for r1 in cluster[0][0].false_set: 
-        #     if r1 not in cluster[0][1].false_set:
-        #         changed_relations.add(r1)
-        #         temp_deleted.add(r1)
-        # for r1 in cluster[0][1].false_set: 
-        #     if r1 not in cluster[0][0].false_set: 
-        #         changed_relations.add(r1)
-        #         temp_added.add(r1)
-
-        # param_ids = {}
-        # param_mapping = { }
-        # relation_param_mapping = {}
-
-        # for relation in changed_relations: 
-        #     if relation.parameter1_type not in param_ids: 
-        #         param_ids[relation.parameter1_type] = 1
-        #     if relation.parameter2_type not in param_ids: 
-        #         param_ids[relation.parameter2_type] = 1
-        #     if relation.parameter1 not in param_mapping:
-        #         pid1 = param_ids[relation.parameter1_type]
-        #         param_ids[relation.parameter1_type] += 1
-        #         param_mapping[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
-        #     if relation.parameter2 not in param_mapping:
-        #         pid2 = param_ids[relation.parameter2_type]
-        #         param_ids[relation.parameter2_type] += 1
-        #         param_mapping[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
-        #     lr = relation.get_lifted_relation()
-        #     if lr not in relation_param_mapping:
-        #         relation_param_mapping[lr] = [ [param_mapping[relation.parameter1], param_mapping[relation.parameter2]] ]
-        #     else: 
-        #         relation_param_mapping[lr].append([param_mapping[relation.parameter1], param_mapping[relation.parameter2]])
-
-        # for relation in temp_added:
-        #     lr = relation.get_lifted_relation()
-        #     pid1 = param_mapping[relation.parameter1]
-        #     pid2 = param_mapping[relation.parameter2]
-        #     cluster_e_add.add(ParameterizedLiftedRelation(pid1,pid2,lr))
-        
-        # for relation in temp_deleted:
-        #     lr = relation.get_lifted_relation()
-        #     pid1 = param_mapping[relation.parameter1]
-        #     pid2 = param_mapping[relation.parameter2]
-        #     cluster_e_delete.add(ParameterizedLiftedRelation(pid1,pid2,lr))
-
-        # relations_union = cluster[0][0].true_set.union(cluster[0][0].false_set)
-        # for relation in temp_added:
-        #     p1 = relation.parameter1
-        #     p2 = relation.parameter2
-        #     for p in relations_union:
-        #         if p.parameter1 == p1 and p.parameter2 == p2 and relation != p:
-        #             pa = param_mapping[p.parameter1]
-        #             pb = param_mapping[p.parameter2]
-        #             lifted_relation = p.get_lifted_relation()
-        #             cluster_e_delete.add(parameterized_relation)
-        
 
         neg_common_relations = set()
         additional_param_mappings = { }    
@@ -962,16 +879,24 @@ class LiftedPDDLAction(object):
                         pid1 = param_mapping[relation.parameter1]
                     else:
                         if relation.parameter1 not in additional_param_mappings: 
-                            pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
-                            additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                            if relation.parameter1 in param_ids:
+                                pid1 = param_ids[relation.paramter1]
+                            else:
+                                pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
+                            # additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                            additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                         pid1 = additional_param_mappings[relation.parameter1]
                         
                     if relation.parameter2 in param_mapping:
                         pid2 = param_mapping[relation.parameter2]
                     else:
                         if relation.parameter2 not in additional_param_mappings: 
-                            pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
-                            additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                            if relation.parameter2 in param_ids:
+                                pid2 = param_ids[relation.paramter1]
+                            else:
+                                pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
+                            # additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                            additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                         pid2 = additional_param_mappings[relation.parameter2]
                         
                     parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
@@ -988,9 +913,9 @@ class LiftedPDDLAction(object):
                 if r1 not in state1.false_set: 
                     local_changed.add(r1)
 
-            local_additional_param_mappings = { }
+            local_additional_param_mappings = { } if not param_ids else additional_param_mappings | param_mapping
             relation_set = set()
-            local_param_mapping = { }
+            local_param_mapping = { } if not param_ids else additional_param_mappings | param_mapping
             local_param_objects = set([])
                 
             local_additional_param_objects = {}
@@ -1075,7 +1000,8 @@ class LiftedPDDLAction(object):
                         else:
                             if relation.parameter1 not in local_additional_param_mappings:
                                 pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
-                                local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                                # local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
+                                local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                             pid1 = local_additional_param_mappings[relation.parameter1]
                             
                         if relation.parameter2 in local_param_mapping:
@@ -1083,7 +1009,8 @@ class LiftedPDDLAction(object):
                         else:
                             if relation.parameter2 not in local_additional_param_mappings:
                                 pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
-                                local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                                # local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
+                                local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                             pid2 = local_additional_param_mappings[relation.parameter2]
                             
                         parameterized_relation = ParameterizedLiftedRelation(pid1,pid2,lr)
@@ -1096,52 +1023,6 @@ class LiftedPDDLAction(object):
                         new_set.add(relation)
                         break
             neg_common_relations = copy.deepcopy(new_set)
-
-        # not removeing anything
-        neg_common_relations_to_remove = set()
-        for re in neg_common_relations:
-            extra_flag = (("extra" in re.pid1) or ("extra" in re.pid2))
-            if extra_flag:
-                pid1 = re.pid1
-
-                if pid1 in additional_param_mappings.values(): 
-                    for o in additional_param_mappings.keys():
-                        if additional_param_mappings[o] == pid1:
-                            o1 = o 
-                            break
-                else:
-                    for o in param_mapping.keys():
-                        if param_mapping[o] == re.pid1:
-                            o1 = o 
-                            break
-                
-                pid2 = re.pid2
-
-                if re.pid2 in additional_param_mappings.values(): 
-                    for o in additional_param_mappings.keys():
-                        if additional_param_mappings[o] == pid2:
-                            o2 = o 
-                            break
-                else:
-                    for o in param_mapping.keys():
-                        if param_mapping[o] == re.pid2:
-                            o2 = o 
-                            break
-
-                # TODO: check this two lines    
-                l1 = Link(o1,re.parent_relation.parameter1_type)
-                l2 = Link(o2,re.parent_relation.parameter2_type)
-                gr = re.parent_relation.get_grounded_relation(l1,l2)
-
-                # if gr not in added_relations[cluster[0][0]]:
-                #     common_relations_to_remove.add(re)
-                # common_relations_to_remove.add(re)
-
-        for re in neg_common_relations_to_remove:
-            neg_common_relations.remove(re)
-
-        # lifted_changed_relations = set([a.get_lifted_relation() for a in changed_relations])
-        # parameterized_changed_relations = set([a for a in common_relations.union(cluster_e_add) if a.parent_relation in lifted_changed_relations])
 
         ########## NEGATIVE PRECONDITION
 
@@ -1180,13 +1061,13 @@ class LiftedPDDLAction(object):
         effects = LiftedPDDLEffect(cluster_e_add,cluster_e_delete,set(), set())
         LiftedPDDLAction.action_id += 1
 
-        return LiftedPDDLAction(LiftedPDDLAction.action_id, list(param_set), preconditions, effects)
+        return LiftedPDDLAction(LiftedPDDLAction.action_id, sorted(list(param_set)), preconditions, effects)
     
     def __str__(self):
         s = "(:action a{} \n".format(self.action_id)
         param_string = ""
         for param in self.parameters:
-            param_string += " ?{} - {} ".format(param.pid,param.type)
+            param_string += " ?{} - {} ".format(param.pid,param.type) if param.type else ""
         s += ":parameters ({})\n".format(param_string)
         precondition_string = ""
         for i,param in enumerate(self.parameters):
@@ -1229,6 +1110,9 @@ class LiftedPDDLAction(object):
         grounded_precondition = self.preconditions.get_grounded_precondition(grounding)
         grounded_effect = self.effects.get_grounded_effect(grounding)
         return GroundedPDDLAction(grounded_precondition,grounded_effect,lifted_action_id)
+    
+    def get_parameters(self):
+        return [str(p) for p in self.parameters]
 
     def __eq__(self,o):
         if (self.preconditions != o.preconditions) or (self.effects != o.effects): #or (self.parameters != o.parameters):
@@ -1286,13 +1170,29 @@ class GroundedPDDLAction(object):
         
         id_string = "lifted_action_id:{};".format(self.lifted_action_id)
         return id_string+add_string+delete_string
+
+def predicatestate_to_pddlstate(pred_state: PredicateState, obj2id: dict[str, int]) -> PDDLState:
+    "Convert a PredicateState object into PDDLState"
+    def fill_tuple_with_none(t):
+        assert isinstance(t, tuple)
+        return t + (None,) * (2 - len(t)) if len(t) < 2 else t
+    positive_set = set()
+    negative_set = set()
+    for pred in pred_state:
+        p1type, p2type = fill_tuple_with_none(pred.types)
+        lifted_relation = Relation(p1type, p2type, pred.name)
+        p1name, p2name = fill_tuple_with_none(pred.params)
+        if pred.truth_value == True:
+            positive_set.add(grounded_relation)
+        elif pred.truth_value == False:
+            negative_set.add(grounded_relation)
+    return PDDLState()
     
 def ps_list_to_cluster(transition_tuples: list[list[PredicateState, PredicateState]]) -> LiftedPDDLAction:
     """
     Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
     """
-    def predicatestate_to_pddlstate(ps: PredicateState) -> PDDLState:
-        pass
+    pass
 
 
 if __name__ == "__main__":
@@ -1310,13 +1210,16 @@ if __name__ == "__main__":
         "Robot": 0,
         "Apple": 1,
         "Table": 2,
-        "Banana": 3
+        "Banana": 3,
+        "Orange": 4
     }
 
     robot_param = Parameter(obj2pid["Robot"], "robot", "Robot")
     apple_param = Parameter(obj2pid["Apple"], "object", "Apple")
     table_param = Parameter(obj2pid["Table"], "location", "Table")
     banana_param = Parameter(obj2pid["Banana"], "object", "Banana")
+    orange_param = Parameter(obj2pid["Orange"], "object", "Orange")
+
     none_param = Parameter(None, "", None)
 
     is_red_relation_grounded_apple = is_red_relation.get_grounded_relation(apple_param, none_param)
@@ -1324,27 +1227,30 @@ if __name__ == "__main__":
 
     at_relation_grounded_apple_table = at_relation.get_grounded_relation(apple_param, table_param)
     at_relation_grounded_banana_table = at_relation.get_grounded_relation(banana_param, table_param)
+    at_relation_grounded_orange_table = at_relation.get_grounded_relation(orange_param, table_param)
 
     close_to_relation_grounded_robot_table = close_to_relation.get_grounded_relation(robot_param, table_param)
     # transition 0
     # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple}
-    false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded}
+    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
+    false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
+
     grounded_state_0 = PDDLState(true_set, false_set)
     # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple}
-    false_set  = {}
-    grounded_state_1 = PDDLState(true_set, false_set, light_room_relation_grounded)
+    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
+    false_set  = {light_room_relation_grounded}
+
+    grounded_state_1 = PDDLState(true_set, false_set)
     transition_0 = [grounded_state_0, grounded_state_1]
 
     # transition 1
     # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple}
-    false_set  = {at_relation_grounded_apple_table,  at_relation_grounded_banana_table, light_room_relation_grounded}
+    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
+    false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
     grounded_state_0 = PDDLState(true_set, false_set)
     # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple}
-    false_set  = {at_relation_grounded_banana_table, light_room_relation_grounded}
+    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
+    false_set  = {light_room_relation_grounded}
     grounded_state_1 = PDDLState(true_set, false_set)
     transition_1 = [grounded_state_0, grounded_state_1]
 
@@ -1353,5 +1259,18 @@ if __name__ == "__main__":
         transition_0,
         transition_1
     ]
-    operator = LiftedPDDLAction.get_action_from_cluster(cluster)
+
+    param_ids = {
+        "Robot": 0,
+        "Apple": 1,
+        "Table": 2,
+        "Banana": 3,
+        "Orange": 4
+    }
+    grounding = {"_p1": none_param, 'location_p2': table_param, 'object_p1': apple_param, 'object_p3': banana_param, 'object_p4':orange_param, 'robot_p0':robot_param}
+    operator = LiftedPDDLAction.get_action_from_cluster(cluster, param_ids)
+    grounded_operator = operator.get_grounded_action(grounding,0)
+    applicability = grounded_operator.check_applicability(grounded_state_0)
+    next_state = grounded_operator.apply(grounded_state_0)
+
     breakpoint()
