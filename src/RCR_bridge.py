@@ -4,6 +4,8 @@ import numpy as np
 from itertools import product
 import functools
 
+from data_structure import PredicateState
+
 @functools.total_ordering
 class Link(object):
     def __init__(self, link_name, link_type):
@@ -135,7 +137,7 @@ class GroundedPDDLPrecondition(object):
 
 @functools.total_ordering
 class LiftedPDDLPrecondition(object):
-    def __init__(self, true_set, false_set,true_aux_set,false_aux_set=set()):
+    def __init__(self, true_set, false_set,true_aux_set=set(),false_aux_set=set()):
         self.true_set = true_set
         self.false_set = false_set
         self.true_aux_set = true_aux_set
@@ -313,8 +315,8 @@ class PDDLState(object):
         else:
             return False
     
-    # @staticmethod
-    # def get_from_ll(lifted_relations_dict, object_dict, ll_state, aux_list):
+    @staticmethod
+    def get_from_ll(lifted_relations_dict, object_dict, ll_state, aux_list):
         true_set = set()
         false_set = set()
         aux_true_set = set()
@@ -465,7 +467,7 @@ class GroundedRelation(Relation):
         self.p2 = parameter2
         self.parameter1 = parameter1.name
         self.parameter2 = parameter2.name
-        self.relational = True if parameter1.type and parameter2.type else False # <-
+        self.relational = True if parameter1.type and parameter2.type else False # TODO: check this
         self.region_generator = None 
         self.sample_fn = None 
         self.env_state = None 
@@ -479,12 +481,7 @@ class GroundedRelation(Relation):
 
     def __str__(self):
         parameter1_str = self.parameter1
-        # if self.parameter1_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     parameter1_str = self.parameter1_type + "_Const"
-        
         parameter2_str = self.parameter2
-        # if self.parameter2_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     parameter2_str = self.parameter2_type + "_Const"
     
         return "({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(self.cr), parameter1_str, parameter2_str) 
     
@@ -509,14 +506,9 @@ class GroundedRelation(Relation):
         return super(GroundedRelation,self).__lt__(o)
         
     def __hash__(self):
-        # return hash(self.__str__())
         parameter1_str = self.parameter1
-        # if self.parameter1_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     parameter1_str = self.parameter1_type + "_Const"
         
         parameter2_str = self.parameter2
-        # if self.parameter2_type in Config.CONST_TYPES[Config.DOMAIN_NAME]:
-        #     parameter2_str = self.parameter2_type + "_Const"
 
         if self.cr != 0:
             return hash("({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(self.region), parameter1_str, parameter2_str))        
@@ -532,44 +524,6 @@ class GroundedRelation(Relation):
                 yield region 
         else:
             yield self.region[0]
-
-    def sample_region(self): 
-        if self.region_generator is None: 
-            self.region_generator = self.get_next_region() 
-        try: 
-            region = self.region_generator.next() 
-        except StopIteration:
-            self.region_generator = None  
-            raise StopIteration
-        else: 
-            return region 
-        
-    def init_sample_generator(self,env_state,sim_object, region,action_info):
-        samples = [] 
-        self.env_state = env_state
-        self.sim_object = sim_object
-        self.region_to_use = region
-        self.sample_fn = self.sampler(action_info)
-    
-    # def sampler(self,action_info):
-        # if self.cr == 0:
-        #     n = 1
-        # else:
-        #     n = Config.SAMPLE_COUNT
-
-        # for i in range(n):
-        #     yield self.sample_config(action_info)
-    
-    # def get_next_sample(self):
-        if self.sample_fn is None: 
-            raise StopIteration
-        try: 
-            sample = self.sample_fn.next() 
-        except StopIteration:
-            self.sample_fn = None 
-            raise StopIteration
-        else:
-            return sample 
 
 @functools.total_ordering
 class LiftedPDDLAction(object): 
@@ -1333,6 +1287,14 @@ class GroundedPDDLAction(object):
         id_string = "lifted_action_id:{};".format(self.lifted_action_id)
         return id_string+add_string+delete_string
     
+def ps_list_to_cluster(transition_tuples: list[list[PredicateState, PredicateState]]) -> LiftedPDDLAction:
+    """
+    Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
+    """
+    def predicatestate_to_pddlstate(ps: PredicateState) -> PDDLState:
+        pass
+
+
 if __name__ == "__main__":
     # test data structures
     # start with the base one

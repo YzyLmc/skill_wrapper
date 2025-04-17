@@ -360,8 +360,8 @@ def invent_predicates(model, skill, operators, tasks, grounded_predicate_truth_v
 def score_by_partition(new_pred: Predicate, groudned_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
     '''
     Partition by effect and then score the predicates across each partition
-    skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
-    threshold={"precond":float, "eff":float}
+        skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
+        threshold={"precond":float, "eff":float}
     '''
 
     skill_list = skill2task2state.keys()
@@ -391,20 +391,19 @@ def score_by_partition(new_pred: Predicate, groudned_skill: Skill, skill2task2st
                 
     return False
 
-def partition_by_termination(skill2task2state) -> dict[tuple, list[dict[PredicateState, list[tuple]]]]:
+def partition_by_termination(skill2task2state) -> dict[Skill, list[dict[PredicateState, list[tuple]]]]:
     '''
     Partition the a set of trajectory using termination set. Will be used again in scoring and final operators learning.
     Only successful execution will be used for partitioning
-    skill2task2state::{skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
-        skill :: grounded skill
+        skill2task2state::{Skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
     Returns:
-    {skill: [{PredicateState: [task_step_tuple]} , ...]}
+        {Skill: [{PredicateState: [task_step_tuple]} , ...]}
     '''
     def states_are_equal(state_1, state_2):
         return state_1.pred_dict == state_2.pred_dict
     
     skill2partition = defaultdict(dict)
-    for skill_keyified, task2state in skill2task2state.items():
+    for skill, task2state in skill2task2state.items():
         partition = defaultdict(list) # {task_step}
         for task_step_tuple, state_meta in task2state.items():
             find_partition = False
@@ -416,7 +415,7 @@ def partition_by_termination(skill2task2state) -> dict[tuple, list[dict[Predicat
             if not find_partition:
                 partition[state].append(task_step_tuple)
                 find_partition = False
-        skill2partition[skill_keyified] = partition
+        skill2partition[skill] = partition
     return skill2partition
 
 # TODO: modified it with new data structure
@@ -512,8 +511,8 @@ def create_operators_from_partitions(skill2task2state, skill2partition):
         pass
     operators = []
     # create operators for each grounded skill
-    for skill_keyified, task2state in skill2task2state.items():
-        precond_n_effect = create_operators_from_one_partition(task2state, skill2partition[skill_keyified])
+    for skill, task2state in skill2task2state.items():
+        precond_n_effect = create_operators_from_one_partition(task2state, skill2partition[skill])
         # lift the variables in precondition and effect if agree with params of the skill
 
     pass

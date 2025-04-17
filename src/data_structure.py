@@ -37,7 +37,7 @@ class Skill:
                 assert p in type_dict
                 assert lifted_skill.types[i] in type_dict[p]
 
-        # grounded skill/predicate
+        # grounded skill
         grounded_pred = deepcopy(lifted_skill)
         grounded_pred.params = tuple(params)
 
@@ -49,7 +49,7 @@ class Predicate:
         self.types = tuple(types)
         self.params = tuple(params) if params else ()
         self.semantic = semantic
-        # self.truth_value = None
+        self.truth_value = None
 
     def __str__(self):
         param_str = ", ".join(map(str, self.params))
@@ -91,10 +91,6 @@ class Predicate:
 
     @staticmethod
     def lift_grounded_pred(grounded_pred, type_dict=None):
-        """
-        Lift a grounded predicate, e.g., {'name': 'At', 'types': ["object", "location"], 'params': ['Apple', 'Table']} to a {'name':"At", 'types':["object", "location"], 'params':[]}
-        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-        """
         assert grounded_pred.is_grounded(), "Cannot lift an ungrounded predicate"
         if type_dict:
             assert all([type in type_dict[param] for type, param in zip(grounded_pred.types, grounded_pred.params)])
