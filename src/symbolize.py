@@ -1,7 +1,7 @@
 '''
 Get symbolic representation from skill semantic info and observation.
 Data structures:
-    type_dict :: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+    type_dict :: dict:: {param: [type]}, e.g., {"Apple": ['object'], "Table": ['location']}
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
         step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     grounded_predicate_truth_value_log :: dict :: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
@@ -16,6 +16,7 @@ import logging
 
 from utils import GPT4, load_from_file
 from data_structure import Skill, Predicate, PredicateState, Precondition, Effect, Operator
+from RCR_bridge import LiftedPDDLAction, RCR_bridge, generate_possible_groundings
 
 # TODO: change this to the new data structure
 def dict_to_string(dict, lifted=False):
@@ -26,7 +27,7 @@ def dict_to_string(dict, lifted=False):
     variable_string = ', '.join(dict['types']) if lifted else ', '.join(dict['params'])
     return f"{dict['name']}({variable_string})"
 
-def possible_grounded_preds(pred_list: list[Predicate], type_list: dict[str, list[str] ]) -> list[Predicate]:
+def possible_grounded_preds(pred_list: list[Predicate], type_dict: dict[str, list[str] ]) -> list[Predicate]:
     """
     Generate all possible grounded predicate using the combination of predicates and objects
     pred_list:: [Predicate]
@@ -122,7 +123,7 @@ def generate_pred(model, skill: Skill, lifted_pred_list: list[Predicate], pred_t
 
     prompt_fpath += f"_{pred_type}.txt"
     prompt = load_from_file(prompt_fpath)
-    prompt = construct_prompt(prompt, skill, pred_list)
+    prompt = construct_prompt(prompt, skill, lifted_pred_list)
     logging.info('Generating predicate')
     resp = model.generate(prompt)[0]
     pred, sem = resp.split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
@@ -208,6 +209,8 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                     skill2task2state[grounded_skill][task_step_tuple] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
                 last_state = deepcopy(state)
     return skill2task2state
+
+def detect_mismatch(skill, operators: dict[Skill, dict[LiftedPDDLAction, dict]]):
 
 # TODO: modify with new data structure
 def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_value_log, tasks, pred_type) -> list[list[str, str]]:
@@ -417,8 +420,10 @@ def partition_by_termination(skill2task2state) -> dict[Skill, list[dict[Predicat
                 find_partition = False
         skill2partition[skill] = partition
     return skill2partition
-
-# TODO: modified it with new data structure
+def create_operators_from_one_partition():
+    """
+    
+    """
 def create_operators_from_one_partition(task2state, task_step_tuple_list) -> list[tuple[dict[PredicateState, bool], dict[str, list[PredicateState]]]]:
     """
     Create operators from one partition.

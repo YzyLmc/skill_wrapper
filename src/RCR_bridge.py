@@ -1258,19 +1258,80 @@ class RCR_bridge:
         operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(transition_cluster, copy.deepcopy(self.obj2pid))
         return operator
 
-    def map_param_name_to_param_object(self, operator: LiftedPDDLAction) -> dict[str, Parameter]:
+    @staticmethod
+    def map_param_name_to_param_object(operator: LiftedPDDLAction, obj2pid: dict[str, int], type_dict: list[str, list[str]] = {}, obj2param: dict[str, Parameter] = {}) -> dict[str, Parameter]:
+        """
+        Generate a grounding corresponding to an object to parameter mapping for grounding lifted operators.
+        At least one of type_dict and obj2param must be provided.
+        """
         op_params: list[str] = operator.get_parameters()
-        pid2obj: dict[int, str] = {v:k for k,v in self.obj2pid.items()} | {-1:"_p1"} # inv dictionary
+        pid2obj: dict[int, str] = {v:k for k,v in obj2pid.items()} | {-1: "_p1"} # inv dictionary
 
         param_name2param_obj = {}
         for param_name in op_params:
             if not param_name.startswith("_"):
                 pid = param_name.split("_p")[-1] # take the last digit of the parameter
-                param_name2param_obj[param_name] = self.obj2param[pid2obj[int(pid)]]
+                obj = pid2obj[int(pid)]
+                if obj in obj2param:
+                    param_name2param_obj[param_name] = obj2param[obj]
+                else:
+                    type = param_name.replace("?", " ").replace("_", " ").split()[0] # ugly string parsing
+                    param_name2param_obj[param_name] = Parameter(pid, type, obj)
             else:
-                param_name2param_obj[param_name] = self.obj2param[None]
-        # breakpoint()
+                param_name2param_obj[param_name] = Parameter(None, "", None)
+
         return param_name2param_obj
+    
+    def get_pid_to_type(self):
+        """
+        pid to type mapping is useful for generating possible groundings for precondition check
+        """
+        pid2type = {}
+        for obj, pid in self.obj2pid.items():
+            pid2type[pid] = self.obj2param[obj].type
+        return pid2type
+    
+def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None):
+    """
+    required_types: list of types corresponding to total argument slots
+    type_dict: dict of object -> type
+    fixed_grounding: list of object names fixed at the beginning
+    """
+    required_types = [pid2type[i] for i in range(len(pid2type))]
+    if fixed_grounding is None:
+        fixed_grounding = []
+
+    # Step 1: Validate fixed_grounding length
+    if len(fixed_grounding) > len(required_types):
+        raise ValueError("Fixed grounding has more objects than required types.")
+
+    # Step 2: Remove fixed types and objects
+    remaining_types = required_types[len(fixed_grounding):]
+    used_objects = set(fixed_grounding)
+
+    # Step 3: Invert type_dict to type -> [objects]
+    type_to_objects = {}
+    for obj, tp_list in type_dict.items():
+        for tp in tp_list:
+            if obj not in used_objects:
+                type_to_objects.setdefault(tp, []).append(obj)
+
+    # Step 4: Gather object choices for remaining types
+    try:
+        object_choices = [type_to_objects[tp] for tp in remaining_types]
+    except KeyError:
+        # One of the remaining types has no available objects
+        return []
+
+    # Step 5: Generate combinations and filter duplicates
+    groundings = []
+    for combo in product(*object_choices):
+        full_combo = tuple(fixed_grounding) + combo
+        if len(set(full_combo)) == len(full_combo):
+            obj2pid = {obj: i for obj, i in enumerate(full_combo)}
+            groundings.append(obj2pid)
+
+    return groundings
 
 if __name__ == "__main__":
     # test data structures
@@ -1379,6 +1440,7 @@ if __name__ == "__main__":
     grounded_pred_3 = Predicate.ground_with_params(pred_3, [], type_dict)
     grounded_pred_4 = Predicate.ground_with_params(pred_1, ["Orange", "Table"], type_dict)
 
+    # imaginal transition where PlaceAt("Apple", "Table") will result in apple and orange both on table
     pred_state_1 = PredicateState([grounded_pred_1, grounded_pred_2, grounded_pred_3, grounded_pred_4])
     pred_state_1.set_pred_value(grounded_pred_1, False)
     pred_state_1.set_pred_value(grounded_pred_2, True)
@@ -1405,8 +1467,13 @@ if __name__ == "__main__":
     test_operator= bridge.operator_from_transitions(test_transitions, grounded_skill)
     pddlstate_1 = bridge.predicatestate_to_pddlstate(pred_state_1)
     pddlstate_2 = bridge.predicatestate_to_pddlstate(pred_state_2)
-
-    grounding = bridge.map_param_name_to_param_object(test_operator)
+    type_dict = {
+        "Apple": ["object"],
+        "Table": ["location"],
+        "Orange": ["object"]
+    }
+    # grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid, obj2param=bridge.obj2param)
+    grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid)
     grounded_operator = test_operator.get_grounded_action(grounding,0)
     applicability = grounded_operator.check_applicability(pddlstate_1)
     next_state = grounded_operator.apply(pddlstate_1)
