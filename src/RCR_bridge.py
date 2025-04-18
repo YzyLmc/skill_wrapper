@@ -2,7 +2,7 @@ import copy
 from itertools import product
 import functools
 
-from data_structure import PredicateState
+from data_structure import Predicate, PredicateState, Skill
 
 @functools.total_ordering
 class Link(object):
@@ -482,10 +482,12 @@ class GroundedRelation(Relation):
         return new_relation
 
     def __str__(self):
-        parameter1_str = self.parameter1
-        parameter2_str = self.parameter2
+        t1 = f"{self.parameter1_type}_" if self.parameter1 else ""
+        t2 = f"{self.parameter2_type}_" if self.parameter2 else ""
+        p1 = self.parameter1 if self.parameter1 else ""
+        p2 = self.parameter2 if self.parameter2 else ""
     
-        return "({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(self.cr), parameter1_str, parameter2_str) 
+        return "({}{}{} {} {})".format(t1, t2, str(self.cr), p1, p2) 
     
     def evaluate(self, state): 
         s = self.__str__()
@@ -1171,106 +1173,241 @@ class GroundedPDDLAction(object):
         id_string = "lifted_action_id:{};".format(self.lifted_action_id)
         return id_string+add_string+delete_string
 
-def predicatestate_to_pddlstate(pred_state: PredicateState, obj2id: dict[str, int]) -> PDDLState:
-    "Convert a PredicateState object into PDDLState"
-    def fill_tuple_with_none(t):
-        assert isinstance(t, tuple)
-        return t + (None,) * (2 - len(t)) if len(t) < 2 else t
-    positive_set = set()
-    negative_set = set()
-    for pred in pred_state:
-        p1type, p2type = fill_tuple_with_none(pred.types)
-        lifted_relation = Relation(p1type, p2type, pred.name)
-        p1name, p2name = fill_tuple_with_none(pred.params)
-        if pred.truth_value == True:
-            positive_set.add(grounded_relation)
-        elif pred.truth_value == False:
-            negative_set.add(grounded_relation)
-    return PDDLState()
-    
-def ps_list_to_cluster(transition_tuples: list[list[PredicateState, PredicateState]]) -> LiftedPDDLAction:
-    """
-    Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
-    """
-    pass
+class RCR_bridge:
+    def __init__(self, obj2pid: dict[str, int]={}, obj2param: dict[str, Parameter]={}):
+        self.obj2pid = obj2pid
+        self.obj2param = obj2param
+    def predicatestate_to_pddlstate(self, pred_state: PredicateState) -> PDDLState:
+        """
+        Convert a PredicateState object into PDDLState
+            obj2pid :: mapping object name to parameter. 
+                    It should contain all parameters appear in the grounded predicates of predicate state object
+        """
+        def fill_tuple_with(t, arg):
+            assert isinstance(t, tuple)
+            return t + (arg,) * (2 - len(t)) if len(t) < 2 else t
+        
+        obj2pid = self.obj2pid | {None:-1}
+        true_set = set()
+        false_set = set()
+        for pred in pred_state.iter_predicates():
+            assert (len(pred.types) < 3 and len(pred.params) < 3), "Cannot work with predicates with more than 2 params"
+            p1type, p2type = fill_tuple_with(pred.types, "")
+            p1name, p2name = fill_tuple_with(pred.params, None)
 
+            lifted_relation = Relation(p1type, p2type, pred.name)
+
+            if p1name not in self.obj2param:
+                # create new parameter for the object
+                p1_param = Parameter(obj2pid[p1name], p1type, p1name)
+                self.obj2param[p1name] = p1_param
+            else:
+                p1_param = self.obj2param[p1name]
+
+            if p2name not in self.obj2param:
+                p2_param = Parameter(obj2pid[p2name], p2type, p2name)
+                self.obj2param[p2name] = p2_param
+            else:
+                p2_param = self.obj2param[p2name]
+
+            grounded_relation = lifted_relation.get_grounded_relation(p1_param, p2_param)
+
+            if pred_state.get_pred_value(pred) == True:
+                true_set.add(grounded_relation)
+            elif pred_state.get_pred_value(pred) == False:
+                false_set.add(grounded_relation)
+        return PDDLState(true_set, false_set)
+    
+    def operator_from_transitions(self, transition_tuples: list[list[PredicateState, PredicateState]], skill: Skill, flush=False) -> LiftedPDDLAction:
+        """
+        Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
+            obj2pid :: mapping of the original grounded parameters to ids of the lifted parameters 
+                        e.g., id of "object_p4" is 4
+        """
+
+        # build obj2pid mapping with skill parameter to be at the beginning (idx 0, 1)
+        obj_set = set()
+        for transition in transition_tuples:
+            for state in transition:
+                for pred in state.iter_predicates():
+                    obj_set.update(pred.params)
+
+        assert all([p in obj_set for p in skill.params]), "skill's parameter should be inside certain predicate"
+
+        obj_id = 0
+        if flush:
+            self.obj2pid = {}
+        # params in the skill first
+        for obj in skill.params:
+            if not obj in self.obj2pid:
+                self.obj2pid[obj] = obj_id
+                obj_id += 1
+        
+        # other params
+        for obj in obj_set:
+            if not obj in self.obj2pid:
+                self.obj2pid[obj] = obj_id
+                obj_id += 1
+
+        transition_cluster = [
+            [self.predicatestate_to_pddlstate(t[0]),
+            self.predicatestate_to_pddlstate(t[1])] \
+                for t in transition_tuples
+                                ]
+
+        operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(transition_cluster, copy.deepcopy(self.obj2pid))
+        return operator
+
+    def map_param_name_to_param_object(self, operator: LiftedPDDLAction) -> dict[str, Parameter]:
+        op_params: list[str] = operator.get_parameters()
+        pid2obj: dict[int, str] = {v:k for k,v in self.obj2pid.items()} | {-1:"_p1"} # inv dictionary
+
+        param_name2param_obj = {}
+        for param_name in op_params:
+            if not param_name.startswith("_"):
+                pid = param_name.split("_p")[-1] # take the last digit of the parameter
+                param_name2param_obj[param_name] = self.obj2param[pid2obj[int(pid)]]
+            else:
+                param_name2param_obj[param_name] = self.obj2param[None]
+        # breakpoint()
+        return param_name2param_obj
 
 if __name__ == "__main__":
     # test data structures
     # start with the base one
 
     # lifted relation
-    is_red_relation = Relation("object", None, "IsRed")
+    # is_red_relation = Relation("object", None, "IsRed")
 
-    light_room_relation = Relation(None, None, "LightRoom")
-    at_relation = Relation("object", "location", "At")
-    close_to_relation = Relation("robot", "location", "CloseTo")
-    # ground relation
+    # light_room_relation = Relation(None, None, "LightRoom")
+    # at_relation = Relation("object", "location", "At")
+    # close_to_relation = Relation("robot", "location", "CloseTo")
+    # # ground relation
+    # obj2pid = {
+    #     "Robot": 0,
+    #     "Apple": 1,
+    #     "Table": 2,
+    #     "Banana": 3,
+    #     "Orange": 4
+    # }
+
+    # robot_param = Parameter(obj2pid["Robot"], "robot", "Robot")
+    # apple_param = Parameter(obj2pid["Apple"], "object", "Apple")
+    # table_param = Parameter(obj2pid["Table"], "location", "Table")
+    # banana_param = Parameter(obj2pid["Banana"], "object", "Banana")
+    # orange_param = Parameter(obj2pid["Orange"], "object", "Orange")
+
+    # none_param = Parameter(None, "", None)
+
+    # is_red_relation_grounded_apple = is_red_relation.get_grounded_relation(apple_param, none_param)
+    # light_room_relation_grounded = light_room_relation.get_grounded_relation(none_param, none_param)
+
+    # at_relation_grounded_apple_table = at_relation.get_grounded_relation(apple_param, table_param)
+    # at_relation_grounded_banana_table = at_relation.get_grounded_relation(banana_param, table_param)
+    # at_relation_grounded_orange_table = at_relation.get_grounded_relation(orange_param, table_param)
+
+    # close_to_relation_grounded_robot_table = close_to_relation.get_grounded_relation(robot_param, table_param)
+    # # transition 0
+    # # PDDL state 0
+    # true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
+    # false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
+
+    # grounded_state_0 = PDDLState(true_set, false_set)
+    # # PDDL state 1
+    # true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
+    # false_set  = {light_room_relation_grounded}
+
+    # grounded_state_1 = PDDLState(true_set, false_set)
+    # transition_0 = [grounded_state_0, grounded_state_1]
+
+    # # transition 1
+    # # PDDL state 0
+    # true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
+    # false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
+    # grounded_state_3 = PDDLState(true_set, false_set)
+    # # PDDL state 1
+    # true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
+    # false_set  = {light_room_relation_grounded}
+    # grounded_state_4 = PDDLState(true_set, false_set)
+    # transition_1 = [grounded_state_3, grounded_state_4]
+
+    # # test cluster: list[list[PDDLState, PDDLState]]
+    # cluster = [
+    #     transition_0,
+    #     transition_1
+    # ]
+
+    # obj2pid = {
+    #     "Robot": 0,
+    #     "Apple": 1,
+    #     "Table": 2,
+    #     "Banana": 3,
+    #     "Orange": 4,
+    # }
+    # grounding = {"_p1": none_param, 'location_p2': table_param, 'object_p1': apple_param, 'object_p3': banana_param, 'object_p4':orange_param, 'robot_p0':robot_param}
+    # operator = LiftedPDDLAction.get_action_from_cluster(cluster, obj2pid)
+    # grounded_operator = operator.get_grounded_action(grounding,0)
+    # applicability = grounded_operator.check_applicability(grounded_state_0)
+    # next_state = grounded_operator.apply(grounded_state_0)
+
+    # breakpoint()
+    ######### CONVERSION TEST
+    bridge = RCR_bridge()
+
+    pred_1 = Predicate("At", ["object", "location"])
+    pred_2 = Predicate("IsHolding", ["object"])
+    pred_3 = Predicate("RoomLight",[])
+
+    type_dict = {
+        "Robot": ["robot"],
+        "Apple": ["object"],
+        "Table": ["location"],
+        "Banana": ["object"],
+        "Orange": ["object"]
+    }
+
     obj2pid = {
         "Robot": 0,
         "Apple": 1,
         "Table": 2,
         "Banana": 3,
-        "Orange": 4
+        "Orange": 4,
     }
 
-    robot_param = Parameter(obj2pid["Robot"], "robot", "Robot")
-    apple_param = Parameter(obj2pid["Apple"], "object", "Apple")
-    table_param = Parameter(obj2pid["Table"], "location", "Table")
-    banana_param = Parameter(obj2pid["Banana"], "object", "Banana")
-    orange_param = Parameter(obj2pid["Orange"], "object", "Orange")
+    grounded_pred_1 = Predicate.ground_with_params(pred_1, ["Apple", "Table"], type_dict)
+    grounded_pred_2 = Predicate.ground_with_params(pred_2, ["Apple"], type_dict)
+    grounded_pred_3 = Predicate.ground_with_params(pred_3, [], type_dict)
+    grounded_pred_4 = Predicate.ground_with_params(pred_1, ["Orange", "Table"], type_dict)
 
-    none_param = Parameter(None, "", None)
+    pred_state_1 = PredicateState([grounded_pred_1, grounded_pred_2, grounded_pred_3, grounded_pred_4])
+    pred_state_1.set_pred_value(grounded_pred_1, False)
+    pred_state_1.set_pred_value(grounded_pred_2, True)
+    pred_state_1.set_pred_value(grounded_pred_3, True)
+    pred_state_1.set_pred_value(grounded_pred_4, False)
 
-    is_red_relation_grounded_apple = is_red_relation.get_grounded_relation(apple_param, none_param)
-    light_room_relation_grounded = light_room_relation.get_grounded_relation(none_param, none_param)
+    pred_state_2 = copy.deepcopy(pred_state_1)
+    pred_state_2.set_pred_value(grounded_pred_1, True)
+    pred_state_2.set_pred_value(grounded_pred_2, False)
+    pred_state_2.set_pred_value(grounded_pred_4, True)
 
-    at_relation_grounded_apple_table = at_relation.get_grounded_relation(apple_param, table_param)
-    at_relation_grounded_banana_table = at_relation.get_grounded_relation(banana_param, table_param)
-    at_relation_grounded_orange_table = at_relation.get_grounded_relation(orange_param, table_param)
+    pred_state_3 = copy.deepcopy(pred_state_1)
+    pred_state_3.set_pred_value(grounded_pred_3, False)
+    
+    pred_state_4 = copy.deepcopy(pred_state_2)
+    pred_state_4.set_pred_value(grounded_pred_3, False)
 
-    close_to_relation_grounded_robot_table = close_to_relation.get_grounded_relation(robot_param, table_param)
-    # transition 0
-    # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
-    false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
-
-    grounded_state_0 = PDDLState(true_set, false_set)
-    # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
-    false_set  = {light_room_relation_grounded}
-
-    grounded_state_1 = PDDLState(true_set, false_set)
-    transition_0 = [grounded_state_0, grounded_state_1]
-
-    # transition 1
-    # PDDL state 0
-    true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
-    false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
-    grounded_state_0 = PDDLState(true_set, false_set)
-    # PDDL state 1
-    true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
-    false_set  = {light_room_relation_grounded}
-    grounded_state_1 = PDDLState(true_set, false_set)
-    transition_1 = [grounded_state_0, grounded_state_1]
-
-    # test cluster: list[list[PDDLState, PDDLState]]
-    cluster = [
-        transition_0,
-        transition_1
+    test_transitions = [
+        [pred_state_1, pred_state_2],
+        [pred_state_3, pred_state_4]
     ]
 
-    param_ids = {
-        "Robot": 0,
-        "Apple": 1,
-        "Table": 2,
-        "Banana": 3,
-        "Orange": 4
-    }
-    grounding = {"_p1": none_param, 'location_p2': table_param, 'object_p1': apple_param, 'object_p3': banana_param, 'object_p4':orange_param, 'robot_p0':robot_param}
-    operator = LiftedPDDLAction.get_action_from_cluster(cluster, param_ids)
-    grounded_operator = operator.get_grounded_action(grounding,0)
-    applicability = grounded_operator.check_applicability(grounded_state_0)
-    next_state = grounded_operator.apply(grounded_state_0)
+    grounded_skill = Skill(name="PlaceAt", types=["object", "location"], params=["Orange", "Table"])
+    test_operator= bridge.operator_from_transitions(test_transitions, grounded_skill)
+    pddlstate_1 = bridge.predicatestate_to_pddlstate(pred_state_1)
+    pddlstate_2 = bridge.predicatestate_to_pddlstate(pred_state_2)
 
+    grounding = bridge.map_param_name_to_param_object(test_operator)
+    grounded_operator = test_operator.get_grounded_action(grounding,0)
+    applicability = grounded_operator.check_applicability(pddlstate_1)
+    next_state = grounded_operator.apply(pddlstate_1)
     breakpoint()

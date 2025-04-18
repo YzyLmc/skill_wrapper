@@ -49,7 +49,7 @@ class Predicate:
         self.types = tuple(types)
         self.params = tuple(params) if params else ()
         self.semantic = semantic
-        self.truth_value = None
+        # self.truth_value = truth_value
 
     def __str__(self):
         param_str = ", ".join(map(str, self.params))
@@ -57,7 +57,7 @@ class Predicate:
         return f"{self.name}({param_str})" if self.params else f"{self.name}({type_str})"
 
     def __hash__(self):
-        # Use name, types, and params as hash — exclude semantic & truth value
+        # Use name, types, and params as hash — exclude semantic
         return hash((self.name, self.types, self.params))
 
     def __eq__(self, other):
@@ -76,7 +76,7 @@ class Predicate:
         params :: list:: list of parameters, e.g., ["Apple", "Table"]
         type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
         """
-        assert not grounded_pred.is_grounded(), "Cannot ground an already grounded predicate"
+        assert not lifted_pred.is_grounded(), "Cannot ground an already grounded predicate"
         # tuple is applicable to the lifted representation
         if type_dict:
             for i, p in enumerate(params):
@@ -107,7 +107,7 @@ class PredicateState:
         Initializes the predicate state.
         Accepts a list of Predicate objects.
         """
-        self.pred_dict = {pred: pred.truth_value for pred in predicates}
+        self.pred_dict = {pred: None for pred in predicates}
 
     def __eq__(self, other):
         if not isinstance(other, PredicateState):
@@ -120,7 +120,6 @@ class PredicateState:
 
     def set_pred_value(self, pred_obj, value):
         if pred_obj in self.pred_dict:
-            pred_obj.set_truth_value(value)
             self.pred_dict[pred_obj] = value
         else:
             raise Exception("Predicate not found!")
@@ -134,7 +133,7 @@ class PredicateState:
         """
         for pred in new_pred_list:
             if pred not in self.pred_dict:
-                self.pred_dict[pred] = pred.truth_value
+                self.pred_dict[pred] = None
 
     def get_unevaluated_predicates(self):
         return [pred for pred, value in self.pred_dict.items() if value is None]
@@ -144,7 +143,7 @@ class PredicateState:
         Generator that yields each predicate object.
         """
         for pred in self.pred_dict:
-            yield pred
+            yield pred 
 
     def get_pred_list(self, lifted=False):
         """
