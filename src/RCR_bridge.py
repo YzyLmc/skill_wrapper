@@ -1291,7 +1291,7 @@ class RCR_bridge:
             pid2type[pid] = self.obj2param[obj].type
         return pid2type
     
-def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None):
+def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> list[dict[str, int]]:
     """
     required_types: list of types corresponding to total argument slots
     type_dict: dict of object -> type

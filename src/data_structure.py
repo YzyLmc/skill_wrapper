@@ -23,33 +23,58 @@ class Skill:
     def is_grounded(self):
         return bool(self.params)
     
-    @staticmethod
-    def ground_with_params(lifted_skill, params: list[str], type_dict=None):
+    def ground_with(self, params: list[str], type_dict=None):
         """
         Grounded a skill or a predicate with parameters and their types.
-        lifted_skill :: Skill object
-        params :: list:: list of parameters, e.g., ["Apple", "Table"]
-        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+
+        Args:
+            lifted_skill :: Skill object
+            params :: list:: list of parameters, e.g., ["Apple", "Table"]
+            type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
         """
+        assert not self.is_grounded(), "Cannot ground a grounded skill"
         # tuple is applicable to the lifted representation
         if type_dict:
             for i, p in enumerate(params):
                 assert p in type_dict
-                assert lifted_skill.types[i] in type_dict[p]
+                assert self.types[i] in type_dict[p]
 
         # grounded skill
-        grounded_pred = deepcopy(lifted_skill)
-        grounded_pred.params = tuple(params)
+        grounded_skill = Skill(
+            name=self.name,
+            types=self.types,
+            params=params
+        )
 
-        return grounded_pred
+        return grounded_skill
+    
+
+    def lifted(self, type_dict=None):
+        assert self.is_grounded(), "Cannot lift an ungrounded predicate"
+        if type_dict:
+            assert all([type in type_dict[param] for type, param in zip(self.types, self.params)])
+        
+        # lifted skill by remove the parameters
+        lifted_skill = Skill(
+            name=self.name,
+            types=self.types,
+            params=[]
+        )
+
+        return lifted_skill
+    
+    def to_jsonable():
+        pass
+
+    def from_jsonable():
+        pass
 
 class Predicate:
-    def __init__(self, name, types, params=None, semantic=None):
+    def __init__(self, name, types, params=[], semantic=None):
         self.name = name
         self.types = tuple(types)
         self.params = tuple(params) if params else ()
         self.semantic = semantic
-        # self.truth_value = truth_value
 
     def __str__(self):
         param_str = ", ".join(map(str, self.params))
@@ -68,38 +93,43 @@ class Predicate:
     def is_grounded(self):
         return bool(self.params)
     
-    @staticmethod
-    def ground_with_params(lifted_pred, params: list[str], type_dict=None):
+    def ground_with(self, params: list[str], type_dict=None):
         """
         Grounded a skill or a predicate with parameters and their types.
         lifted_pred :: Predicate object
         params :: list:: list of parameters, e.g., ["Apple", "Table"]
         type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
         """
-        assert not lifted_pred.is_grounded(), "Cannot ground an already grounded predicate"
+        assert not self.is_grounded(), "Cannot ground an already grounded predicate"
         # tuple is applicable to the lifted representation
         if type_dict:
             for i, p in enumerate(params):
                 assert p in type_dict
-                assert lifted_pred.types[i] in type_dict[p]
+                assert self.types[i] in type_dict[p]
 
         # grounded predicate
-        grounded_pred = deepcopy(lifted_pred)
-        grounded_pred.params = tuple(params)
+        grounded_pred = Predicate(
+            name=self.name,
+            types=self.types,
+            params=params
+        )
 
         return grounded_pred
 
-    @staticmethod
-    def lift_grounded_pred(grounded_pred, type_dict=None):
-        assert grounded_pred.is_grounded(), "Cannot lift an ungrounded predicate"
+    def lifted(self, type_dict=None):
+        assert self.is_grounded(), "Cannot lift an ungrounded predicate"
         if type_dict:
-            assert all([type in type_dict[param] for type, param in zip(grounded_pred.types, grounded_pred.params)])
+            assert all([type in type_dict[param] for type, param in zip(self.types, self.params)])
         
-                # grounded predicate
-        grounded_pred = deepcopy(grounded_pred)
-        grounded_pred.params = []
+        # lift predicate
+        lifted_pred = Predicate(
+            name=self.name,
+            types=self.types,
+            params=[],
+            semantic=self.semantic
+        )
 
-        return grounded_pred
+        return lifted_pred
 
 class PredicateState:
     def __init__(self, predicates):

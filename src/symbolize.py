@@ -5,33 +5,27 @@ Data structures:
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
         step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     grounded_predicate_truth_value_log :: dict :: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
-    operators :: {lifted_skill: [{"operator": LiftedPDDLAction, "pid2type": {pid: int: type: str}}]}
-TODO: make hashable classes jsonable
+    operators :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     '''
 from collections import defaultdict
 from copy import deepcopy
 import itertools
 import logging
+from typing import Union
 
 from utils import GPT4, load_from_file
 from data_structure import Skill, Predicate, PredicateState, Precondition, Effect, Operator
-from RCR_bridge import LiftedPDDLAction, RCR_bridge, generate_possible_groundings
-
-# TODO: change this to the new data structure
-def dict_to_string(dict, lifted=False):
-    """
-    Assembly a dictionary of grounded/lifted representation to string
-    dict::dict:: {'name':str, 'params':list}
-    """
-    variable_string = ', '.join(dict['types']) if lifted else ', '.join(dict['params'])
-    return f"{dict['name']}({variable_string})"
+from RCR_bridge import PDDLState, LiftedPDDLAction, RCR_bridge, generate_possible_groundings
 
 def possible_grounded_preds(pred_list: list[Predicate], type_dict: dict[str, list[str] ]) -> list[Predicate]:
     """
-    Generate all possible grounded predicate using the combination of predicates and objects
-    pred_list:: [Predicate]
-    type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
-    return:: list:: list of possible grounded predicates
+    Generate all possible grounded predicate using the combination of predicates and objects.
+
+    Args:
+        pred_list:: [Predicate]
+        type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
+    Returns:
+        grounded_predicates :: list of possible grounded predicates
     """
     # build inverse type_dict
     type_dict_inv = defaultdict(list)
@@ -43,14 +37,16 @@ def possible_grounded_preds(pred_list: list[Predicate], type_dict: dict[str, lis
     grounded_predicates = []
     for pred in pred_list:
         for params in itertools.product(*[type_dict_inv[p] for p in pred.types]):
-            grounded_predicates.append(Predicate.ground_with_params(pred, params, type_dict))
+            grounded_predicates.append(pred.ground_with(params, type_dict))
     return grounded_predicates
 
 def calculate_pred_to_update(grounded_predicates: list[Predicate], grounded_skill: Skill) -> list[Predicate]:
     '''
     Given a skill and its parameters, find the set of predicates that need updates
-    grounded_skill :: skill :: grounded skill
-    grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
+
+    Args:
+        grounded_skill :: skill :: grounded skill
+        grounded_predicates::list:: list of grounded predicates, e.g., [{'name': 'At', 'params': ['Apple', 'Table']}]
     '''
     return [gp for gp in grounded_predicates if any([p in gp.params for p in grounded_skill.params]) or len(gp.types) == 0]
 
@@ -70,19 +66,21 @@ def eval_pred(model, img: str, grounded_skill: Skill, grounded_pred: Predicate, 
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     init step and later steps use different prompts. hardcoded.
-    grounded_skill::dict:: grounded skill with parameter type, e.g., {'name':'GoTo', "params":['location', 'location']}
-    grounded_pred::dict:: grounded predicate with parameter type, e.g., {'name':"At", 'params':["location"]}
+
+    Args:
+        grounded_skill::dict:: grounded skill with parameter type, e.g., {'name':'GoTo', "params":['location', 'location']}
+        grounded_pred::dict:: grounded predicate with parameter type, e.g., {'name':"At", 'params':["location"]}
     '''
     def construct_prompt(prompt, grounded_skill, grounded_pred):
         "replace placeholders in the prompt"
         # Predicate might have parameters don't belong to the skill
         place_holders = ['[GROUNDED_SKILL]', '[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
-        lifted_pred = Predicate.lift_grounded_pred(grounded_pred, type_dict)
+
         while any([p in prompt for p in place_holders]):
             prompt = prompt.replace('[GROUNDED_SKILL]', str(grounded_skill))
             prompt = prompt.replace('[GROUNDED_PRED]', str(grounded_pred))
-            prompt = prompt.replace('[LIFTED_PRED]', str(lifted_pred))
-            prompt = prompt.replace('[SEMANTIC]', lifted_pred.semantic)
+            prompt = prompt.replace('[LIFTED_PRED]', str(grounded_pred.lifted()))
+            prompt = prompt.replace('[SEMANTIC]', grounded_pred.semantic)
         return prompt
     
     prompt = load_from_file(prompt_fpath[0]) if not init else load_from_file(prompt_fpath[1])
@@ -96,8 +94,9 @@ def eval_pred(model, img: str, grounded_skill: Skill, grounded_pred: Predicate, 
 
 def generate_pred(model, skill: Skill, lifted_pred_list: list[Predicate], pred_type: str, tried_pred=[], prompt_fpath='prompts/predicate_refining') -> Predicate:
     '''
-    propose new predicates based on the contrastive pair
-    return:
+    propose new predicates based on the contrastive pair.
+
+    Returns:
         new_pred :: {'name':str, 'types':list, 'params':list, 'semantic':str}
     '''
     # TODO: add tried_pred back to the prompt
@@ -127,11 +126,12 @@ def generate_pred(model, skill: Skill, lifted_pred_list: list[Predicate], pred_t
     return new_pred
 
 # Adding to precondition or effect are different prompts
-def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate], type_dict,  grounded_predicate_truth_value_log):
+def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate], type_dict,  grounded_predicate_truth_value_log, skill: Skill = None):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
-    Input:
+
+    Args:
         lifted_pred_list::list(Predicate):: List of all lifted predicates
         grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
         tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
@@ -159,23 +159,21 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
 
         # for each step, iterate through all steps and find empty predicates and update them
         # calculate predicates to update based on the last action every step after init
-        # 
-        # only empty predicates will be updated
-        # init step is updated separately
 
         # update predicates for all states 
         for step, state in steps.items():
             grounded_predicate_truth_value_log[task_id][step].add_pred_list(grounded_pred_list)
 
-            # 1. find states need to be re-eval
+            # 1. find states need to be eval or re-eval
+            # At init step only evaluate empty ones
             pred_to_update = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_predicates() if step == 0 \
-                    else calculate_pred_to_update(grounded_pred_list, state["skill"])
+                else calculate_pred_to_update(grounded_pred_list, state["skill"])
 
             # 2. re-eval grounded predicates
             for pred in pred_to_update:
                 # only update empty predicates
-                if not grounded_predicate_truth_value_log[task_id][step].get_truth_value(pred):
-                    truth_value = eval_pred(model, state["image"], state["skill"], pred, type_dict, init=step==0)
+                if grounded_predicate_truth_value_log[task_id][step].get_truth_value(pred) == None:
+                    truth_value = eval_pred(model, state["image"], state["skill"], pred, type_dict, init=True)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
             
             # 3.copy all empty predicates from previous state
@@ -183,122 +181,105 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                     truth_value =  grounded_predicate_truth_value_log[task_id][step].get_pred_value(pred)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
 
-    logging.info('Done evaluation from mismatch_symbolic_state')
+            unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_predicates()
+            assert (unevaluated_pred==None) == (step==0), "Step 0 shouldn't have any predicate unevaluated"
+            for pred in unevaluated_pred:
+                # fetch truth value from last state
+                truth_value = grounded_predicate_truth_value_log[task_id][step-1].get_pred_value(pred)
+                grounded_predicate_truth_value_log[task_id][step].set_pred_value(pred, truth_value)
+
+    logging.info('Done updating predicate truth values')
     return grounded_predicate_truth_value_log
 
 
 def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks):
     '''
-    helper function to convert grounded predicate log into skill2task2state for predicate invention
-    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
-    pred_type :str: {"precond", "eff"}
+    helper function to convert grounded predicate log into skill2task2state for predicate invention.
+
+    Args:
+        grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+        tasks:: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ; step is int ranging from 0-8
+        pred_type :str: {"precond", "eff"}
     Returns:
-    skill2task2state::{grounded_skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
-        task_step_tuple :: (task_name : str, step : int)
+        skill2task2state::{grounded_skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
+            task_step_tuple :: (task_name : str, step : int)
     '''
-    skill2task2state = defaultdict(dict)
+    skill2task2state: dict[Skill, dict[tuple, dict[str, Union[list[PredicateState, PredicateState], bool]]]] = defaultdict(dict)
     for task_name, steps in grounded_predicate_truth_value_log.items():
             for step, state in steps.items(): # state :: PredicateState class
                 if not step == 0: # init state has no skill, and thus won't be included in (task_name, step)
                     grounded_skill = tasks[task_name][step]["skill"]
-                    task_step_tuple = (task_name, step)
+                    task_step_tuple: tuple[str, int] = (task_name, step)
                     skill2task2state[grounded_skill][task_step_tuple] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
                 last_state = deepcopy(state)
     return skill2task2state
 
-def detect_mismatch(grounded_skill: Skill, operators: dict[Skill, dict[LiftedPDDLAction, dict]], grounded_predicate_truth_value_log, tasks, pred_type: str) -> list[list[str]]:
+# TODO: Heavy unit test
+def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> dict[Skill, list[list[str, str]]]:
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
-    operators :: operator
-    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
-    pred_type::{'precond', 'eff'}
 
+    Args:
+        skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
+        grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
+        tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
+        pred_type::{'precond', 'eff'}
     Returns:
-    mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]
+        mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]
     """
+    def in_alpha(possible_groundings, pddl_state_list: list[PDDLState, PDDLState], operator, pred_type: str) -> bool:
+        """
+        There exist a grounding such that the grounded state agree with the operator's precondition/effect
+        """
+        for grounding in possible_groundings:
+            grounded_operator = operator.get_grounded_action(grounding, 0) # don't know if action_id matters
+            if pred_type == "precond":
+                applicable = grounded_operator.check_applicability(pddl_state_list[0])
+                if applicable:
+                    return True
+            elif pred_type == "eff":
+                next_state = grounded_operator.apply(pddl_state_list[0])
+                if next_state == pddl_state_list[1]:
+                    return True
+        return False
+   
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
+    bridge = RCR_bridge()
+    skill2mismatched_pairs = {}
     # All grounded skills
+    # TODO: detect mismatch across grounded skill or lifted skill? Now across grounded
     for grounded_skill in skill2task2state:
-        task2state = skill2task2state[grounded_skill]
+        # evaluate across all grounded skill of the same name and type
+        if grounded_skill.lifted == lifted_skill:
+            task2in_alpha: dict[str, bool] = {} # alpha is the union of grounding of precondition or effect of operators corresponding to one skill
+            task2success: dict[str, bool] = {}
+            # task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
+            task2state: dict[tuple, dict[str, Union[list[PredicateState], bool]]] = skill2task2state[grounded_skill]
 
-# TODO: modify with new data structure
-def detect_mismatch(skill, operators: list[Operator], grounded_predicate_truth_value_log, tasks, pred_type) -> list[list[str, str]]:
-    """
-    Find mismatch state pairs where they both belong to Union Precondition or Effect.
-    operators :: operator
-    grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-    tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
-    pred_type::{'precond', 'eff'}
+            for task_step_tuple, transition_meta in task2state.items():
+                task2success = {task_step_tuple: transition_meta['success']}
+                state_in_alpha = False
 
-    Returns:
-    mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]
-    """
-    # TODO: compatibility with empty precond and eff, and empty operator
-    def in_alpha(state_tuple, grounded_skill, operators, pred_type):
-        """
-        If a state is within the union set of precond/eff of learned operators.
-        The predicates need to be grounded with the same params as the skill so that we can evaluate over grounded states
-        state :: PredicateState
-        """
-        skill_params = grounded_skill['params']
-        if pred_type == 'precond':
-            state = state_tuple[0]
-            for operator in operators:
-                # if truth values of precond are all satisfied by state
-                # massive line but basically saying truth value in PredicateState should agree with predicate grounded with skill params
-                if any([state.get_pred_value(Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_pred_tuple), skill_params))!=value for lift_pred_tuple, value in operator['precond'].items()]):
-                    return False
-            return True
+                for operator, pid2type in skill2operator[lifted_skill]:
+                    possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
+                    pddl_state_list = [bridge.predicatestate_to_pddlstate(state) for state in transition_meta["states"]]
+                    if in_alpha(possible_groundings, pddl_state_list, operator, pred_type):
+                        state_in_alpha = True
+                        break
 
-        # effect is a bit tricky
-        # if not specified by precond:
-        #   if not specified by eff: no care
-        #   if specified by eff:
-        #       if specified by eff+: final value has to be true
-        #       if specified by eff-: final value has to be false
-        # if specified by precond:
-        #   if not specified by eff: final value has to agree with precond
-        #   if specified by precond and eff:
-        #       if specified by eff+: final value has to be true
-        #       if specified by eff-: final value has to be false
+                task2in_alpha[task_step_tuple] = state_in_alpha
+            assert len(task2in_alpha) == len(task2success), "length of both dictionaries state2in_alpha and state2success must equal"
+            # looking for pairs of state where truth value of s1 and s2 agree in state2in_alpha but conflict in state2success
+            task_step_tuple_list = list(task2state.keys())
+            mismatched_pairs = []
+            for i in range(len(task2state)):
+                for j in range(i + 1, len(task_step_tuple_list)):
+                    task_step_tuple_1, task_step_tuple_2 = task_step_tuple_list[i], task_step_tuple_list[j]
+                    if task2in_alpha[task_step_tuple_1] == task2in_alpha[task_step_tuple_2] and task2success[task_step_tuple_1] != task2success[task_step_tuple_2]:
+                        mismatched_pairs.append([task_step_tuple_1, task_step_tuple_2])
+            skill2mismatched_pairs[grounded_skill] = mismatched_pairs
 
-        elif pred_type == "eff":
-            state = state_tuple[1]
-            for operator in operators:
-                # construct grounded predicate with skill params
-                for lifted_pred_tuple, value in operator["eff+"].items():
-                    grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
-                    if not state.get_pred_value(grounded_pred) == value:
-                        return False
-                for lifted_pred_tuple, value in operator["eff-"].items():
-                    grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
-                    if not state.get_pred_value(grounded_pred) == value:
-                        return False
-                # predicates in precond but not in eff+/- have to remain the same
-                for lifted_pred_tuple, value in operator["precond"].items():
-                    if (lifted_pred_tuple not in operator["eff+"]) and (lifted_pred_tuple not in operator["eff-"]):
-                        grounded_pred = Predicate.ground_with_params(PredicateState.restore_pred_from_key(lift_grounded_pred), skill_params)
-                        if not state.get_pred_value(grounded_pred) == value:
-                            return False
-            return True
-        
-    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
-    task2state = skill2task2state[skill]
-    task2in_alpha = {task_step_tuple: in_alpha(state_meta['state'], grounded_skill, operators, pred_type) for task_step_tuple, state_meta in task2state.items()} # {task_step_tuple: in_alpha | bool}
-    task2success = {task_step_tuple: state_meta['success'] for task_step_tuple, state_meta in task2state.items()} # {task_step_tuple: success | bool}
-    assert len(task2in_alpha) == len(task2success), "length of both dictionaries state2in_alpha and state2success must equal"
-    task_step_tuple_list = list(task2in_alpha.keys())
-    mismatched_pairs = []
-    # looking for pairs of state where truth value of s1 and s2 agree in state2in_alpha but conflict in state2success
-    for i in range(len(task_step_tuple_list)):
-        for j in range(i + 1, len(task_step_tuple_list)):
-            task_step_tuple_1, task_step_tuple_2 = task_step_tuple_list[i], task_step_tuple_list[j]
-            if task2in_alpha[task_step_tuple_1] == task2in_alpha[task_step_tuple_2] and task2success[task_step_tuple_1] != task2success[task_step_tuple_2]:
-                mismatched_pairs.append([task_step_tuple_1, task_step_tuple_2])
-    
-    return mismatched_pairs
+    return skill2mismatched_pairs   
 
 def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type,  skill2triedpred={}, threshold={"precond":0.5, "eff":0.5}):
     """
@@ -320,7 +301,7 @@ def invent_predicate_one(model, skill, tasks, grounded_predicate_truth_value_log
     hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, pred_type)
     # NOTE: effect score will be different now due to the new partition
     add_new_pred = score_by_partition(new_pred, skill, hypothetical_skill2task2state, pred_type, threshold)
-    # logging.info(f"Precondition T score of predicate {dict_to_string(new_pred)}: {t_score}, F score: {f_score}")
+
     if add_new_pred:
         logging.info(f"Predicate {new_pred} added to predicate set by {pred_type} check")
         lifted_pred_list.append(new_pred)
