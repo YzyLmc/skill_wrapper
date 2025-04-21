@@ -548,16 +548,38 @@ def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-08-06')
     # mock symbolic state
-    pred_list = [{'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}]
     type_dict = {"Robot": ["robot"], "Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
     skill_1 = {'name': 'PickUp', 'types':['object'], 'params':[]}
     skill_2 = {"name": "GoTo", "types": ['location'], 'params':[]}
     skill_3 = {"name": "PlaceAt", "types": ['object', 'location'], 'params':[]}
     skill_list = [skill_1, skill_2, skill_3]
-    # pred_type = 'eff'
-    pred_type = 'precond'
-    # response = generate_pred(model, skill, pred_list, pred_type)
-    # print(response)
+    type_dict = {
+        "Robot": ["robot"], 
+        "Apple": ['object'], 
+        "Banana": ['object'], 
+        "Table": ['location'], 
+        "Couch": ['location']
+        }
+
+    pred = Predicate("At", ["object", "location"])
+    grounded_pred = pred.ground_with(["Apple", "Table"], type_dict)
+    lifted_pred = grounded_pred.lifted()
+    skill = Skill("PlaceAt", ["object", "location"])
+    grounded_skill = skill.ground_with(["Apple", "Table"], type_dict)
+    lifted_skill = grounded_skill.lifted()
+
+    lifted_pred_list = [
+        Predicate("At", ["object", "location"]),
+        Predicate("CloseTo", ["robot", "location"]),
+        Predicate("HandOccupied", []),
+        Predicate("IsHolding", ["object"]),
+        Predicate("EnoughBattery", []),
+        Predicate('handEmpty', [])
+    ]
+
+    pred_state = PredicateState(lifted_pred_list)
+    breakpoint()
+    
     example_lifted_predicates = [
         {'name':"At", 'types':["object", "location"], 'params':[], 'semantic': "At sem"},
         {'name':"CloseTo", 'types':["robot", "location"], 'params':[], 'semantic': "CloseTo sem"},

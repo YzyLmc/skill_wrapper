@@ -149,8 +149,7 @@ class SkillSequenceProposing():
     def update_replay_buffer(self, new_replay_buffer):
         if new_replay_buffer is not None:
             self.replay_buffer = new_replay_buffer
-    def update_skill_pair_count(self, new_skill_pair_count):
-        self.attempted_skill_pair_count = new_skill_pair_count
+            
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
     '''
@@ -265,7 +264,7 @@ class SkillSequenceProposing():
 
         abstract_executable = True
         executable = True
-       
+        # TODO: change the logic of choosing opertors, always check if 
         #iterate through the skill sequence and add/change predicate labels until something is not executable
         for i, skill in enumerate(skill_sequence):
 

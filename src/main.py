@@ -227,6 +227,7 @@ def main():
         if args.continue_learning:
             # TODO: continue learning not implemented for the new system
             raise NotImplementedError("Continue learning not implemented yet")
+        
         else:   
             # start from scratch
             # TODO: load metadata from yaml
@@ -266,20 +267,19 @@ def main():
         tasks = {}
         grounded_predicate_truth_value_log = {}
 
-        # Predicate invention main loop
+        # main loop
         for i in range(int(start_num), args.num_iter):
-
+            # propose skill sequence and execute
             grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary = propose_and_execute(skill_sequence_proposing, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, init_observation, args)
+            # invent predicates
             skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 
             logging.info(f"iteration #{i+1} is done")
-            save_to_file(log_data, log_save_path)
             logging.info(f"result has been saved to {log_save_path}")
             save_to_file(log_data, log_save_path)
             logging.info(f'Final operators this round:\n{skill2operator}')
-            logging.info(f"result has been saved to {log_save_path}")
 
-            # Write back only the lines that don't start with 'HTTP'
+            # Clean the lines start with 'HTTP'
             lines = load_from_file(save_path)
             with open(save_path, 'w') as file:
                 for line in lines:
