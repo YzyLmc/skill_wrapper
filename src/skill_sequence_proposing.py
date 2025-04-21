@@ -5,20 +5,14 @@ import copy
 import re
 from sentence_transformers import SentenceTransformer, util as st_utils
 import torch
-
-import pdb
+import base64
 
 '''
 TODO: Use ChatGPT for working example - check that skills are diverse + concered about diverse skill set
-TODO: want to see that foundation model can generate plans that produce different types of failure cases (predicate failure) without presenting the predicates to the foundation model
-- Diverse failure cases
-
 '''
 
-class TaskProposing():
-
-
-    def __init__(self, grounded_operator_dictionary, grounded_predicate_dictionary, max_skill_count, skill_save_interval, replay_buffer, objects_in_scene, env_description):
+class SkillSequenceProposing():
+    def __init__(self, grounded_predicate_dictionary, grounded_operator_dictionary, objects_in_scene, replay_buffer, env_description):
 
         #coverage of tasks: entropy measure
         #chainability of tasks: building partial state + approximations of other predicates
@@ -92,7 +86,7 @@ class TaskProposing():
 
         #embedding model for grounding LLM output to groundable/executable skills and objects
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device('cpu') # for my m1 macbook: mps
+        self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
 
         self.all_operator_embeddings = self.embedding_model.encode(list(self.operator_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
@@ -102,8 +96,6 @@ class TaskProposing():
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
         self.curr_skill_count = 0
-        self.save_skill_freq = skill_save_interval
-        self.max_skill_count = max_skill_count
 
         #parameters for kernel density estimation
         self.h = 1
@@ -119,12 +111,10 @@ class TaskProposing():
     def create_foundation_model_prompt(self):
 
         skill_prompts = []
-
         for skill in self.operator_dictionary:
 
             args = self.operator_dictionary[skill]['arguments']
             preconds = self.operator_dictionary[skill]['preconditions']
-
             preconds = [k+'='+str(v) for (k,v) in preconds.items()]
             effects_pos = [x+'=True' for x in self.operator_dictionary[skill]['effects_positive']]
             effects_neg = [x+'=False' for x in self.operator_dictionary[skill]['effects_negative']]
@@ -133,16 +123,12 @@ class TaskProposing():
             skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()]) + '\npreconditions: [' + ', '.join(preconds) + ']\neffects: {' + ', '.join(effects) + '}'
             skill_prompts.append(skill_prompt)
         
-        # pdb.set_trace()
         least_explored_skills = self.get_least_explored_skills()
-
-        prompt_context = "A robot with a single gripper is attempting to learn the preconditions and effects for a finite set of skills by performing tasks in an environment" 
-        
+        prompt_context = "A robot with a single gripper is attempting to learn the preconditions and effects for a finite set of skills by performing tasks in an environment"  
         prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of operators. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\nCertain skills have similar names and arguments, but different preconditions and effects. Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute, ensuring to follow the naming/syntax/arguments for skills provided. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nGoTo_1(CounterTop)\nPickUp_2(Apple, CounterTop)\n\nTask 1:".format('\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
     
         return prompt, prompt_context
         
-
     '''
     AUXILLIARY: functions to update the predicate dictionary and skill_dictionary after refinement
     '''
@@ -160,10 +146,6 @@ class TaskProposing():
         if new_object_set is not None:
             self.objects_in_scene = new_object_set
 
-    def add_obj_to_set(self, new_obj):
-        if new_obj is not None:
-            self.objects_in_scene.append(new_obj)
-    
     def update_replay_buffer(self, new_replay_buffer):
         if new_replay_buffer is not None:
             self.replay_buffer = new_replay_buffer
@@ -190,13 +172,10 @@ class TaskProposing():
             elif executable_sequence[p1] is False:
                 p1 = p2
                 
-            
             p2 += 1
-
 
         normalized_skill_pair_prob =  new_skill_pair_count / np.sum(new_skill_pair_count) if np.sum(new_skill_pair_count) > 0 else new_skill_pair_count
         log_skill_pair_prob = np.where(normalized_skill_pair_prob > 0.0 , np.log(normalized_skill_pair_prob), 0.0)
-
 
         new_shannon_entropy = np.sum(-1 * normalized_skill_pair_prob * log_skill_pair_prob)
         return new_shannon_entropy, new_skill_pair_count
@@ -286,12 +265,9 @@ class TaskProposing():
 
         abstract_executable = True
         executable = True
-
-        
        
         #iterate through the skill sequence and add/change predicate labels until something is not executable
         for i, skill in enumerate(skill_sequence):
-
 
             #generate abstract skill shell
             lifted_skill = lifted_skill_sequence[i]
@@ -334,20 +310,13 @@ class TaskProposing():
                 #turn predicates positive or negative based on effects
 
                 for eff in abstract_effects_neg:
-
-                    # eff = eff.split('(')[0] + '()'
                     abstract_current_predicates[eff] = 0
                 
                 for eff in abstract_effects_pos:
-
-                    # eff = eff.split('(')[0] + '()'
-
                     abstract_current_predicates[eff] = 1
 
             predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
-            #-----------------------------------------------------------#
-
             for pre, value in abstract_preconditions.items():
 
                 match = re.match(r"(\w+)\((.*)\)", pre)
@@ -357,21 +326,15 @@ class TaskProposing():
 
                 for a in abstract_to_grounded_args.keys():
                     pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
-                # if '(x)' in pre:
-                #     pre = pre.replace('x', arguments[0])
-                
-                # elif '(r)' in pre:
-                #     pre = pre.replace('(r)', f'({arguments[0]})')
+
                 pre = pred_name + pred_args
 
                 if (pre in current_predicates and current_predicates[pre] != int(value)):
                     executable = False
                     break
-
-               
+              
                 current_predicates[pre] = int(value)
-            
-            
+                 
             executable_sequence.append(executable)
             if not executable:
                 executable = True
@@ -389,16 +352,7 @@ class TaskProposing():
                     for a in abstract_to_grounded_args.keys():
                         pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
                    
-
-                    # if '(x)' in eff:
-                    #     eff = eff.replace('x', arguments[0])
-                    # elif '(r)' in eff:
-                    #     eff = eff.replace('(r)', f'({arguments[0]})')
                     eff = pred_name + pred_args
-                    
-
-                    
-
                     current_predicates[eff] = 0
                 
                 for eff in abstract_effects_pos:
@@ -408,26 +362,14 @@ class TaskProposing():
                     #pred_args = match.group(2).split(",")
                     pred_args = '('+eff.split('(')[1]
 
-
                     for a in abstract_to_grounded_args.keys():
                         pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
-                    
-
-                    # if'(x)' in eff:
-                    #     eff = eff.replace('x', arguments[0])
-                    # elif '(r)' in eff:
-                    #     eff = eff.replace('(r)', f'({arguments[1]})')
+                
                     eff = pred_name + pred_args
-
-                    
                     current_predicates[eff] = 1
-            
-            
-            
+
             predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
             
-
-        # pdb.set_trace()
         return predicate_sequence, max_executable, executable_sequence
 
     def compute_task_chainability(self, executable_sequence, max_executable):
@@ -462,19 +404,12 @@ class TaskProposing():
 
             return kde
             
-
-
         #estimate P(s_buffer = s_hat) using symbolic state space as "feature" representation
         for pred in predicate_sequence:
-
             kernel_density = compute_density_estimation(pred,self.h)
-
             total_logprob += -1*np.log(kernel_density)
 
-
-
         return total_logprob
-
 
     def compute_chainability_and_sufficience(self, task_dictionary, initial_observation_path):
         
@@ -494,29 +429,22 @@ class TaskProposing():
             task_dictionary[task]['max_executable'] = max_executable
             task_dictionary[task]['executable_sequence'] = executable_sequence
 
-
             #compute and aggregate the chainability and sufficience prob per task
             chainability = self.compute_task_chainability(executable_sequence, max_executable)
             sufficience_logprob = self.compute_task_sufficience_probability(predicate_sequence)
 
-
             task_chainabilities.append(chainability)
             task_sufficience_logprobs.append(sufficience_logprob)
         
-        
         return np.array(task_chainabilities), np.array(task_sufficience_logprobs)
-
 
     '''
     OVERALL SCORING: Function to run general scoring at the task level, combining coverage, sufficience and chainability
     '''
     def generate_scores_and_choose_task(self, task_dictionary, curr_observation_path):
-        
-        # pdb.set_trace()
         #run the 3 scoring functions
         task_chainabilities, task_sufficience_logprobs = self.compute_chainability_and_sufficience(task_dictionary, curr_observation_path)
         task_entropy_gains, task_skill_counts = self.compute_shannon_entropy(task_dictionary)
-
 
         #collect the maximum and minimum for each metric
         max_entropy_gain = max(task_entropy_gains); min_entropy_gain = min(task_entropy_gains)
@@ -589,9 +517,6 @@ class TaskProposing():
         # pdb.set_trace()
         return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]['grounded']
 
-
-
-
     '''
     FOUNDATION MODEL: Functions to run LLM (GPT4-O) as well as generate dynamic prompting structure using least explored tasks
     '''
@@ -621,20 +546,15 @@ class TaskProposing():
             
             messages[1]["content"].append({'type': 'text', 'text': prompt})
 
-            
             return messages
 
         encoded_images = load_image(image_paths)
-
         messages = create_payload(context_prompt,prompt, encoded_images)
 
-        
         response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
-
         response = response.choices[0].message.content
 
         return response
-
 
     def construct_task_dictionary(self, foundation_model_output):
 
@@ -684,18 +604,8 @@ class TaskProposing():
         
         # pdb.set_trace()
         return task_dictionary
-                
 
-
-           
-
-
-
-    def run_task_proposing(self, new_predicate_dictionary, new_operator_dictionary, new_object_list, new_replay_buffer, curr_observation_path):
-
-        # if self.curr_skill_count > self.max_skill_count:
-        #     print('SKILL EXECUTION HAS REACHED LIMIT: curr_skill_count > max_skill_count')
-        #     return None, None
+    def run_skill_sequence_proposing(self, new_predicate_dictionary, new_operator_dictionary, new_object_list, new_replay_buffer, curr_observation_path):
 
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
         self.update_predicate_dictionary(new_predicate_dictionary)
@@ -709,15 +619,11 @@ class TaskProposing():
         #Step 2: run foundation model using the generated prompt
         foundation_model_output = self.run_foundation_model(prompt, prompt_context, curr_observation_path)
 
-
         #Step 3: parse and ground FM output into a task dictionary
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
 
         #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal task to run
         chosen_task, chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary, curr_observation_path)
-
-       
-
 
         return chosen_task, chosen_skill_sequence
 
@@ -740,9 +646,9 @@ if __name__ == '__main__':
 
     replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False], [True, False, False, True], [True, False, True, True], [False, False, False, False], [False, False, False, False], [False, False, False, False], [False, False, False, False], [True, False, False, True], [True, True, True, True],[False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
 
-    task_proposing = TaskProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=20, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
+    skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
     curr_observation_path = []
-    chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
 
     grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
     'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
@@ -760,10 +666,10 @@ if __name__ == '__main__':
 
     replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
 
-    # task_proposing = TaskProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=20, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
+    # skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
     curr_observation_path = []
-    chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
-
+    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+    breakpoint()
 
 # if __name__ == '__main__':
 #     # pdb.set_trace()
@@ -816,9 +722,9 @@ if __name__ == '__main__':
 #     curr_observation_path = []
 
 
-#     task_proposing = TaskProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=20, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
-#     # task_proposing.update_skill_pair_count(new_skill_pair_count)
+#     skill_sequence_proposing = SkillSequenceProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
+#     # skill_sequence_proposing.update_skill_pair_count(new_skill_pair_count)
 
-#     chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+#     chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
 #     print(chosen_task, chosen_skill_sequence)
 #     pdb.set_trace()

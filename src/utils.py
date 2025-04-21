@@ -5,6 +5,7 @@ from time import sleep
 import logging
 import json
 import csv
+import yaml
 import os
 from pathlib import Path
 import string
@@ -46,6 +47,9 @@ def load_from_file(fpath, noheader=True):
             if noheader:
                 fileds = next(csvreader)
             out = [row for row in csvreader]
+    elif ftype == 'yaml':
+        with open(fpath, 'r') as rfile:
+            out = yaml.safe_load(rfile)
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
     return out
@@ -223,6 +227,15 @@ class GPT4:
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
         return responses
+
+def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
+    counter = 1
+    while True:
+        save_path = f"{directory}/{fname}_{counter}.{ftype}"
+        if not os.path.exists(save_path):
+            break
+        counter += 1
+    return save_path
 
 # ai2thor utils
 def get_top_down_frame(controller):

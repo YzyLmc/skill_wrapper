@@ -1,0 +1,54 @@
+# This yaml file contains meta data for a test task.
+---
+env: ai2thor
+
+skills:
+  Pick:
+    name: Pick
+    types:
+      - object
+    semantics:
+      object: the object to be picked up.
+
+  Place:
+    name: Place
+    types:
+      - object
+      - location
+    semantics:
+      object: the object to be dropped.
+      location: the receptacle onto which object is dropped.
+
+  GoTo:
+    name: GoTo
+    types:
+      - location
+    semantics:
+      location: the location for the robot to go to.
+
+objects:
+  Vase:
+    types:
+      - object
+  TissueBox:
+    types:
+      - object
+  Bowl:
+    types:
+      - object
+  DiningTable:
+    types:
+      - location
+  Sofa:
+    types:
+      - location
+  CoffeeTable:
+    types:
+      - location
+
+Env_description: 'Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially.'
+
+Initial_observation:
+  img_fpath: "dummy_img.jpg"
+
+

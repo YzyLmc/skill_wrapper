@@ -7,11 +7,11 @@ import logging
 from collections import defaultdict
 import re
 
-from utils import GPT4, load_from_file, save_to_file
-from task_proposing import TaskProposing
-from symbolize import refine_pred, merge_predicates, cross_assignment, refine_pred_new
+from data_structure import Skill
+from utils import GPT4, load_from_file, save_to_file, get_save_fpath
+from skill_sequence_proposing import SkillSequenceProposing
+from invent_predicate import invent_predicates
 from ai2thor_task_exec import convert_task_to_code
-from ai2thor_init_obs import get_initial_obs
 
 # bunch of conversion functions to seam refinement and task proposal
 def skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary):
@@ -23,6 +23,7 @@ def skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictiona
                 grounded_skill_dictionary[s]['effects_positive'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in skill2operators[skill]['eff'].items() if value == 1]
                 grounded_skill_dictionary[s]['effects_negative'] = [eff.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])') for eff, value in skill2operators[skill]['eff'].items() if value == -1]
     return grounded_skill_dictionary
+
 # new templating function just stuff argument definitions in
 def complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary):
     # construct argument definition from previous dictionary first for skill sequence proposal
@@ -68,7 +69,6 @@ def update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2
             args = command[7:-1].replace(' ','').split(",")  # Extract arguments
             return f'DropAt_{args[0]}_{args[1]}'
 
-    # breakpoint()
     if not 'num2id' in replay_buffer:
         replay_buffer['num2id'] = {}
     new_tasks = {}
@@ -150,194 +150,151 @@ def update_tasks(skill_list, task_fpath="tasks/exps"):
                 skill2tasks_new[skill][task_id]['loc'] = ''
     return skill2tasks_new
 
-def single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, curr_observation_path, args, log_data=None):
-    '''
-    run one iteration of refinement and proposal
-    pred_dict, skill2operators and skill2tasks are from refinement. 
-    replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
-    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
-    '''
-    # new_predicate_dictionary, new_skill_dictionary, new_object_list, new_replay_buffer
-    chosen_skill_sequence = None
+def propose_and_execute(skill_sequence_proposing, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, init_observation_path, args):
     t = 0
     task_success = False
     while t < 10 and not task_success:
-        chosen_task, chosen_skill_sequence = task_proposing.run_task_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+        chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, init_observation_path)
         t += 1
         print(f'Task: {chosen_skill_sequence}')
         logging.info(f'Task: {chosen_skill_sequence}')
         try:
             if len(chosen_skill_sequence) < 6:
                 continue
-            # breakpoint()
             # map partitioned operator back to skills
             chosen_skill_sequence = [re.sub(r'_\d+', '', action) for action in chosen_skill_sequence]
-            # breakpoint()
+ 
             generated_code = convert_task_to_code(chosen_skill_sequence)
-            local_scope = {}
-            global_scope = {}
+            local_scope, global_scope = {}, {}
             exec(generated_code, global_scope, local_scope)
             task_success = True
         except:
+            logging.info("Skill sequence execution failed.")
             pass
 
-    # breakpoint()
     if args.step_by_step:
             logging.info('Task done. You should check the images labels')
             breakpoint()
 
-    # imgs will be stored at tasks/exps
-    old_skill2tasks = deepcopy(skill2tasks)
-    skill2tasks = update_tasks(list(skill2tasks.keys()))
+    # NOTE: executions should be recorded somewhere readable
+    # so the return value should not be useful
+    return grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary
 
-    for skill in skill2operators:
+def invent_predicates(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
+    '''
+    run one iteration of refinement and proposal
+    pred_dict, skill2operator and skill2tasks are from refinement. 
+    replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
+    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
+    '''
+    # new_predicate_dictionary, new_skill_dictionary, new_object_list, new_replay_buffer
+    for lifted_skill in skill2operator:
         skill2triedpred = {} # reset tried_predicate buffer after each skill
-        skill2operators, pred_dict, skill2triedpred, new_grounded_skill_dictionary = refine_pred_new(model, skill, skill2operators, skill2tasks, pred_dict, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
+        skill2operator, lifted_pred_list, skill2triedpred = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
 
-    # we need to save skill2tasks, skill2operators, and pred_dict at each step (task)
     # logfile:: {num: {'skill2tasks':dict, 'skill2operators':dict, 'pred_dict':dict} }
-    if not log_data:
-        log_data = {"0":{'model': args.model, 'env': args.env}}
-    time_step = max([int(key) for key in list(log_data.keys())]) + 1
-    grounded_skill_dictionary = complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary)
-    # log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': skill2operators2grounded_skill_dict(skill2operators, grounded_skill_dictionary), 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
-    log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': grounded_skill_dictionary, 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
-    grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
-    replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
+    # if not log_data:
+    #     log_data = {"0":{'model': args.model, 'env': args.env}}
+    # time_step = max([int(key) for key in list(log_data.keys())]) + 1
+    # grounded_skill_dictionary = complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary)
 
-    return log_data, skill2operators, skill2tasks, pred_dict, grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary
+    # log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': grounded_skill_dictionary, 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
+    # grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
+    # replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
 
+    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
 def main():
-    # init parameters
-    if args.env == "ai2thor":
-        # init logging
-        counter = 1
-        while True:
-            save_path = f"{args.save_dir}/log_raw_results_{counter}.log"
-            if not os.path.exists(save_path):
-                break
-            counter += 1
+    # init env
+    env_config = load_from_file(args.env_config_fpath)
+    save_path = get_save_fpath(args.save_dir, f"{env_config["env"]}_log_raw_results", "log")
+    logging.basicConfig(level=logging.INFO,
+                            format='%(message)s',
+                            handlers=[
+                                logging.FileHandler(save_path, mode='w'),
+                                logging.StreamHandler()
+                            ]
+        )
+    # logging.getLogger('requests').setLevel(logging.INFO)
+    # logging.getLogger('httpx').setLevel(logging.INFO)
 
-        logging.basicConfig(level=logging.INFO,
-                                format='%(message)s',
-                                handlers=[
-                                    logging.FileHandler(save_path, mode='w'),
-                                    logging.StreamHandler()
-                                ]
-            )
-        
-        logging.getLogger('requests').setLevel(logging.INFO)
-        logging.getLogger('httpx').setLevel(logging.INFO)
+    if not args.no_log:
+        log_save_path = get_save_fpath(args.save_dir, f"{env_config["env"]}_{args.num_iter}{'continue' if args.continue_learning else ''}", "json")
 
+    # main loop
+    if env_config["env"] == "ai2thor":
         model = GPT4(engine=args.model)
         if args.continue_learning:
-            # TODO: continue learning not tested after update
-            assert args.load_fpath
-            # load from log file
-            log_data = load_from_file(args.load_fpath)
-            last_run_num = str(max([key for key in log_data.keys() if key.isdigit()]))
-            skill2tasks, skill2operators, pred_dict, grounded_skill_dictionary, replay_buffer = log_data[last_run_num]["skill2tasks"], log_data[last_run_num]["skill2operators"], log_data[last_run_num]["pred_dict"], log_data[last_run_num]["grounded_skill_dictionary"], log_data[last_run_num]["replay_buffer"]
-
+            # TODO: continue learning not implemented for the new system
+            raise NotImplementedError("Continue learning not implemented yet")
         else:   
             # start from scratch
-            # semantic of the skills
+            # TODO: load metadata from yaml
+            lifted_skills = [Skill(name=skill_meta['name'], types=skill_meta['types']) for skill_meta in env_config['skills'].values()]
             grounded_skill_dictionary = {
-                'PickUp_1(obj, loc)':{'arguments': {'obj': "the object to be picked up", "loc": "the receptacle that the object is picked up from"}, 'preconditions': {},  'effects_positive':[], 'effects_negative': []},
-                'DropAt_1(obj, loc)': {'arguments': {'obj': "the object to be dropped", 'loc': "the receptacle onto which object is dropped"}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []},
-                'GoTo_1(init, goal)': {'arguments': {'init': "the location for the robot to start from", 'to': "the location for the robot to go to"}, 'preconditions': {}, 'effects_positive':[], 'effects_negative':[]}
+                str(lifted_skill): {'arguments': {ptype: env_config['skills'][lifted_skill.name]['semantics'][ptype] for ptype in lifted_skill.types}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
+                    for lifted_skill in lifted_skills
             }
-            
-            # init skill to operators
-            skill2operators = {}
-            skill2tasks = {}
-            pred_dict = {}
-            for skill in grounded_skill_dictionary:
-                skill = skill.replace('(obj', '([OBJ]').replace('obj)', '[OBJ])').replace('(init', '([LOC_1]').replace('goal)', '[LOC_2])').replace('(loc', '([LOC]').replace('loc)', '[LOC])')
-                skill = re.sub(r'_\d+', '', skill)
-                skill2operators[skill] = {'precond':{}, 'eff':{}}
-                skill2tasks[skill] = {}
 
-            skill2tasks = update_tasks(skill2tasks)
+            # init skill to operators
+            lifted_pred_list = []
+            skill2operator = {}
+            for skill in lifted_skills:
+                skill2operator[skill] = {'precond':{}, 'eff':{}}
+
+            skill2tasks = update_tasks(skill2tasks) # TODO: update the update_tasks function
             log_data = None
 
-        # env description
+        # init params for skill sequence proposing
         grounded_predicate_dictionary = {}
-        curr_observation_path = []
-
-        # get initial observation
-        get_initial_obs()
-        
-        # init task proposing system
         replay_buffer = {'image_before':[], 'image_after':[], 'skill':[], 'predicate_eval':[]}
-        objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
-        env_description = 'Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially.'
-        task_proposing = TaskProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, max_skill_count=8*args.num_iter, skill_save_interval=2, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
         
-        counter = 1
-        if not args.no_log:
-            while True:
-                log_save_path = f"{args.save_dir}/{args.env}_{args.num_iter}_log_{counter}{'continue' if args.continue_learning else ''}.json"
-                if not os.path.exists(log_save_path):
-                    break
-                counter += 1
+        # init skill sequence proposing system
+        objects_in_scene = list(env_config['objects'].keys())
+        env_description = env_config["Env_description"]
+        init_observation = env_config['Initial_observation']['img_fpath']
+        skill_sequence_proposing = SkillSequenceProposing(grounded_predicate_dictionary, grounded_skill_dictionary, objects_in_scene, replay_buffer, env_description)
+        
         if args.continue_learning:
-            start_num = str(max([int(key) for key in log_data.keys() if key.isdigit()]))
+            raise NotImplementedError("Continue learning not implemented yet")
+            # start_num = str(max([int(key) for key in log_data.keys() if key.isdigit()]))
         else:
             start_num = "0"
+
+        # TODO: read or init if start from scratch
+        type_dict = {obj: obj_meta['types'] for obj, obj_meta in env_config['objects'].items()}
+        tasks = {}
+        grounded_predicate_truth_value_log = {}
+
+        # Predicate invention main loop
         for i in range(int(start_num), args.num_iter):
-            log_data, skill2operators, skill2tasks, pred_dict, grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary = single_run(model, task_proposing, pred_dict, skill2operators, skill2tasks, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, curr_observation_path, args, log_data=log_data)
-            if pred_dict:
-                try:
-                     if not len(set([len(pred_dict[pred]['task']) for pred in pred_dict])) == 1: # all predicates should be evaluated on all tasks
-                        breakpoint()
-                except:
-                    breakpoint()
-            # print(f"iteration #{i+1} is done")
-            logging.info(f"iteration #{i+1} is done")
-            # print(f"current operators:{skill2operators}")
+
+            grounded_predicate_dictionary, replay_buffer, grounded_skill_dictionary = propose_and_execute(skill_sequence_proposing, replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary, init_observation, args)
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
+
             logging.info(f"iteration #{i+1} is done")
             save_to_file(log_data, log_save_path)
-            # print(f"result has been saved to {log_save_path}")
+            logging.info(f"result has been saved to {log_save_path}")
+            save_to_file(log_data, log_save_path)
+            logging.info(f'Final operators this round:\n{skill2operator}')
             logging.info(f"result has been saved to {log_save_path}")
 
-            if args.step_by_step:
-                logging.info('about to cross assign and merge')
-                breakpoint()
-
-            # try
-            try:
-                merged_skill2operators, equal_preds = merge_predicates(model, skill2operators, pred_dict)
-                assigned_skill2operators = cross_assignment(merged_skill2operators, skill2tasks, pred_dict, equal_preds=equal_preds)
-
-                log_data[str(i+1)]['assigned_skill2operators'] = assigned_skill2operators
-                log_data[str(i+1)]['merged_skill2operators'] = merged_skill2operators
-                save_to_file(log_data, log_save_path)
-                logging.info(f'Final operators this round:\n{assigned_skill2operators}')
-                # logging.info(f"result has been saved to {log_save_path}")
-                # logging.info('Final operators this round:\n', assigned_skill2operators)
-                logging.info(f"result has been saved to {log_save_path}")
-            except:
-                logging.info('merge failed. Will continue next iteration. merge can be done later manually')
-                pass
-
             # Write back only the lines that don't start with 'HTTP'
-            with open(save_path, 'r') as file:
-                lines = file.readlines()
+            lines = load_from_file(save_path)
             with open(save_path, 'w') as file:
                 for line in lines:
                     if not 'HTTP' in line:
                         file.write(line)
-                        if args.step_by_step:
-                            breakpoint()
-
-    # TODO: integrate with habitat env    
-    elif args.env == 'habitat':
-        pass
+            
+            if args.step_by_step:
+                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run to next interation?")
+                breakpoint()
+    else:
+        raise NotImplementedError(f"Env {env_config["env"]} has not been implemented.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, choices=["ai2thor", "habitat"], default="ai2thor")
+    parser.add_argument("--env_config_fpath", type=str, default="task_config/test.yaml", help="yaml file that store meta data of the env")
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", "chatgpt-4o-latest"], default="gpt-4o-2024-08-06")
     parser.add_argument("--num_iter", type=int, default=5, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
