@@ -148,6 +148,10 @@ class PredicateState:
         items = tuple(sorted(self.pred_dict.items(), key=lambda x: hash(x[0])))
         return hash(items)
 
+    def __str__(self):
+        string = "\n".join([f"{str(pred)} {truth_value}" for pred, truth_value in self.pred_dict.items()])
+        return string
+    
     def set_pred_value(self, pred_obj, value):
         if pred_obj in self.pred_dict:
             self.pred_dict[pred_obj] = value
@@ -165,7 +169,7 @@ class PredicateState:
             if pred not in self.pred_dict:
                 self.pred_dict[pred] = None
 
-    def get_unevaluated_predicates(self):
+    def get_unevaluated_preds(self):
         return [pred for pred, value in self.pred_dict.items() if value is None]
 
     def iter_predicates(self):
@@ -180,17 +184,9 @@ class PredicateState:
         Returns a list of predicate dictionaries in original form.
         If lifted=True, params are emptied.
         """
-        pred_list = []
-        seen = set()
-        for pred in self.pred_dict:
-            if pred not in seen:
-                pred_list.append({
-                    "name": pred.name,
-                    "types": list(pred.types),
-                    "params": [] if lifted else list(pred.params),
-                    "semantic": pred.semantic
-                })
-                seen.add(pred)
+        pred_list = list(self.pred_dict.keys())
+        if lifted:
+            pred_list = list(set([pred.lifted() for pred in pred_list]))
         return pred_list
 
 class Precondition:

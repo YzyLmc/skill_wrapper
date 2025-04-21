@@ -1282,7 +1282,7 @@ class RCR_bridge:
 
         return param_name2param_obj
     
-    def get_pid_to_type(self):
+    def get_pid_to_type(self) -> dict[int, str]:
         """
         pid to type mapping is useful for generating possible groundings for precondition check
         """
