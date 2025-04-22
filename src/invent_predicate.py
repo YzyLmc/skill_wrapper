@@ -4,7 +4,7 @@ Data structures:
     type_dict :: dict:: {param: [type]}, e.g., {"Apple": ['object'], "Table": ['location']}
     tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
         step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
-    grounded_predicate_truth_value_log :: dict :: {task:{step:[{'name':str, 'params':list, 'truth_value':bool}]}}
+    grounded_predicate_truth_value_log :: dict :: {task:{step:PredicateState}}
     skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     '''
 from collections import defaultdict
@@ -14,7 +14,7 @@ import logging
 from typing import Union
 
 from utils import GPT4, load_from_file
-from data_structure import Skill, Predicate, PredicateState, Precondition, Effect, Operator
+from data_structure import Skill, Predicate, PredicateState
 from RCR_bridge import PDDLState, LiftedPDDLAction, RCR_bridge, generate_possible_groundings
 
 def possible_grounded_preds(pred_list: list[Predicate], type_dict: dict[str, list[str] ]) -> list[Predicate]:

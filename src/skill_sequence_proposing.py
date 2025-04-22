@@ -7,12 +7,14 @@ from sentence_transformers import SentenceTransformer, util as st_utils
 import torch
 import base64
 
+from utils import load_from_file
+
 '''
 TODO: Use ChatGPT for working example - check that skills are diverse + concered about diverse skill set
 '''
 
 class SkillSequenceProposing():
-    def __init__(self, grounded_predicate_dictionary, grounded_operator_dictionary, objects_in_scene, replay_buffer, env_description):
+    def __init__(self, grounded_predicate_dictionary, grounded_operator_dictionary, objects_in_scene, replay_buffer, env_description, prompt_fpath="prompts/skill_sequence_proposal.yaml"):
 
         #coverage of tasks: entropy measure
         #chainability of tasks: building partial state + approximations of other predicates
@@ -65,7 +67,7 @@ class SkillSequenceProposing():
         self.skill_to_index = {x: i for i,x in enumerate(self.skill_dictionary.keys())}
         self.attempted_skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
 
-
+        self.prompt_dict = load_from_file(prompt_fpath)
 
         self.curr_shannon_entropy = 0.0
 
@@ -663,7 +665,12 @@ if __name__ == '__main__':
     objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
     env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
 
-    replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
+    replay_buffer = {
+        'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
+        'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
+        'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
+        'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
+        'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
 
     # skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
     curr_observation_path = []

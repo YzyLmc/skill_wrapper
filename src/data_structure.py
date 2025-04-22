@@ -1,5 +1,5 @@
 import itertools
-from copy import deepcopy
+import yaml
 
 class Skill:
     def __init__(self, name, types, params=[]):
@@ -62,12 +62,6 @@ class Skill:
         )
 
         return lifted_skill
-    
-    def to_jsonable():
-        pass
-
-    def from_jsonable():
-        pass
 
 class Predicate:
     def __init__(self, name, types, params=[], semantic=None):
@@ -346,3 +340,96 @@ def generate_possible_groundings(type_list: list[str], type_dict: dict[str, list
             combinations.append(full_combo)
 
     return combinations
+
+# Customized yaml config
+# Save and load data structures
+def predicate_representer(dumper, data):
+    return dumper.represent_mapping(u'!Predicate', {
+        'name': data.name,
+        'types': data.types,
+        'params': data.params,
+        'semantic': data.semantic,
+    })
+
+yaml.add_representer(Predicate, predicate_representer)
+
+def predicate_constructor(loader, node):
+    values = loader.construct_mapping(node, deep=True)
+    pred = Predicate(
+        name=values['name'],
+        types=values['types'],
+        params=values['params'],
+        semantic=values['semantic']
+    )
+    return pred
+yaml.add_constructor(u'!Predicate', predicate_constructor)
+
+def predicate_state_representer(dumper, data):
+    # Convert Predicate objects and their truth values to a serializable list
+    pred_list = []
+    for pred, value in data.pred_dict.items():
+        pred_list.append({
+            'predicate': pred,
+            'truth_value': value
+        })
+    
+    return dumper.represent_mapping(u'!PredicateState', {
+        'predicates': pred_list
+    })
+yaml.add_representer(PredicateState, predicate_state_representer)
+
+def predicate_state_constructor(loader, node):
+    values = loader.construct_mapping(node, deep=True)
+    pred_list = values['predicates']
+    
+    # Create a new PredicateState from the list of Predicate objects
+    preds = [item['predicate'] for item in pred_list]
+    state = PredicateState(preds)
+
+    # Set the truth values
+    for item in pred_list:
+        state.pred_dict[item['predicate']] = item['truth_value']
+    
+    return state
+yaml.add_constructor(u'!PredicateState', predicate_state_constructor)
+
+def skill_representer(dumper, data):
+    print(data)
+    return dumper.represent_mapping('!Skill', {
+        'name': data.name,
+        'types': list(data.types),
+        'params': list(data.params)
+    })
+yaml.add_representer(Skill, skill_representer)
+yaml.add_representer(Skill, skill_representer, Dumper=yaml.SafeDumper)
+
+def skill_constructor(loader, node):
+    values = loader.construct_mapping(node, deep=True)
+    print(values)
+    return Skill(
+        name=values["name"],
+        types=values["types"],
+        params=values["params"]
+    )
+yaml.add_constructor('!Skill', skill_constructor)
+yaml.add_constructor('!Skill', skill_constructor, Loader=yaml.FullLoader)
+
+if __name__ == "__main__":
+    lifted_pred_list = [
+        Predicate("At", ["object", "location"]),
+        Predicate("CloseTo", ["robot", "location"]),
+        Predicate("HandOccupied", []),
+        Predicate("IsHolding", ["object"]),
+        Predicate("EnoughBattery", []),
+        Predicate('handEmpty', [])
+    ]
+    PickUp = Skill("PickUp", ["object", "location"])
+    str2skill = {"pickup": PickUp}
+    # Saving to YAML
+    with open("str2skill.yaml", "w") as f:
+        yaml.dump(str2skill, f)
+
+    # Loading from YAML
+    with open("str2skill.yaml", "r") as f:
+        loaded_data = yaml.load(f, Loader=yaml.FullLoader)
+    breakpoint()
