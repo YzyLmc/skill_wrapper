@@ -67,7 +67,7 @@ class SkillSequenceProposing():
         self.skill_to_index = {x: i for i,x in enumerate(self.skill_dictionary.keys())}
         self.attempted_skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
 
-        self.prompt_dict = load_from_file(prompt_fpath)
+        self.prompt_dict = load_from_file(prompt_fpath) # TODO: finish up this section
 
         self.curr_shannon_entropy = 0.0
 

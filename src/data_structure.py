@@ -16,7 +16,7 @@ class Skill:
         return hash((self.name, self.types, self.params))
     
     def __eq__(self, other):
-        if not isinstance(other, Predicate):
+        if not isinstance(other, Skill):
             return False
         return (self.name, self.types, self.params) == (other.name, other.types, other.params)
 
@@ -38,17 +38,14 @@ class Skill:
             for i, p in enumerate(params):
                 assert p in type_dict
                 assert self.types[i] in type_dict[p]
-
         # grounded skill
         grounded_skill = Skill(
             name=self.name,
             types=self.types,
             params=params
         )
-
         return grounded_skill
     
-
     def lifted(self, type_dict=None):
         assert self.is_grounded(), "Cannot lift an ungrounded predicate"
         if type_dict:
@@ -94,7 +91,8 @@ class Predicate:
         params :: list:: list of parameters, e.g., ["Apple", "Table"]
         type_dict:: dict:: {param: type}, e.g., {"Apple": ['object'], "Table": ['location']}
         """
-        assert not self.is_grounded(), "Cannot ground an already grounded predicate"
+        if self.types: # if the predicate is parametrized
+            assert not self.is_grounded(), "Cannot ground an already grounded predicate"
         # tuple is applicable to the lifted representation
         if type_dict:
             for i, p in enumerate(params):
@@ -111,9 +109,10 @@ class Predicate:
         return grounded_pred
 
     def lifted(self, type_dict=None):
-        assert self.is_grounded(), "Cannot lift an ungrounded predicate"
+        if self.types: # if the predicate is parametrized
+            assert self.is_grounded(), "Cannot lift an ungrounded predicate"
         if type_dict:
-            assert all([type in type_dict[param] for type, param in zip(self.types, self.params)])
+            assert all([type in type_dict[param] for type, param in zip(self.types, self.params)]) or (not self.types)
         
         # lift predicate
         lifted_pred = Predicate(

@@ -142,7 +142,7 @@ class GPT4:
                     ntries += 1
         else:
             msg = prompt2msg(query_prompt)
-            # breakpoint()
+
             while not complete and ntries < 15:
                 try:
                     raw_responses = client.chat.completions.create(model=self.engine,
@@ -206,6 +206,7 @@ class GPT4:
         payload["messages"].append(msg)
         complete = False
         ntries = 0
+
         while not complete and ntries < 15:
             try:
                 raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
@@ -226,6 +227,7 @@ class GPT4:
             responses = [raw_responses["choices"][0]["message"]["content"].strip()]
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
+        breakpoint()
         return responses
 
 def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
