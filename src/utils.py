@@ -5,7 +5,7 @@ from time import sleep
 import logging
 import json
 import csv
-import yaml
+from data_structure import yaml
 import os
 from pathlib import Path
 import string
@@ -49,7 +49,7 @@ def load_from_file(fpath, noheader=True):
             out = [row for row in csvreader]
     elif ftype == 'yaml':
         with open(fpath, 'r') as rfile:
-            out = yaml.safe_load(rfile)
+            out = yaml.load(rfile, Loader=yaml.FullLoader)
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
     return out

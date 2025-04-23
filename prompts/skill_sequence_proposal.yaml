@@ -1,0 +1,38 @@
+# Prompt for skill sequence proposal.
+# prompt context is for system prompt
+---
+context_prompt: >
+  A robot with a single gripper is attempting to learn the preconditions and effects 
+  for a finite set of skills by executing exploratory skill sequences and exploring the environment.
+
+prompt: |
+  Propose a set of skill sequences for a robot to execute.
+  The robot is attempting to learn the preconditions and effects for a finite set of operators. 
+  The robot can navigate the environment freely but only has one gripper. 
+  The robot has access to the following skills with their associated arguments:
+
+  [SKILL_PROMPT]
+  
+  The list of objects the robot has previously encountered in the environment are: 
+  [OBJECT_IN_SCENE]
+  [ENV_DESCRIPTION]
+
+  The pairs of consecutive skills (skill1, skill2) that have been least explored are: 
+  [[LEAST_EXPLORED_SKILLS]].
+
+  Certain skills have similar names and arguments, but different preconditions and effects. 
+  Using the list of objects and the skill preconditions / effects learned, 
+  generate 5 tasks and their sequence of skills such that: 
+  (1) the tasks purposefully violate skill preconditions often 
+  (2) the ordering of skills in each task is unique 
+  (3) at least 1 unexplored skill pair is used in each task 
+  (4) all tasks have at least 8 skills in sequence.
+
+  Output only the task name and the sequence of skills to execute, 
+  ensuring to follow the naming/syntax/arguments for skills provided. 
+  Output 1 skill every new line, following the format below:
+  Skill Sequence 1: 
+  GoTo(CounterTop)
+  PickUp(Apple, CounterTop)
+  
+  Skill Sequence 2:

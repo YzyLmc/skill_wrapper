@@ -14,7 +14,7 @@ TODO: Use ChatGPT for working example - check that skills are diverse + concered
 '''
 
 class SkillSequenceProposing():
-    def __init__(self, grounded_predicate_dictionary, grounded_operator_dictionary, objects_in_scene, replay_buffer, env_description, prompt_fpath="prompts/skill_sequence_proposal.yaml"):
+    def __init__(self, grounded_predicate_dictionary={}, replay_buffer={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
 
         #coverage of tasks: entropy measure
         #chainability of tasks: building partial state + approximations of other predicates
@@ -43,31 +43,40 @@ class SkillSequenceProposing():
         7) Counts of all pairs of grounded skills
 
         '''
+        self.env_config = load_from_file(env_config_fpath)
 
         #predicate dictionary: {predicate: definition/description}
         self.predicate_dictionary = grounded_predicate_dictionary
-
-        #operator dictionary: {operator name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
-        self.operator_dictionary = grounded_operator_dictionary
         
+        #operator dictionary: {operator name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
+        # TODO: this is not operator dictionary, it's a skill dictionary
+        self.operator_dictionary = {
+                str(lifted_skill): {'arguments': {ptype: self.env_config['skills'][lifted_skill.name]['semantics'][ptype] for ptype in lifted_skill.types}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
+                    for lifted_skill in self.env_config['skills']
+            }
+
         #skill dictionary: {skill name: {arguments: {argument: description}}}
-        self.skill_dictionary = {re.sub(r'_\d+', '', k): v['arguments'] for (k,v) in grounded_operator_dictionary.items()}
-        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in grounded_operator_dictionary.items()}
+        self.skill_dictionary = {skill_name: skill_metadata['semantics'] for (skill_name, skill_metadata) in self.env_config['skills'].items()}
+        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: the key and value are the same at the beginning
 
         #replay buffer: {image before, image after, skill, predicate eval}
         self.replay_buffer = replay_buffer #TODO: coordinate with Ziyi
 
         #global object set for the scene
-        self.objects_in_scene = objects_in_scene
+        self.objects_in_scene = list(self.env_config['objects'].keys())
 
         #spatial relationship of objects
-        self.env_description = env_description
+        self.env_description = self.env_config['Env_description']
+
+        #initial visual observation of the environment
+        self.initial_observation = self.env_config['Initial_observation']
+        self.curr_observation = self.initial_observation
        
         #global frequency count for all pairs of skills 
         self.skill_to_index = {x: i for i,x in enumerate(self.skill_dictionary.keys())}
         self.attempted_skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
 
-        self.prompt_dict = load_from_file(prompt_fpath) # TODO: finish up this section
+        self.prompt_dict = load_from_file(prompt_fpath)
 
         self.curr_shannon_entropy = 0.0
 
@@ -94,8 +103,6 @@ class SkillSequenceProposing():
         self.all_operator_embeddings = self.embedding_model.encode(list(self.operator_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
         self.all_arg_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
 
-
-
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
         self.curr_skill_count = 0
 
@@ -116,18 +123,24 @@ class SkillSequenceProposing():
         for skill in self.operator_dictionary:
 
             args = self.operator_dictionary[skill]['arguments']
-            preconds = self.operator_dictionary[skill]['preconditions']
-            preconds = [k+'='+str(v) for (k,v) in preconds.items()]
-            effects_pos = [x+'=True' for x in self.operator_dictionary[skill]['effects_positive']]
-            effects_neg = [x+'=False' for x in self.operator_dictionary[skill]['effects_negative']]
-            effects = effects_pos + effects_neg
+            # preconds = self.operator_dictionary[skill]['preconditions']
+            # preconds = [k+'='+str(v) for (k,v) in preconds.items()]
+            # effects_pos = [x+'=True' for x in self.operator_dictionary[skill]['effects_positive']]
+            # effects_neg = [x+'=False' for x in self.operator_dictionary[skill]['effects_negative']]
+            # effects = effects_pos + effects_neg
 
-            skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()]) + '\npreconditions: [' + ', '.join(preconds) + ']\neffects: {' + ', '.join(effects) + '}'
+            skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()]) # + '\npreconditions: [' + ', '.join(preconds) + ']\neffects: {' + ', '.join(effects) + '}'
             skill_prompts.append(skill_prompt)
         
         least_explored_skills = self.get_least_explored_skills()
-        prompt_context = "A robot with a single gripper is attempting to learn the preconditions and effects for a finite set of skills by performing tasks in an environment"  
-        prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of operators. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\nCertain skills have similar names and arguments, but different preconditions and effects. Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute, ensuring to follow the naming/syntax/arguments for skills provided. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nGoTo_1(CounterTop)\nPickUp_2(Apple, CounterTop)\n\nTask 1:".format('\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
+        prompt_context = self.prompt_dict["prompt_context"]
+        prompt = self.prompt_dict["prompt"]
+        prompt = prompt.replace("[SKILL_PROMPT]", skill_prompts)\
+                        .replace("[OBJECT_IN_SCENE]", self.objects_in_scene)\
+                        .replace("[ENV_DESCRIPTION]", self.env_description)\
+                        .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
+        # prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of operators. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\nCertain skills have similar names and arguments, but different preconditions and effects. Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute, ensuring to follow the naming/syntax/arguments for skills provided. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nGoTo_1(CounterTop)\nPickUp_2(Apple, CounterTop)\n\nTask 1:".format( \
+        #     '\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
     
         return prompt, prompt_context
         
@@ -151,6 +164,10 @@ class SkillSequenceProposing():
     def update_replay_buffer(self, new_replay_buffer):
         if new_replay_buffer is not None:
             self.replay_buffer = new_replay_buffer
+    
+    def update_curr_obs(self, new_obs_path):
+        if new_obs_path is not None:
+            self.curr_observation = new_obs_path
             
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
@@ -236,7 +253,7 @@ class SkillSequenceProposing():
     '''
     CHAINABILITY & SUFFICIENCE: Functions to approximate the predicate-level information
     '''
-    def generate_incremental_predicate_for_task(self, skill_sequence, lifted_skill_sequence, initial_observation_path):
+    def generate_incremental_predicate_for_task(self, skill_sequence, lifted_skill_sequence):
 
         '''
         Sufficiency: relies on abstract state changes to be abstract with respect to the object
@@ -246,13 +263,13 @@ class SkillSequenceProposing():
             How is predicate failure handled?
         '''
 
-        # pdb.set_trace()
         #maintain dicitonary of updated predicates so far: {predicate: known assignemnt from precondition/effects of skills that are executed}
         abstract_current_predicates = {}
 
         #skill dictionary: {skill name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
         #TODO: maybe instead setup initial set of calls to VLM to estimate all the predicates first -- using inital_observation
         #TODO: @Ziyi: maybe you could replace naively adding '1' to abstract_current_predicates[p] with VLM_Eval(p, initial_observation_path) instead to make the algorithm more appropriate
+        initial_observation = self.initial_observation
         for p in self.predicate_dictionary:
             #p = p.split('(')[0] + '()'
             abstract_current_predicates[p] = 1
@@ -266,7 +283,7 @@ class SkillSequenceProposing():
 
         abstract_executable = True
         executable = True
-        # TODO: change the logic of choosing opertors, always check if 
+        # TODO: change the logic of choosing operators, always check if 
         #iterate through the skill sequence and add/change predicate labels until something is not executable
         for i, skill in enumerate(skill_sequence):
 
@@ -412,7 +429,7 @@ class SkillSequenceProposing():
 
         return total_logprob
 
-    def compute_chainability_and_sufficience(self, task_dictionary, initial_observation_path):
+    def compute_chainability_and_sufficience(self, task_dictionary):
         
         #track to select task with maximum chainability and sufficience
         task_chainabilities = []
@@ -424,7 +441,7 @@ class SkillSequenceProposing():
             skill_sequence = task_dictionary[task]['grounded']
             lifted_skill_sequence = task_dictionary[task]['lifted']
 
-            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, lifted_skill_sequence, initial_observation_path)
+            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, lifted_skill_sequence)
 
             #update the task dictionary with maximum number of steps that can be executed
             task_dictionary[task]['max_executable'] = max_executable
@@ -603,10 +620,9 @@ class SkillSequenceProposing():
                 task_dictionary[line] = {'grounded':[], 'lifted':[]}
                 curr_task = line
         
-        # pdb.set_trace()
         return task_dictionary
 
-    def run_skill_sequence_proposing(self, new_predicate_dictionary, new_operator_dictionary, new_object_list, new_replay_buffer, curr_observation_path):
+    def run_skill_sequence_proposing(self, new_predicate_dictionary=None, new_operator_dictionary=None, new_object_list=None, new_replay_buffer=None, curr_observation_path=None):
 
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
         self.update_predicate_dictionary(new_predicate_dictionary)
@@ -618,7 +634,7 @@ class SkillSequenceProposing():
         prompt, prompt_context = self.create_foundation_model_prompt()
         
         #Step 2: run foundation model using the generated prompt
-        foundation_model_output = self.run_foundation_model(prompt, prompt_context, curr_observation_path)
+        foundation_model_output = self.run_foundation_model(prompt, prompt_context, self.curr_observation)
 
         #Step 3: parse and ground FM output into a task dictionary
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
@@ -632,49 +648,49 @@ class SkillSequenceProposing():
 
 if __name__ == '__main__':
 
-    grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'PickUp_3(obj, loc)': {'preconditions': {'HasEmptyGripper()':True, 'IsAt(loc)':True}, 'effects_positive': [], 'effects_negative': ['HasEmptyGripper()'], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'DropAt_1(obj, loc)': {'preconditions': {'IsAt(loc)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
-    'GoTo_1(init, goal)': {'preconditions': {'IsAt(init)':True}, 'effects_positive': ['HasEmptyGripper()', 'IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}, 
-    'GoTo_2(init, goal)': {'preconditions': {'IsAt(init)':True, 'IsAt(goal)':False}, 'effects_positive': ['IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}}
+    # grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'PickUp_3(obj, loc)': {'preconditions': {'HasEmptyGripper()':True, 'IsAt(loc)':True}, 'effects_positive': [], 'effects_negative': ['HasEmptyGripper()'], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'DropAt_1(obj, loc)': {'preconditions': {'IsAt(loc)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
+    # 'GoTo_1(init, goal)': {'preconditions': {'IsAt(init)':True}, 'effects_positive': ['HasEmptyGripper()', 'IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}, 
+    # 'GoTo_2(init, goal)': {'preconditions': {'IsAt(init)':True, 'IsAt(goal)':False}, 'effects_positive': ['IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}}
 
-    grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.'}
-
-    
-    objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
-    env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
-
-    replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False], [True, False, False, True], [True, False, True, True], [False, False, False, False], [False, False, False, False], [False, False, False, False], [False, False, False, False], [True, False, False, True], [True, True, True, True],[False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
-
-    skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
-    curr_observation_path = []
-    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
-
-    grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'PickUp_3(obj, loc)': {'preconditions': {'HasEmptyGripper()':True, 'IsAt(loc)':True}, 'effects_positive': [], 'effects_negative': ['HasEmptyGripper()'], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    'DropAt_1(obj, loc)': {'preconditions': {'IsAt(loc)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
-    'DropAt_2(obj, loc)': {'preconditions': {'IsAt(loc)':True, 'HasEmptyGripper()':False, 'IsHolding(obj)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
-    'GoTo_1(init, goal)': {'preconditions': {'IsAt(init)':True}, 'effects_positive': ['HasEmptyGripper()', 'IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}, 
-    'GoTo_2(init, goal)': {'preconditions': {'IsAt(init)':True, 'IsAt(goal)':False}, 'effects_positive': ['IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}}
-
-    grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.', 'IsHolding(obj)': 'The robot is holding object `obj`.'}
+    # grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.'}
 
     
-    objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
-    env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
+    # objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
+    # env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
 
-    replay_buffer = {
-        'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
-        'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
-        'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
-        'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
-        'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
+    # replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False], [True, False, False, True], [True, False, True, True], [False, False, False, False], [False, False, False, False], [False, False, False, False], [False, False, False, False], [True, False, False, True], [True, True, True, True],[False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
 
     # skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
+    # curr_observation_path = []
+    # chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+
+    # grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'PickUp_3(obj, loc)': {'preconditions': {'HasEmptyGripper()':True, 'IsAt(loc)':True}, 'effects_positive': [], 'effects_negative': ['HasEmptyGripper()'], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
+    # 'DropAt_1(obj, loc)': {'preconditions': {'IsAt(loc)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
+    # 'DropAt_2(obj, loc)': {'preconditions': {'IsAt(loc)':True, 'HasEmptyGripper()':False, 'IsHolding(obj)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
+    # 'GoTo_1(init, goal)': {'preconditions': {'IsAt(init)':True}, 'effects_positive': ['HasEmptyGripper()', 'IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}, 
+    # 'GoTo_2(init, goal)': {'preconditions': {'IsAt(init)':True, 'IsAt(goal)':False}, 'effects_positive': ['IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}}
+
+    # grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.', 'IsHolding(obj)': 'The robot is holding object `obj`.'}
+
+    
+    # objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
+    # env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
+
+    # replay_buffer = {
+    #     'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
+    #     'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
+    #     'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
+    #     'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
+        # 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
+    # }
+    skill_sequence_proposing = SkillSequenceProposing()
     curr_observation_path = []
-    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing()
     breakpoint()
 
 # if __name__ == '__main__':
@@ -728,9 +744,9 @@ if __name__ == '__main__':
 #     curr_observation_path = []
 
 
-#     skill_sequence_proposing = SkillSequenceProposing(grounded_skill_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
-#     # skill_sequence_proposing.update_skill_pair_count(new_skill_pair_count)
+    skill_sequence_proposing = SkillSequenceProposing(grounded_predicate_dictionary, grounded_skill_dictionary, replay_buffer)
+    # skill_sequence_proposing.update_skill_pair_count(new_skill_pair_count)
 
-#     chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
+    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
 #     print(chosen_task, chosen_skill_sequence)
 #     pdb.set_trace()

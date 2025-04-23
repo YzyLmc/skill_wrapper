@@ -1,0 +1,76 @@
+# This yaml file contains meta data for a test task.
+---
+env: dorfl
+
+skills:
+  Pick:
+    name: Pick
+    types:
+      - pickupable
+    semantics:
+      pickupable: the object to be picked up.
+
+  Place:
+    name: Place
+    types:
+      - pickupable
+      - location
+    semantics:
+      pickupable: the object to be dropped.
+      location: the receptacle onto which object is dropped.
+
+  Open:
+    name: Open
+    types:
+      - openable
+    semantics:
+      openable: the container that can be opened.
+
+  Scoop:
+    name: Scoop
+    types:
+      - utensil
+      - openable
+    semantics:
+      utensil: the utensil used to scoop from a container.
+      openable: the container that can be opened to be scooped from.
+  
+  Spread:
+    name: Spread
+    types:
+      - utensil
+      - food
+    semantics:
+      utensil: the utensil used to spread ingredients on food.
+      food: the food that need ingredients to be spread on.
+    
+objects:
+  PeanutButter:
+    types:
+      - openable
+      - pickupbale
+  Knife:
+    types:
+      - pickupable
+      - utensil
+  Plate:
+    types:
+      - receptacle
+  Bread:
+    types:
+      - food
+  Cup:
+    types:
+      - pickupable
+      - receptacle
+  Table:
+    types:
+      - location
+  Shelf:
+    types:
+      - location
+
+Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
+
+Initial_observation:
+  img_fpath: 'test_imgs/init_state/dorfl.png'

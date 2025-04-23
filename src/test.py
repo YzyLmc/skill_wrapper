@@ -104,6 +104,5 @@ skill2operator = {
 }
 lifted_skill = Skill("PickUp", ["object"])
 mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_pred_truth_value_log, dummy_tasks, type_dict, pred_type="precond")
-breakpoint()
-_,_, skill2parttion = partition_by_termination_n_eff(skill2task2state)
+_,_, skill2partition = partition_by_termination_n_eff(skill2task2state)
 breakpoint()

@@ -227,9 +227,9 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                     grounded_skill = tasks[task_name][step]["skill"]
                     task_step_tuple: tuple[str, int] = (task_name, step)
                     if success_only and tasks[task_name][step]['success']:
-                            skill2task2state[grounded_skill][task_step_tuple] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
+                            skill2task2state[grounded_skill][task_step_tuple] = {'states':[last_state, state], 'success': tasks[task_name][step]['success']}
                     elif not success_only:
-                        skill2task2state[grounded_skill][task_step_tuple] = {'state':[last_state, state], 'success': tasks[task_name][step]['success']}
+                        skill2task2state[grounded_skill][task_step_tuple] = {'states':[last_state, state], 'success': tasks[task_name][step]['success']}
 
                 last_state = deepcopy(state)
     return skill2task2state
@@ -452,10 +452,11 @@ def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
         for task_step_tuple, transition_meta in task2state.items():
 
             state_0, state_1 = transition_meta["states"]
-            value_dict = {pred: state_1.get_pred_value(pred) - state_0.get_pred_value(pred) for pred in state_0 \
+            value_dict = {pred: state_1.get_pred_value(pred) - state_0.get_pred_value(pred) for pred in state_0.iter_predicates() \
                                 if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0}
             
             termination_partition[state_1].append(task_step_tuple)
+            # value_dict is not hashable so 
             eff_partition[value_dict].append(task_step_tuple)
 
         skill2state2partition[grounded_skill] = termination_partition
