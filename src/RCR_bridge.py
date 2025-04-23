@@ -798,7 +798,10 @@ class LiftedPDDLAction(object):
                             pid1 = local_param_mapping[relation.parameter1]
                         else:
                             if relation.parameter1 not in local_additional_param_mappings:
-                                pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
+                                if relation.parameter1 in param_ids:
+                                    pid1 = param_ids[relation.parameter1]
+                                else:
+                                    pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
                                 # local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
                                 local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                             pid1 = local_additional_param_mappings[relation.parameter1]
@@ -807,7 +810,10 @@ class LiftedPDDLAction(object):
                             pid2 = local_param_mapping[relation.parameter2]
                         else:
                             if relation.parameter2 not in local_additional_param_mappings:
-                                pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
+                                if relation.parameter2 in param_ids:
+                                    pid2 = param_ids[relation.parameter2]
+                                else:
+                                    pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
                                 # local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
                                 local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                             pid2 = local_additional_param_mappings[relation.parameter2]
@@ -882,7 +888,7 @@ class LiftedPDDLAction(object):
                     else:
                         if relation.parameter1 not in additional_param_mappings: 
                             if relation.parameter1 in param_ids:
-                                pid1 = param_ids[relation.paramter1]
+                                pid1 = param_ids[relation.parameter1]
                             else:
                                 pid1 = additional_param_objects[relation.parameter1_type].index(relation.parameter1)+1
                             # additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
@@ -894,7 +900,7 @@ class LiftedPDDLAction(object):
                     else:
                         if relation.parameter2 not in additional_param_mappings: 
                             if relation.parameter2 in param_ids:
-                                pid2 = param_ids[relation.paramter1]
+                                pid2 = param_ids[relation.parameter2]
                             else:
                                 pid2 = additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
                             # additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
@@ -1001,7 +1007,10 @@ class LiftedPDDLAction(object):
                             pid1 = local_param_mapping[relation.parameter1]
                         else:
                             if relation.parameter1 not in local_additional_param_mappings:
-                                pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
+                                if relation.parameter1 in param_ids:
+                                    pid1 = param_ids[relation.parameter1]
+                                else:
+                                    pid1 = local_additional_param_objects[relation.parameter1_type].index(relation.parameter1) + 1
                                 # local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_" +  "extra" + "_p" + str(pid1)
                                 local_additional_param_mappings[relation.parameter1] = relation.parameter1_type + "_p" + str(pid1)
                             pid1 = local_additional_param_mappings[relation.parameter1]
@@ -1010,7 +1019,10 @@ class LiftedPDDLAction(object):
                             pid2 = local_param_mapping[relation.parameter2]
                         else:
                             if relation.parameter2 not in local_additional_param_mappings:
-                                pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
+                                if relation.parameter2 in param_ids:
+                                    pid2 = param_ids[relation.parameter2]
+                                else:
+                                    pid2 = local_additional_param_objects[relation.parameter2_type].index(relation.parameter2)+1
                                 # local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_" +  "extra" + "_p" + str(pid2)
                                 local_additional_param_mappings[relation.parameter2] = relation.parameter2_type + "_p" + str(pid2)
                             pid2 = local_additional_param_mappings[relation.parameter2]
@@ -1026,7 +1038,7 @@ class LiftedPDDLAction(object):
                         break
             neg_common_relations = copy.deepcopy(new_set)
 
-        ########## NEGATIVE PRECONDITION
+        ########## NEGATIVE PRECONDITION FINISHED
 
         param_set = set()
         for relation in common_relations: 
@@ -1035,6 +1047,7 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
+            print(param1, param2, relation, 1)
 
         # ADD negative relations here
         for relation in neg_common_relations: 
@@ -1043,6 +1056,7 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
+            print(param1, param2, relation, 2)
 
         for relation in cluster_e_add:
 
@@ -1058,6 +1072,7 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
+            print(param1, param2, relation, 3)
 
         preconditions = LiftedPDDLPrecondition(true_set=common_relations, false_set=neg_common_relations,true_aux_set=set())
         effects = LiftedPDDLEffect(cluster_e_add,cluster_e_delete,set(), set())

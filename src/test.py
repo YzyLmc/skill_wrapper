@@ -13,6 +13,7 @@ type_dict = {
 pred = Predicate("At", ["object", "location"])
 grounded_pred = pred.ground_with(["Apple", "Table"], type_dict)
 lifted_pred = grounded_pred.lifted()
+
 skill = Skill("PlaceAt", ["object", "location"])
 grounded_skill = skill.ground_with(["Apple", "Table"], type_dict)
 lifted_skill = grounded_skill.lifted()
@@ -105,4 +106,13 @@ skill2operator = {
 lifted_skill = Skill("PickUp", ["object"])
 mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_pred_truth_value_log, dummy_tasks, type_dict, pred_type="precond")
 _,_, skill2partition = partition_by_termination_n_eff(skill2task2state)
+new_pred = Predicate("IsHolding", ["object"])
+threshold={"precond":0.5, "eff":0.5}
+result = score_by_partition(new_pred, lifted_skill, skill2task2state, pred_type, threshold)
+# create operators from success executions
+skill2task2state = grounded_pred_log_to_skill2task2state(grounded_pred_truth_value_log, dummy_tasks,success_only=True)
+_,_, skill2partition = partition_by_termination_n_eff(skill2task2state)
+skill2operator = create_operators_from_partitions(skill2task2state, skill2partition)
+lifted_pred_list, skill2triedpred, new_pred_accepted = invent_predicate_one(mismatch_pairs[0], model, lifted_skill, dummy_tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type)
+skill2operator, lifted_pred_list, skill2triedpred = invent_predicates(model, lifted_skill, skill2operator, dummy_tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list)
 breakpoint()

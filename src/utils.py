@@ -227,7 +227,7 @@ class GPT4:
             responses = [raw_responses["choices"][0]["message"]["content"].strip()]
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
-        breakpoint()
+        # breakpoint()
         return responses
 
 def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
