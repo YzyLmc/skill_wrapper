@@ -384,7 +384,7 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     # 2. create one operator for each partition
     skill2operator = create_operators_from_partitions(skill2task2state, skill2partition)
 
-    return skill2operator, lifted_pred_list, skill2triedpred
+    return skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log
 
 def score_by_partition(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
     '''

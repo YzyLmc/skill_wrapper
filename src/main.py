@@ -7,7 +7,7 @@ import logging
 from collections import defaultdict
 import re
 
-from data_structure import Skill
+from data_structure import Skill, yaml
 from utils import GPT4, load_from_file, save_to_file, get_save_fpath
 from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates
@@ -43,28 +43,16 @@ def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, groun
     tasks = update_tasks(tasks)
     return tasks
 
-def invent_predicates(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
+def invent_predicates_for_all(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
     '''
     run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement. 
     replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
-    # new_predicate_dictionary, new_skill_dictionary, new_object_list, new_replay_buffer
     for lifted_skill in skill2operator:
         skill2triedpred = {} # reset tried_predicate buffer after each skill
-        skill2operator, lifted_pred_list, skill2triedpred = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
-
-    # logfile:: {num: {'skill2tasks':dict, 'skill2operators':dict, 'pred_dict':dict} }
-    # if not log_data:
-    #     log_data = {"0":{'model': args.model, 'env': args.env}}
-    # time_step = max([int(key) for key in list(log_data.keys())]) + 1
-    # grounded_skill_dictionary = complete_grounded_skill_dict(grounded_skill_dictionary, new_grounded_skill_dictionary)
-
-    # log_data[str(time_step)] = {'skill2tasks':skill2tasks, 'skill2operators':skill2operators, 'pred_dict':pred_dict, 'grounded_skill_dictionary': grounded_skill_dictionary, 'generated_task': chosen_skill_sequence, 'replay_buffer': replay_buffer}
-    # grounded_predicate_dictionary = pred_dict2grounded_predicates_dict(pred_dict)
-    # replay_buffer = update_replay_buffer(replay_buffer, chosen_skill_sequence, pred_dict, skill2tasks, old_skill2tasks)
-
+        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
 def main():
@@ -91,21 +79,14 @@ def main():
         
         else:   
             # start from scratch
-            lifted_skills = [Skill(name=skill_meta['name'], types=skill_meta['types']) for skill_meta in env_config['skills'].values()]
 
             # init skill to operators
             lifted_pred_list = []
             skill2operator = {}
-            for skill in lifted_skills:
-                skill2operator[skill] = {'precond':{}, 'eff':{}} # switch to new format
             log_data = None
 
-        
         # init skill sequence proposing system
-        objects_in_scene = list(env_config['objects'].keys())
-        env_description = env_config["Env_description"]
-        init_observation = env_config['Initial_observation']['img_fpath']
-        skill_sequence_proposing = SkillSequenceProposing()
+        skill_sequence_proposing = SkillSequenceProposing(env_config_fpath=args.env_config_fpath) # prompt not included but 
         
         if args.continue_learning:
             raise NotImplementedError("Continue learning not implemented yet")
@@ -123,7 +104,7 @@ def main():
             # propose skill sequence and execute
             tasks = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
             # invent predicates
-            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 
             logging.info(f"iteration #{i+1} is done")
             logging.info(f"result has been saved to {log_save_path}")
