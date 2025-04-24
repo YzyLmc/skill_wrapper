@@ -1,1 +1,1 @@
-# SkillWrapper: Automatically Learning Interpretable Skill Abstractions with Foundation Models
+# SkillWrapper: Autonomously Learning Interpretable Skill Abstractions with Foundation Models
