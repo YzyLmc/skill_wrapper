@@ -14,8 +14,57 @@ from utils import load_from_file
 TODO: Use ChatGPT for working example - check that skills are diverse + concered about diverse skill set
 '''
 
+# data structure conversion function
+def to_replay_buffer(tasks, grounded_predicate_truth_value_log):
+    """
+    Args:
+        tasks :: dict(task_name: (step: dict("skill": grounded_skill : Skill, 'image':img_path : str, 'success': Bool)))
+        grounded_predicate_truth_value_log :: dict :: {task_name:{step:PredicateState}}
+    Returns:
+        replay_buffer :: dict(image_before: list[str], image_after: list[str], skill: [str], predicate_eval: list[list[bool]]])
+    """
+    replay_buffer = {
+        "image_before":[],
+        "image_after": [],
+        "skill": [],
+        "predicate_eval": []
+    }
+    assert sorted(list(tasks.keys())) == sorted(list(tasks.keys(grounded_predicate_truth_value_log))), \
+            "Predicate turth values of all tasks have to be evalauted before proposing the next skill sequence."
+    for task_name, task_meta in tasks.items():
+        for step, state in task_meta.items():
+            if not step == 0: # skip the first step where no skill is executed
+                replay_buffer["image_before"].append(last_state["image"])
+                replay_buffer["image_after"].append(state["image"])
+                replay_buffer["skill"].append(str(state["skill"]))
+                grounded_pred_list = grounded_predicate_truth_value_log[task_name][step].get_pred_list()
+                # NOTE: these predicate are grounded, while operators will be lifted
+                replay_buffer['predicate_eval'].append([grounded_predicate_truth_value_log[task_name][step].get_pred_value(grounded_pred) for grounded_pred in grounded_pred_list])
+            last_state = state
+
+    return replay_buffer
+
+# TODO:
+def skill2operator_to_operator_dictionary(skill2operator):
+    """
+    Args:
+        skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
+    Returns:
+        operator_dictionary :: {}
+    """
+    pass
+
+def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
+    """
+    Args:
+        lifted_pred_list :: list[Predicate]
+    Returns:
+        preddicate_dictionary :: dict[str, str]
+    """
+    return {str(pred): pred.semantic for pred in lifted_pred_list}
+
 class SkillSequenceProposing():
-    def __init__(self, grounded_predicate_dictionary={}, replay_buffer={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
+    def __init__(self, lifted_predicate_dictionary={}, replay_buffer={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
 
         #coverage of tasks: entropy measure
         #chainability of tasks: building partial state + approximations of other predicates
@@ -47,7 +96,7 @@ class SkillSequenceProposing():
         self.env_config = load_from_file(env_config_fpath)
 
         #predicate dictionary: {predicate: definition/description}
-        self.predicate_dictionary = grounded_predicate_dictionary
+        self.predicate_dictionary = lifted_predicate_dictionary
 
         #operator dictionary: {operator name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
         # TODO: this is not operator dictionary, it's a skill dictionary
@@ -124,15 +173,8 @@ class SkillSequenceProposing():
 
         skill_prompts = []
         for skill in self.operator_dictionary:
-
             args = self.operator_dictionary[skill]['arguments']
-            # preconds = self.operator_dictionary[skill]['preconditions']
-            # preconds = [k+'='+str(v) for (k,v) in preconds.items()]
-            # effects_pos = [x+'=True' for x in self.operator_dictionary[skill]['effects_positive']]
-            # effects_neg = [x+'=False' for x in self.operator_dictionary[skill]['effects_negative']]
-            # effects = effects_pos + effects_neg
-
-            skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()]) # + '\npreconditions: [' + ', '.join(preconds) + ']\neffects: {' + ', '.join(effects) + '}'
+            skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()])
             skill_prompts.append(skill_prompt)
         
         least_explored_skills = self.get_least_explored_skills()
@@ -143,32 +185,15 @@ class SkillSequenceProposing():
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
                         .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
         
-        # prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of operators. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\nCertain skills have similar names and arguments, but different preconditions and effects. Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute, ensuring to follow the naming/syntax/arguments for skills provided. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nGoTo_1(CounterTop)\nPickUp_2(Apple, CounterTop)\n\nTask 1:".format( \
-        #     '\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
-    
         return prompt, prompt_context
         
     '''
     AUXILLIARY: functions to update the predicate dictionary and skill_dictionary after refinement
     '''
-    def update_predicate_dictionary(self, new_predicate_dictionary):
-        if new_predicate_dictionary is not None:
-            self.predicate_dictionary = new_predicate_dictionary
-    
-    def update_operator_dictionary(self, new_operator_dictionary):
-        if new_operator_dictionary is not None:
-            self.operator_dictionary = new_operator_dictionary
-            self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in new_operator_dictionary.items()}
-            self.all_operator_embeddings = self.embedding_model.encode(list(self.operator_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
-
     def update_obj_set(self, new_object_set):
         if new_object_set is not None:
             self.objects_in_scene = new_object_set
 
-    def update_replay_buffer(self, new_replay_buffer):
-        if new_replay_buffer is not None:
-            self.replay_buffer = new_replay_buffer
-    
     def update_curr_obs(self, new_obs_path):
         if new_obs_path is not None:
             self.curr_observation = new_obs_path
@@ -537,7 +562,7 @@ class SkillSequenceProposing():
         self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
         self.attempted_skill_pair_count = task_skill_counts[max_score_idx]
         # pdb.set_trace()
-        return list(task_dictionary.values())[max_score_idx]['grounded']
+        return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]['grounded']
 
     '''
     FOUNDATION MODEL: Functions to run LLM (GPT4-O) as well as generate dynamic prompting structure using least explored tasks
@@ -626,13 +651,19 @@ class SkillSequenceProposing():
         
         return task_dictionary
 
-    def run_skill_sequence_proposing(self, new_predicate_dictionary=None, new_operator_dictionary=None, new_object_list=None, new_replay_buffer=None, curr_observation_path=None):
+    def run_skill_sequence_proposing(self, tasks=None, lifted_pred_list=None, grounded_predicate_truth_value_log=None, skill2operator=None, new_object_list=None, curr_observation_path=None):
 
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
-        self.update_predicate_dictionary(new_predicate_dictionary)
-        self.update_operator_dictionary(new_operator_dictionary)
+        if tasks is not None:
+            assert grounded_predicate_truth_value_log is not None, "predicate turth values must be provided for updating replay buffer"
+            self.replay_buffer = to_replay_buffer(tasks, grounded_predicate_truth_value_log)
+        if lifted_pred_list is not None:
+            self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
+        if skill2operator is not None:
+            # TODO: also update skill dictionary?
+            self.operator_dictionary = skill2operator_to_operator_dictionary(skill2operator)
         self.update_obj_set(new_object_list)
-        self.update_replay_buffer(new_replay_buffer)
+        self.update_curr_obs(curr_observation_path)
 
         #Step 1: create prompt with least explored skill pairs and object set
         prompt, prompt_context = self.create_foundation_model_prompt()
@@ -643,13 +674,11 @@ class SkillSequenceProposing():
         #Step 3: parse and ground FM output into a task dictionary
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
  
-        #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal task to run
+        #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal sequence to run
         chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
 
         return chosen_skill_sequence
-
-
-
+    
 if __name__ == '__main__':
 
     # grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
@@ -685,15 +714,16 @@ if __name__ == '__main__':
     # objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
     # env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
 
-    # replay_buffer = {
-    #     'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
-    #     'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
-    #     'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
-    #     'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
+    replay_buffer = {
+        'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
+        'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
+        'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
+        'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
         # 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
-    # }
+    }
     skill_sequence_proposing = SkillSequenceProposing()
-    chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing()
+    curr_observation_path = []
+    chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing()
     breakpoint()
 
 # if __name__ == '__main__':

@@ -2,10 +2,10 @@
 Get symbolic representation from skill semantic info and observation.
 Data structures for logging:
     - read from data:
-        - tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
+        - tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
             NOTE: step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     - produced by skillwrapper
-        - grounded_predicate_truth_value_log :: dict :: {task:{step:PredicateState}}
+        - grounded_predicate_truth_value_log :: dict :: {task_name:{step:PredicateState}}
         - skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     '''
 from collections import defaultdict
@@ -246,7 +246,7 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
     Args:
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
         grounded_predicate_truth_value_log::dict:: {task:{step:PredicateState}}
-        tasks :: dict(id: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
+        tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': bool))) ::
         pred_type::{'precond', 'eff'}
     Returns:
         mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]

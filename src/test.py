@@ -29,11 +29,12 @@ lifted_pred_list = [
 
 pred_state = PredicateState(lifted_pred_list)
 
-# with open("pred_state.yaml", "w") as f:
-#     yaml.dump(pred_state, f)
+with open("skill.yaml", "w") as f:
+    yaml.dump(lifted_skill, f)
 
-# with open("pred_state.yaml", "r") as f:
-#     loaded_data = yaml.load(f, Loader=yaml.Loader)
+with open("skill.yaml", "r") as f:
+    loaded_data = yaml.load(f, Loader=yaml.Loader)
+breakpoint()
 
 groundings = possible_grounded_preds(lifted_pred_list, type_dict)
 grounded_skill = skill.ground_with(["Banana", "Table"])
