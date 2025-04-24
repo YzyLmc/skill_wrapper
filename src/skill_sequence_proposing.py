@@ -1,6 +1,7 @@
 
 from openai import OpenAI
 import numpy as np
+import os
 import copy
 import re
 from sentence_transformers import SentenceTransformer, util as st_utils
@@ -69,7 +70,7 @@ class SkillSequenceProposing():
         self.env_description = self.env_config['Env_description']
 
         #initial visual observation of the environment
-        self.initial_observation = self.env_config['Initial_observation']
+        self.initial_observation = self.env_config['Initial_observation']['img_fpath']
         self.curr_observation = self.initial_observation
        
         #global frequency count for all pairs of skills 
@@ -77,7 +78,6 @@ class SkillSequenceProposing():
         self.attempted_skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
 
         self.prompt_dict = load_from_file(prompt_fpath)
-        breakpoint()
         self.curr_shannon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
@@ -93,11 +93,11 @@ class SkillSequenceProposing():
 
 
         #GPT4O LLM model to query for new proposed tasks
-        self.model = OpenAI(api_key='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')
+        self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         #embedding model for grounding LLM output to groundable/executable skills and objects
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device('mps') # for my m1 macbook: mps
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
 
         self.all_operator_embeddings = self.embedding_model.encode(list(self.operator_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
@@ -135,10 +135,11 @@ class SkillSequenceProposing():
         least_explored_skills = self.get_least_explored_skills()
         prompt_context = self.prompt_dict["prompt_context"]
         prompt = self.prompt_dict["prompt"]
-        prompt = prompt.replace("[SKILL_PROMPT]", skill_prompts)\
-                        .replace("[OBJECT_IN_SCENE]", self.objects_in_scene)\
+        prompt = prompt.replace("[SKILL_PROMPT]", "\n".join(skill_prompts))\
+                        .replace("[OBJECT_IN_SCENE]", str(self.objects_in_scene))\
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
                         .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
+        
         # prompt = "Propose a set of tasks for a robot to execute along with a sequence of skills to achieve these tasks. The robot is attempting to learn the preconditions and effects for a finite set of operators. The robot can navigate the environment freely but only has one gripper. The robot has access to the following skills with their associated arguments, precondition estimate and effect estimate:\n\n{}\n\nThe list of objects the robot has previously encountered in the environment are: {}\n{}\n\nThe pairs of consecutive skills (skill1, skill2) that have been least explored are: [{}].\n\nCertain skills have similar names and arguments, but different preconditions and effects. Using the list of objects and the skill preconditions / effects learned, generate 5 tasks and their sequence of skills such that: (1) the tasks purposefully violate skill preconditions often (2) the ordering of skills in each task is unique (3) at least 1 unexplored skill pair is used in each task (4) all tasks have at least 8 skills in sequence.\n\nOutput only the task name and the sequence of skills to execute, ensuring to follow the naming/syntax/arguments for skills provided. Output 1 skill every new line, following the format below:\nTask 1: Pick up the apple:\nGoTo_1(CounterTop)\nPickUp_2(Apple, CounterTop)\n\nTask 1:".format( \
         #     '\n\n'.join(skill_prompts), self.objects_in_scene, self.env_description, ','.join(least_explored_skills))
     
@@ -269,7 +270,7 @@ class SkillSequenceProposing():
         #skill dictionary: {skill name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
         #TODO: maybe instead setup initial set of calls to VLM to estimate all the predicates first -- using inital_observation
         #TODO: @Ziyi: maybe you could replace naively adding '1' to abstract_current_predicates[p] with VLM_Eval(p, initial_observation_path) instead to make the algorithm more appropriate
-        initial_observation = self.initial_observation
+        initial_observation = self.initial_observation # TODO
         for p in self.predicate_dictionary:
             #p = p.split('(')[0] + '()'
             abstract_current_predicates[p] = 1
@@ -459,9 +460,9 @@ class SkillSequenceProposing():
     '''
     OVERALL SCORING: Function to run general scoring at the task level, combining coverage, sufficience and chainability
     '''
-    def generate_scores_and_choose_task(self, task_dictionary, curr_observation_path):
+    def generate_scores_and_choose_task(self, task_dictionary):
         #run the 3 scoring functions
-        task_chainabilities, task_sufficience_logprobs = self.compute_chainability_and_sufficience(task_dictionary, curr_observation_path)
+        task_chainabilities, task_sufficience_logprobs = self.compute_chainability_and_sufficience(task_dictionary)
         task_entropy_gains, task_skill_counts = self.compute_shannon_entropy(task_dictionary)
 
         #collect the maximum and minimum for each metric
@@ -616,7 +617,7 @@ class SkillSequenceProposing():
                 task_dictionary[curr_task]['lifted'].append(closest_grounded_skill_abstract)
                 task_dictionary[curr_task]['grounded'].append(closest_grounded_skill + '(' + ','.join(arguments[:max_args])+')')
 
-            elif len(line) > 0 and 'Task' in line:
+            elif len(line) > 0 and 'Skill Sequence' in line:
                 task_dictionary[line] = {'grounded':[], 'lifted':[]}
                 curr_task = line
         
@@ -638,9 +639,9 @@ class SkillSequenceProposing():
 
         #Step 3: parse and ground FM output into a task dictionary
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
-
+ 
         #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal task to run
-        chosen_task, chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary, curr_observation_path)
+        chosen_task, chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
 
         return chosen_task, chosen_skill_sequence
 

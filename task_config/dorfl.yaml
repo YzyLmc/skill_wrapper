@@ -78,4 +78,5 @@ objects:
 Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
 
 Initial_observation:
-  img_fpath: 'test_imgs/init_state/dorfl.png'
+  img_fpath: 
+    - 'test_imgs/init_state/dorfl.png'
