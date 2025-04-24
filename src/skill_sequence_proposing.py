@@ -61,7 +61,10 @@ class SkillSequenceProposing():
         self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: the key and value are the same at the beginning
 
         #replay buffer: {image before, image after, skill, predicate eval}
-        self.replay_buffer = replay_buffer #TODO: coordinate with Ziyi
+        if not replay_buffer:
+            self.replay_buffer = {"image_before":[], "image_after":[], "skill":[], "predicate_eval":[]}
+        else:
+            self.replay_buffer = replay_buffer #TODO: coordinate with Ziyi
 
         #global object set for the scene
         self.objects_in_scene = list(self.env_config['objects'].keys())
@@ -534,7 +537,7 @@ class SkillSequenceProposing():
         self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
         self.attempted_skill_pair_count = task_skill_counts[max_score_idx]
         # pdb.set_trace()
-        return list(task_dictionary.keys())[max_score_idx], list(task_dictionary.values())[max_score_idx]['grounded']
+        return list(task_dictionary.values())[max_score_idx]['grounded']
 
     '''
     FOUNDATION MODEL: Functions to run LLM (GPT4-O) as well as generate dynamic prompting structure using least explored tasks
@@ -641,9 +644,9 @@ class SkillSequenceProposing():
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
  
         #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal task to run
-        chosen_task, chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
+        chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
 
-        return chosen_task, chosen_skill_sequence
+        return chosen_skill_sequence
 
 
 
@@ -690,7 +693,6 @@ if __name__ == '__main__':
         # 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
     # }
     skill_sequence_proposing = SkillSequenceProposing()
-    curr_observation_path = []
     chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing()
     breakpoint()
 
