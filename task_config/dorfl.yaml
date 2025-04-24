@@ -3,43 +3,48 @@
 env: dorfl
 
 skills:
-  Pick:
+  Pick: !Skill
     name: Pick
     types:
       - pickupable
-    semantics:
+    params: !!python/tuple []
+    semantics: 
       pickupable: the object to be picked up.
 
-  Place:
+  Place: !Skill
     name: Place
     types:
       - pickupable
       - location
+    params: !!python/tuple []
     semantics:
       pickupable: the object to be dropped.
       location: the receptacle onto which object is dropped.
 
-  Open:
+  Open: !Skill
     name: Open
     types:
       - openable
+    params: !!python/tuple []
     semantics:
       openable: the container that can be opened.
 
-  Scoop:
+  Scoop: !Skill
     name: Scoop
     types:
       - utensil
       - openable
+    params: !!python/tuple []
     semantics:
       utensil: the utensil used to scoop from a container.
       openable: the container that can be opened to be scooped from.
   
-  Spread:
+  Spread: !Skill
     name: Spread
     types:
       - utensil
       - food
+    params: !!python/tuple []
     semantics:
       utensil: the utensil used to spread ingredients on food.
       food: the food that need ingredients to be spread on.

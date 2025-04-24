@@ -1,7 +1,7 @@
 # Prompt for skill sequence proposal.
 # prompt context is for system prompt
 ---
-context_prompt: >
+prompt_context: >
   A robot with a single gripper is attempting to learn the preconditions and effects 
   for a finite set of skills by executing exploratory skill sequences and exploring the environment.
 

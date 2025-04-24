@@ -2,10 +2,11 @@ import itertools
 import yaml
 
 class Skill:
-    def __init__(self, name, types, params=[]):
+    def __init__(self, name, types, params=[], semantics=dict()):
         self.name = name
         self.types = tuple(types)
         self.params = tuple(params)
+        self.semantics = semantics
     
     def __str__(self):
         param_str = ", ".join(map(str, self.params))
@@ -393,22 +394,22 @@ def predicate_state_constructor(loader, node):
 yaml.add_constructor(u'!PredicateState', predicate_state_constructor)
 
 def skill_representer(dumper, data):
-    print(data)
     return dumper.represent_mapping('!Skill', {
         'name': data.name,
         'types': list(data.types),
-        'params': list(data.params)
+        'params': list(data.params),
+        'semantics': data.semantics
     })
 yaml.add_representer(Skill, skill_representer)
 yaml.add_representer(Skill, skill_representer, Dumper=yaml.SafeDumper)
 
 def skill_constructor(loader, node):
     values = loader.construct_mapping(node, deep=True)
-    print(values)
     return Skill(
         name=values["name"],
         types=values["types"],
-        params=values["params"]
+        params=values["params"],
+        semantics=values["semantics"]
     )
 yaml.add_constructor('!Skill', skill_constructor)
 yaml.add_constructor('!Skill', skill_constructor, Loader=yaml.FullLoader)

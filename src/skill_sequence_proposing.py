@@ -47,16 +47,16 @@ class SkillSequenceProposing():
 
         #predicate dictionary: {predicate: definition/description}
         self.predicate_dictionary = grounded_predicate_dictionary
-        
+
         #operator dictionary: {operator name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
         # TODO: this is not operator dictionary, it's a skill dictionary
         self.operator_dictionary = {
-                str(lifted_skill): {'arguments': {ptype: self.env_config['skills'][lifted_skill.name]['semantics'][ptype] for ptype in lifted_skill.types}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
-                    for lifted_skill in self.env_config['skills']
+                str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
+                    for lifted_skill in self.env_config['skills'].values()
             }
 
         #skill dictionary: {skill name: {arguments: {argument: description}}}
-        self.skill_dictionary = {skill_name: skill_metadata['semantics'] for (skill_name, skill_metadata) in self.env_config['skills'].items()}
+        self.skill_dictionary = {str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
         self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: the key and value are the same at the beginning
 
         #replay buffer: {image before, image after, skill, predicate eval}
@@ -77,7 +77,7 @@ class SkillSequenceProposing():
         self.attempted_skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
 
         self.prompt_dict = load_from_file(prompt_fpath)
-
+        breakpoint()
         self.curr_shannon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
@@ -744,9 +744,9 @@ if __name__ == '__main__':
 #     curr_observation_path = []
 
 
-    skill_sequence_proposing = SkillSequenceProposing(grounded_predicate_dictionary, grounded_skill_dictionary, replay_buffer)
+    skill_sequence_proposing = SkillSequenceProposing()
     # skill_sequence_proposing.update_skill_pair_count(new_skill_pair_count)
-
+    breakpoint()
     chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
 #     print(chosen_task, chosen_skill_sequence)
 #     pdb.set_trace()
