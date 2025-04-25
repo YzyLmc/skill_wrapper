@@ -5,7 +5,7 @@ Data structures for logging:
         - tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool))) ::
             NOTE: step is int starting from 0. init state of the skill is at (step-1), next state is at step. step 0 has no skill
     - produced by skillwrapper
-        - grounded_predicate_truth_value_log :: dict :: {task_name:{step:PredicateState}}
+        - grounded_predicate_truth_value_log :: {task_name:{step:PredicateState}}
         - skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     '''
 from collections import defaultdict

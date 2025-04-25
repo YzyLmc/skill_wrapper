@@ -8,7 +8,7 @@ from collections import defaultdict
 import re
 
 from data_structure import Skill, yaml
-from utils import GPT4, load_from_file, save_to_file, get_save_fpath
+from utils import GPT4, load_from_file, save_to_file, get_save_fpath, setup_logging, clean_logging
 from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates
 from ai2thor_task_exec import convert_task_to_code
@@ -43,7 +43,7 @@ def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, groun
     tasks = update_tasks(tasks)
     return tasks
 
-def invent_predicates_for_all(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
+def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
     '''
     run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement. 
@@ -58,28 +58,19 @@ def invent_predicates_for_all(model, lifted_pred_list, skill2operator, tasks, gr
 def main():
     # init env
     env_config = load_from_file(args.env_config_fpath)
-    save_path = get_save_fpath(args.save_dir, f"{env_config["env"]}_log_raw_results", "log")
-    logging.basicConfig(level=logging.INFO,
-                            format='%(message)s',
-                            handlers=[
-                                logging.FileHandler(save_path, mode='w'),
-                                logging.StreamHandler()
-                            ]
-        )
 
-    if not args.no_log:
-        log_save_path = get_save_fpath(args.save_dir, f"{env_config["env"]}_{args.num_iter}{'continue' if args.continue_learning else ''}", "json")
+    log_save_path = setup_logging(args.save_dir, env_config["env"]) # configure logging
 
     # main loop
     if env_config["env"] == "ai2thor":
         model = GPT4(engine=args.model)
         if args.continue_learning:
             # TODO: continue learning not implemented for the new system
+            # requires a load function to load grounded_predicate_truth_value_log, skill2operators, and lifted_pred_list
             raise NotImplementedError("Continue learning not implemented yet")
         
         else:   
             # start from scratch
-
             # init skill to operators
             lifted_pred_list = []
             skill2operator = {}
@@ -104,23 +95,18 @@ def main():
             # propose skill sequence and execute
             tasks = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
             # invent predicates
-            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 
             logging.info(f"iteration #{i+1} is done")
             logging.info(f"result has been saved to {log_save_path}")
             save_to_file(log_data, log_save_path)
             logging.info(f'Final operators this round:\n{skill2operator}')
 
-            # Clean the lines start with 'HTTP'
-            lines = load_from_file(save_path)
-            with open(save_path, 'w') as file:
-                for line in lines:
-                    if not 'HTTP' in line:
-                        file.write(line)
-            
             if args.step_by_step:
                 logging.info(f"iteration #{i+1}/{args.num_iter} is done, run to next interation?")
                 breakpoint()
+
+        clean_logging(log_save_path)
     else:
         raise NotImplementedError(f"Env {env_config["env"]} has not been implemented.")
 
@@ -131,7 +117,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_iter", type=int, default=5, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-    parser.add_argument("--no_log", action='store_true')
     parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
     parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")

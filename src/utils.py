@@ -239,6 +239,53 @@ def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
         counter += 1
     return save_path
 
+def setup_logging(dir_name, env_name) -> str:
+    save_path = get_save_fpath(dir_name, f"{env_name}_log_raw_results", "log")
+    logging.basicConfig(level=logging.INFO,
+                        format='%(message)s',
+                        handlers=[
+                            logging.FileHandler(save_path, mode='w'),
+                            logging.StreamHandler()
+                        ]
+    )
+    logging.info(f"log files will be saved at {save_path}")
+
+    return save_path
+
+def clean_logging(save_path, keyword_list=['HTTP']):
+    """
+    There will be redundant messages with certain prefix in the log file.
+    This function will naively remove the lines that contains thos prefix
+    """
+    # Clean the lines start with 'HTTP'
+    lines = load_from_file(save_path)
+    with open(save_path, 'w') as file:
+        for line in lines:
+            if not any(kw in line for kw in keyword_list):
+                file.write(line)
+
+def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log):
+    """
+    Save results as seprate yaml file. 
+    Operators will be save in both pkl files for later usage and string in yaml files for human readability.
+
+    Args:
+        grounded_predicate_truth_value_log {task_name:{step:PredicateState}}
+        lifted_pred_list :: list[Predicate]
+        skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
+    """
+    # Clean the lines start with 'HTTP'
+    lines = load_from_file(save_path)
+    with open(save_path, 'w') as file:
+        for line in lines:
+            if not 'HTTP' in line:
+                file.write(line)
+    pass
+
+def load_results(): # for continue learning purpose
+    pass
+
+
 # ai2thor utils
 def get_top_down_frame(controller):
     # Setup the top-down camera
