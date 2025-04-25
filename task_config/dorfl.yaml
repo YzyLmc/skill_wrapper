@@ -4,7 +4,15 @@ env: dorfl
 
 skills:
   Pick: !Skill
-    name: Pick
+    name: PickLeft
+    types:
+      - pickupable
+    params: !!python/tuple []
+    semantics: 
+      pickupable: the object to be picked up.
+
+  Pick: !Skill
+    name: PickRight
     types:
       - pickupable
     params: !!python/tuple []
@@ -66,7 +74,6 @@ objects:
       - food
   Cup:
     types:
-      - pickupable
       - receptacle
   Table:
     types:
