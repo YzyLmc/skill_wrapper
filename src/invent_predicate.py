@@ -317,7 +317,10 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     task_1, index_1 = mismatch_pair[1]
     state_0 = tasks[task_0][index_0] if pred_type == "eff" else tasks[task_0][index_0-1]
     state_1 = tasks[task_1][index_1] if pred_type == "eff" else tasks[task_1][index_1-1]
-
+    
+    logging.info("Inventing predicates for two transitions:\n")
+    logging.info(f"1. task:{task_0}, step: {index_0}\n")
+    logging.info(f"2. task:{task_1}, step: {index_1}\n") # TODO: print predicate state
     new_pred = generate_pred([state_0["image"], state_1["image"]],
                              [state_0["skill"], state_1["skill"]],
                              [state_0["success"], state_1["success"]],

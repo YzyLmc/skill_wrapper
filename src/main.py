@@ -8,7 +8,7 @@ from collections import defaultdict
 import re
 
 from data_structure import Skill, yaml
-from utils import GPT4, load_from_file, save_to_file, get_save_fpath, setup_logging, clean_logging
+from utils import GPT4, load_from_file, setup_logging, clean_logging, save_results
 from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates
 from ai2thor_task_exec import convert_task_to_code
@@ -71,10 +71,8 @@ def main():
         
         else:   
             # start from scratch
-            # init skill to operators
             lifted_pred_list = []
             skill2operator = {}
-            log_data = None
 
         # init skill sequence proposing system
         skill_sequence_proposing = SkillSequenceProposing(env_config_fpath=args.env_config_fpath) # prompt not included but 
@@ -98,9 +96,9 @@ def main():
             skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 
             logging.info(f"iteration #{i+1} is done")
-            logging.info(f"result has been saved to {log_save_path}")
-            save_to_file(log_data, log_save_path)
-            logging.info(f'Final operators this round:\n{skill2operator}')
+            operator_string_list = [f"Skill:{str(skill2operator)}\nOperator{str(operator_tuple[0])}\n" for lifted_skill, operator_tuple in skill2operator.items()]
+            logging.info(f'Operators learned this round:\n{"\n".join(operator_string_list)}')
+            save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
 
             if args.step_by_step:
                 logging.info(f"iteration #{i+1}/{args.num_iter} is done, run to next interation?")

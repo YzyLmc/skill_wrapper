@@ -264,7 +264,7 @@ def clean_logging(save_path, keyword_list=['HTTP']):
             if not any(kw in line for kw in keyword_list):
                 file.write(line)
 
-def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log):
+def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_directory):
     """
     Save results as seprate yaml file. 
     Operators will be save in both pkl files for later usage and string in yaml files for human readability.
@@ -274,42 +274,18 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
         lifted_pred_list :: list[Predicate]
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     """
-    # Clean the lines start with 'HTTP'
-    lines = load_from_file(save_path)
-    with open(save_path, 'w') as file:
-        for line in lines:
-            if not 'HTTP' in line:
-                file.write(line)
-    pass
+    save_to_file(skill2operator, f"{save_directory}/skill2operator.pkl")
+    readable_operators = {lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas] for lifted_skill, operator_metas in skill2operator.items()}
+    save_to_file(readable_operators, f"{save_directory}/skill2operator.yaml")
+
+    save_to_file(lifted_pred_list, f"{save_directory}/lifted_pred_list.yaml")
+
+    save_to_file(grounded_predicate_truth_value_log, f"{save_directory}/grounded_predicate_truth_value_log.yaml")
+    # TODO: auto rename in case of overwriting
+    logging.info(f"results have been saved to {save_directory}")
 
 def load_results(): # for continue learning purpose
     pass
-
-
-# ai2thor utils
-def get_top_down_frame(controller):
-    # Setup the top-down camera
-    event = controller.step(action="GetMapViewCameraProperties", raise_for_failure=True)
-    breakpoint()
-    pose = copy.deepcopy(event.metadata["actionReturn"])
-    bounds = event.metadata["sceneBounds"]["size"]
-    max_bound = max(bounds["x"], bounds["z"])
-
-    pose["fieldOfView"] = 50
-    pose["position"]["y"] += 1.1 * max_bound
-    pose["orthographic"] = False
-    pose["farClippingPlane"] = 50
-    del pose["orthographicSize"]
-
-    # add the camera to the scene
-    event = controller.step(
-        action="AddThirdPartyCamera",
-        **pose,
-        skyboxColor="white",
-        raise_for_failure=True,
-    )
-    top_down_frame = event.third_party_camera_frames[-1]
-    return Image.fromarray(top_down_frame)
 
 if __name__ == "__main__":
     gpt = GPT4(engine="o1")

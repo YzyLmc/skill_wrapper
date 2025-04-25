@@ -1047,7 +1047,6 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
-            print(param1, param2, relation, 1)
 
         # ADD negative relations here
         for relation in neg_common_relations: 
@@ -1056,7 +1055,6 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
-            print(param1, param2, relation, 2)
 
         for relation in cluster_e_add:
 
@@ -1072,7 +1070,6 @@ class LiftedPDDLAction(object):
 
             param2 = Parameter(relation.pid2,relation.parent_relation.parameter2_type)
             param_set.add(param2)
-            print(param1, param2, relation, 3)
 
         preconditions = LiftedPDDLPrecondition(true_set=common_relations, false_set=neg_common_relations,true_aux_set=set())
         effects = LiftedPDDLEffect(cluster_e_add,cluster_e_delete,set(), set())
@@ -1450,10 +1447,10 @@ if __name__ == "__main__":
         "Orange": 4,
     }
 
-    grounded_pred_1 = Predicate.ground_with_params(pred_1, ["Apple", "Table"], type_dict)
-    grounded_pred_2 = Predicate.ground_with_params(pred_2, ["Apple"], type_dict)
-    grounded_pred_3 = Predicate.ground_with_params(pred_3, [], type_dict)
-    grounded_pred_4 = Predicate.ground_with_params(pred_1, ["Orange", "Table"], type_dict)
+    grounded_pred_1 = Predicate.ground_with(pred_1, ["Apple", "Table"], type_dict)
+    grounded_pred_2 = Predicate.ground_with(pred_2, ["Apple"], type_dict)
+    grounded_pred_3 = Predicate.ground_with(pred_3, [], type_dict)
+    grounded_pred_4 = Predicate.ground_with(pred_1, ["Orange", "Table"], type_dict)
 
     # imaginal transition where PlaceAt("Apple", "Table") will result in apple and orange both on table
     pred_state_1 = PredicateState([grounded_pred_1, grounded_pred_2, grounded_pred_3, grounded_pred_4])

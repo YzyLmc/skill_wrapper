@@ -44,15 +44,27 @@ def to_replay_buffer(tasks, grounded_predicate_truth_value_log):
 
     return replay_buffer
 
-# TODO:
+# TODO: see if RCR data structure works, if not do conversion
 def skill2operator_to_operator_dictionary(skill2operator):
     """
     Args:
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     Returns:
-        operator_dictionary :: {}
+        operator_dictionary :: {operator_name: {precondition: {pred: bool}, effect: {pred: bool}}}
     """
-    pass
+    operator_dictionary = {}
+    for lifted_skill, operator_metas in skill2operator.items():
+        for i, operator_meta in enumerate(operator_metas): # inner tuple :: tuple[LifetdPDDLAction, dict[int, str]]
+            operator_name = f"{str(lifted_skill)}_{i}"
+            operator_dictionary[operator_name]= operator_meta[0]
+
+            # operator_dictionary[operator_name] = {
+            #     "preconditions": operator_meta[0].precondition,
+            #     "effects_positive": {},
+            #     "effects_negative": {}
+            # }
+    return operator_dictionary
+    
 
 def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     """
@@ -595,7 +607,7 @@ class SkillSequenceProposing():
             messages[1]["content"].append({'type': 'text', 'text': prompt})
 
             return messages
-        # breakpoint()
+
         encoded_images = load_image(image_paths)
         messages = create_payload(prompt_context, prompt, encoded_images)
 
@@ -692,36 +704,11 @@ if __name__ == '__main__':
 
     # grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.'}
 
-    
-    # objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
-    # env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
-
-    # replay_buffer = {'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'], 'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'], 'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], 'predicate_eval': [[True, True, False, False], [True, False, False, True], [True, False, True, True], [False, False, False, False], [False, False, False, False], [False, False, False, False], [False, False, False, False], [True, False, False, True], [True, True, True, True],[False, False, False, False]], 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
-
-    # skill_sequence_proposing = SkillSequenceProposing(grounded_operator_dictionary = grounded_skill_dictionary, grounded_predicate_dictionary = grounded_predicate_dictionary, replay_buffer = replay_buffer, objects_in_scene = objects_in_scene, env_description=env_description)
-    # curr_observation_path = []
-    # chosen_task, chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(grounded_predicate_dictionary, grounded_skill_dictionary, None, replay_buffer, curr_observation_path)
-
-    # grounded_skill_dictionary = {'PickUp_1(obj, loc)': {'preconditions': {'IsAt(loc)':False}, 'effects_positive': [], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    # 'PickUp_2(obj, loc)': {'preconditions': {}, 'effects_positive': ['IsAt(loc)'], 'effects_negative': [], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    # 'PickUp_3(obj, loc)': {'preconditions': {'HasEmptyGripper()':True, 'IsAt(loc)':True}, 'effects_positive': [], 'effects_negative': ['HasEmptyGripper()'], 'arguments': {'obj': 'the object to be picked up', 'loc': 'the receptacle that the object is picked up from'}}, 
-    # 'DropAt_1(obj, loc)': {'preconditions': {'IsAt(loc)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
-    # 'DropAt_2(obj, loc)': {'preconditions': {'IsAt(loc)':True, 'HasEmptyGripper()':False, 'IsHolding(obj)':True}, 'effects_positive': ['HasEmptyGripper()'], 'effects_negative': [], 'arguments': {'obj': 'the object to be dropped', 'loc': 'the receptacle onto which object is dropped'}}, 
-    # 'GoTo_1(init, goal)': {'preconditions': {'IsAt(init)':True}, 'effects_positive': ['HasEmptyGripper()', 'IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}, 
-    # 'GoTo_2(init, goal)': {'preconditions': {'IsAt(init)':True, 'IsAt(goal)':False}, 'effects_positive': ['IsAt(goal)'], 'effects_negative': ['IsAt(init)'], 'arguments': {'init': 'the location for the robot to start from', 'goal': 'the location for the robot to go to'}}}
-
-    # grounded_predicate_dictionary = {'HasEmptyGripper()': "The robot's gripper is empty and ready to grasp an object.", 'IsAt(loc)': 'The robot is at the location `loc`.', 'IsAt(init)': 'The robot is at the location `init`.', 'IsAt(goal)': 'The robot is at the location `goal`.', 'IsHolding(obj)': 'The robot is holding object `obj`.'}
-
-    
-    # objects_in_scene = ['Vase', 'TissueBox', 'Bowl', 'DiningTable', 'Sofa', 'CoffeeTable']
-    # env_description = "Bowl is on the DiningTable, Vase is on the CoffeeTable, Tissue is on the Sofa, and the robot is at the Sofa initially."
-
     replay_buffer = {
         'image_before': ['tasks/exps/GoTo/Before_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/Before_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/Before_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/Before_DropAt_Vase_CoffeeTable_True_1.jpg'],
         'image_after': ['tasks/exps/GoTo/After_GoTo_Sofa_CoffeeTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_Sofa_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_1.jpg', 'tasks/exps/PickUp/After_PickUp_Bowl_DiningTable_False_1.jpg', 'tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_1.jpg', 'tasks/exps/DropAt/After_DropAt_Bowl_CoffeeTable_False_1.jpg', 'tasks/exps/PickUp/After_PickUp_Vase_Sofa_False_1.jpg', 'tasks/exps/DropAt/After_DropAt_Vase_CoffeeTable_True_1.jpg'],
         'skill': ['GoTo(Sofa,CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'DropAt(Vase,Sofa)', 'GoTo(CoffeeTable,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'DropAt(Bowl,CoffeeTable)', 'PickUp(Vase,Sofa)', 'DropAt(Vase,CoffeeTable)'], \
         'predicate_eval': [[True, True, False, False, True], [True, False, False, True, True], [True, False, True, True, False], [False, False, False, False, True], [False, False, False, False, True], [False, False, False, False, False], [False, False, False, False, True], [True, False, False, True, False], [True, True, True, True, True],[False, False, False, False, False]], 
-        # 'num2id': {0: 'GoTo_Sofa_CoffeeTable_True_1', 1: 'GoTo_Sofa_CoffeeTable_True_1', 2: 'PickUp_Vase_CoffeeTable_True_1', 3: 'PickUp_Vase_CoffeeTable_True_1', 4: 'DropAt_Vase_Sofa_False_1', 5: 'DropAt_Vase_Sofa_False_1', 6: 'GoTo_CoffeeTable_DiningTable_True_1', 7: 'GoTo_CoffeeTable_DiningTable_True_1', 8: 'PickUp_Bowl_DiningTable_False_1', 9: 'PickUp_Bowl_DiningTable_False_1', 10: 'GoTo_DiningTable_CoffeeTable_True_1', 11: 'GoTo_DiningTable_CoffeeTable_True_1', 12: 'DropAt_Bowl_CoffeeTable_False_1', 13: 'DropAt_Bowl_CoffeeTable_False_1', 14: 'PickUp_Vase_Sofa_False_1', 15: 'PickUp_Vase_Sofa_False_1', 16: 'DropAt_Vase_CoffeeTable_True_1', 17: 'DropAt_Vase_CoffeeTable_True_1'}}
     }
     skill_sequence_proposing = SkillSequenceProposing()
     curr_observation_path = []
