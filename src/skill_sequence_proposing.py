@@ -113,7 +113,7 @@ class SkillSequenceProposing():
         #             for lifted_skill in self.env_config['skills'].values()
         #     }
         
-        self.operator = skill2operator_to_operator_dictionary(skill2operator) if skill2operator else skill2operator
+        self.operator_dictionary = skill2operator_to_operator_dictionary(skill2operator) if skill2operator else skill2operator
 
         #skill dictionary: {skill name: {arguments: {argument: description}}}
         self.skill_dictionary = {str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
@@ -151,6 +151,7 @@ class SkillSequenceProposing():
             'frequency_penalty': 0.35,
             'top_p': 1.0,
             # 'max_tokens':550,
+            'engine': 'gpt-4o',
             'engine': 'o1',
             'stop': ''
         }
@@ -164,7 +165,7 @@ class SkillSequenceProposing():
         # self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
 
-        self.all_operator_embeddings = self.embedding_model.encode(list(self.operator_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
+        self.all_operator_embeddings = self.embedding_model.encode(list(self.skill_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
         self.all_arg_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
@@ -654,16 +655,17 @@ class SkillSequenceProposing():
 
             match = re.match(r"(\w+)\((.*)\)", line.strip())
 
+
             if match and curr_task is not None:
                 skill_name = match.group(1)  # The function name
                 arguments = match.group(2).split(",")  # The arguments, split by commas
-
 
                 #get the closest similarity skill embedding
                 query_skill_embedding = self.embedding_model.encode(skill_name, convert_to_tensor=True, device=self.device)
                 cos_scores = st_utils.pytorch_cos_sim(query_skill_embedding.to(self.device), self.all_operator_embeddings.to(self.device))[0]
                 cos_scores = cos_scores.detach().cpu().numpy()
                 closest_operator_idx = np.argsort(-cos_scores)[0]
+                breakpoint()
                 closest_grounded_skill = list(self.operator_dictionary.keys())[closest_operator_idx].split('(')[0]
                 closest_grounded_skill_abstract = list(self.operator_dictionary.keys())[closest_operator_idx]
 
