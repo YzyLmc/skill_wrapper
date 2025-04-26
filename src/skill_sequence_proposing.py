@@ -8,6 +8,7 @@ from sentence_transformers import SentenceTransformer, util as st_utils
 import torch
 import base64
 
+from RCR_bridge import LiftedPDDLAction
 from utils import load_from_file
 
 '''
@@ -45,24 +46,19 @@ def to_replay_buffer(tasks, grounded_predicate_truth_value_log):
     return replay_buffer
 
 # TODO: see if RCR data structure works, if not do conversion
-def skill2operator_to_operator_dictionary(skill2operator):
+def skill2operator_to_operator_dictionary(skill2operator) -> dict[str, tuple[LiftedPDDLAction, dict]]:
     """
     Args:
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     Returns:
-        operator_dictionary :: {operator_name: {precondition: {pred: bool}, effect: {pred: bool}}}
+        operator_dictionary :: {operator_name: (LiftedPDDLAction, pid2type: dict)}
     """
     operator_dictionary = {}
     for lifted_skill, operator_metas in skill2operator.items():
         for i, operator_meta in enumerate(operator_metas): # inner tuple :: tuple[LifetdPDDLAction, dict[int, str]]
             operator_name = f"{str(lifted_skill)}_{i}"
-            operator_dictionary[operator_name]= operator_meta[0]
+            operator_dictionary[operator_name]= operator_meta
 
-            # operator_dictionary[operator_name] = {
-            #     "preconditions": operator_meta[0].precondition,
-            #     "effects_positive": {},
-            #     "effects_negative": {}
-            # }
     return operator_dictionary
     
 
@@ -76,7 +72,7 @@ def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     return {str(pred): pred.semantic for pred in lifted_pred_list}
 
 class SkillSequenceProposing():
-    def __init__(self, lifted_predicate_dictionary={}, replay_buffer={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
+    def __init__(self, lifted_pred_list={}, tasks={}, grounded_predicate_truth_value_log={}, skill2operator={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
 
         #coverage of tasks: entropy measure
         #chainability of tasks: building partial state + approximations of other predicates
@@ -95,7 +91,7 @@ class SkillSequenceProposing():
 
         Algorithms we need to solidify
         2) Bayesian approach to estimating aspects of partial state we do not know ==> based on statistical evidence of replay buffer
-        3) Pareto-optimality measure: combining coverage, chainability and sufficience in a way that ensures 
+        3) Pareto-optimality measure: combining coverage, chainability in a way that ensures 
 
 
         DONE:
@@ -108,24 +104,27 @@ class SkillSequenceProposing():
         self.env_config = load_from_file(env_config_fpath)
 
         #predicate dictionary: {predicate: definition/description}
-        self.predicate_dictionary = lifted_predicate_dictionary
+        self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
 
         #operator dictionary: {operator name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
         # TODO: this is not operator dictionary, it's a skill dictionary
-        self.operator_dictionary = {
-                str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
-                    for lifted_skill in self.env_config['skills'].values()
-            }
+        # self.operator_dictionary = {
+        #         str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}, 'preconditions': {}, 'effects_positive':[], 'effects_negative': []} \
+        #             for lifted_skill in self.env_config['skills'].values()
+        #     }
+        
+        self.operator = skill2operator_to_operator_dictionary(skill2operator) if skill2operator else skill2operator
 
         #skill dictionary: {skill name: {arguments: {argument: description}}}
         self.skill_dictionary = {str(lifted_skill): {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
-        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: the key and value are the same at the beginning
+        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()}
 
         #replay buffer: {image before, image after, skill, predicate eval}
-        if not replay_buffer:
+        if not (tasks and grounded_predicate_truth_value_log):
             self.replay_buffer = {"image_before":[], "image_after":[], "skill":[], "predicate_eval":[]}
         else:
-            self.replay_buffer = replay_buffer #TODO: coordinate with Ziyi
+            assert (tasks and grounded_predicate_truth_value_log), "You need to provide both to compute the replay buffer"
+            self.replay_buffer = to_replay_buffer(tasks, grounded_predicate_truth_value_log)
 
         #global object set for the scene
         self.objects_in_scene = list(self.env_config['objects'].keys())
@@ -177,7 +176,6 @@ class SkillSequenceProposing():
         #scaling parameters for pareto-optimal task selection
         self.k = 10 #set period after how many skill executions to switch mode
         #all alphas are in the range [1,3]
-        # self.chainability_alpha = lambda x : np.cos((np.pi/self.k) * x) + 2
         self.chainability_alpha = lambda x: 1
         self.sufficience_alpha = lambda x: np.sin((np.pi/self.k) * x - (np.pi/2)) + 2
         self.entropy_gain_alpha = lambda x: np.cos( ( np.pi / self.k) * x) + 2
@@ -313,7 +311,6 @@ class SkillSequenceProposing():
         #TODO: @Ziyi: maybe you could replace naively adding '1' to abstract_current_predicates[p] with VLM_Eval(p, initial_observation_path) instead to make the algorithm more appropriate
         initial_observation = self.initial_observation # TODO
         for p in self.predicate_dictionary:
-            #p = p.split('(')[0] + '()'
             abstract_current_predicates[p] = 1
 
         current_predicates = {}
@@ -470,7 +467,18 @@ class SkillSequenceProposing():
             total_logprob += -1*np.log(kernel_density)
 
         return total_logprob
+    
+    def compute_chainability(self, skill_sequence_dictionary):
 
+        # 
+        task_chainabilities = []
+
+        for skill_sequence in skill_sequence_dictionary:
+            task_chainability = self.chainability_per_task(skill_sequence)
+            task_chainabilities.append(task_chainability)
+
+        return np.array(task_chainabilities)
+        
     def compute_chainability_and_sufficience(self, task_dictionary):
         
         #track to select task with maximum chainability and sufficience
@@ -499,7 +507,7 @@ class SkillSequenceProposing():
         return np.array(task_chainabilities), np.array(task_sufficience_logprobs)
 
     '''
-    OVERALL SCORING: Function to run general scoring at the task level, combining coverage, sufficience and chainability
+    OVERALL SCORING: Function to run general scoring at the task level, combining coverage and chainability
     '''
     def generate_scores_and_choose_task(self, task_dictionary):
         #run the 3 scoring functions
@@ -569,7 +577,6 @@ class SkillSequenceProposing():
             if combined_score > max_score:
                 max_score = combined_score
                 max_score_idx = k
-
 
         #find the task with the maximum combined score + set the current skill count to that task's skill count + set the current task execution matrix counts
         self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
