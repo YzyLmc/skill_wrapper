@@ -36,3 +36,33 @@ prompt: |
   PickUp(Apple, CounterTop)
   
   Skill Sequence 2:
+
+  Propose a set of skill sequences for a robot to execute. The robot is attempting to learn the preconditions and effects for predefined operators. 
+
+prompt_new: |
+  The robot can navigate anywhere freely but only has two grippers. The robot has access to the following skills with their associated parameter types:
+  - PickRight(pickupable) pickupable: the object to be picked up. 
+  - PickLeft(pickupable) pickupable: the object to be picked up
+  - Place(pickupable, location) pickupable: the object to be dropped. location: the receptacle onto which object is dropped. 
+  - Open(openable) openable: the container that can be opened. 
+  - Scoop(utensil, openable) utensil: the utensil used to scoop from a container. openable: the container that can be opened to be scooped from. 
+  - Spread(utensil, food) utensil: the utensil used to spread ingredients on food. food: the food that need ingredients to be spread on. 
+
+  The list of objects the robot has previously encountered in the environment with their parameter types are: 
+  PeanutButter: {'types': ['openable', 'pickupable']} 
+  Knife: {'types': ['pickupable', 'utensil']} 
+  Plate: {'types': ['receptacle']} 
+  Bread: {'types': ['food']} 
+  Cup: {'types': ['receptacle']} 
+  Table: {'types': ['location']} 
+  Shelf: {'types': ['location']} 
+
+  Initial State: Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right. 
+  The pairs of consecutive skills (skill1, skill2) that have been least explored are: [( PickRight, PickRight), (PickRight, PickLeft), (PickRight, Place), (PickRight, Open), (PickRight, Scoop),(PickRight, Spread)]. 
+
+  Certain skills have similar names and parameters, but different preconditions and effects. Using the list of objects and the learned skills, generate 5 tasks and their sequence of skills such that: (1) the ordering of skills in each task is unique. (2) at least 1 unexplored skill pair is used in each task. (3) all tasks have at least 10 skills in sequence. (4) if a skill like "PickRight(pickable)" requires parameter type "pickupable", you **must only** execute the skill on objects like "Knife" or "PeanutButter" that **have exactly same** parameter type "pickupable". Output only the sequence of skills with each skill in a new line. Also output if reasoning is correct with True/False value, following the format below.: 
+
+  Skill Sequence 1: 
+  PickRight(PeanutButter) - True: "PickRight(pickupable)" requires "pickupable" type; "PeanutButter" = "pickupable" type
+  Place(PeanutButter, Table)  - True: "Place(pickupable, receptacle)" requires "pickupable, receptacle" type; "PeanutButter" = "pickupable" type, "Table" = "receptacle" type
+  Skill Sequence 1:

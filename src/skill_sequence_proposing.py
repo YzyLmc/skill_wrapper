@@ -180,6 +180,22 @@ class SkillSequenceProposing():
         self.sufficience_alpha = lambda x: np.sin((np.pi/self.k) * x - (np.pi/2)) + 2
         self.entropy_gain_alpha = lambda x: np.cos( ( np.pi / self.k) * x) + 2
 
+    def parse_skill_sequence(self, proposed_skill_sequence: str):
+        #Function parses the skill sequence proposed by the LLM, removing the skills with 'False' label and returning only skill names
+        # Split by lines
+        lines = proposed_skill_sequence.strip().split('\n')
+
+        # Filter and collect only skills labeled "True"
+        skills = []
+        for line in lines:
+            if " - True:" in line:
+                skill = line.split(" - True:")[0]
+                skills.append(skill)
+
+        # Print each skill on a new line
+        output = "\n".join(skills)
+        return output
+
     def create_foundation_model_prompt(self):
 
         skill_prompts = []
