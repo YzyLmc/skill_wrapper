@@ -12,52 +12,6 @@ from RCR_bridge import LiftedPDDLAction, RCR_bridge
 from data_structure import Skill, Predicate, PredicateState
 from utils import load_from_file
 
-# TODO : might not need this
-# data structure conversion function
-def to_replay_buffer(tasks, grounded_predicate_truth_value_log):
-    """
-    Args:
-        tasks :: dict(task_name: (step: dict("skill": grounded_skill : Skill, 'image':img_path : str, 'success': Bool)))
-        grounded_predicate_truth_value_log :: dict :: {task_name:{step:PredicateState}}
-    Returns:
-        replay_buffer :: dict(image_before: list[str], image_after: list[str], skill: [str], predicate_eval: list[list[bool]]])
-    """
-    replay_buffer = {
-        "image_before":[],
-        "image_after": [],
-        "skill": [],
-        "predicate_eval": []
-    }
-    assert sorted(list(tasks.keys())) == sorted(list(tasks.keys(grounded_predicate_truth_value_log))), \
-            "Predicate turth values of all tasks have to be evalauted before proposing the next skill sequence."
-    for task_name, task_meta in tasks.items():
-        for step, state in task_meta.items():
-            if not step == 0: # skip the first step where no skill is executed
-                replay_buffer["image_before"].append(last_state["image"])
-                replay_buffer["image_after"].append(state["image"])
-                replay_buffer["skill"].append(str(state["skill"]))
-                grounded_pred_list = grounded_predicate_truth_value_log[task_name][step].get_pred_list()
-                # NOTE: these predicate are grounded, while operators will be lifted
-                replay_buffer['predicate_eval'].append([grounded_predicate_truth_value_log[task_name][step].get_pred_value(grounded_pred) for grounded_pred in grounded_pred_list])
-            last_state = state
-
-    return replay_buffer
-# TODO: also remove this
-def skill2operator_to_operator_dictionary(skill2operator) -> dict[str, tuple[LiftedPDDLAction, dict]]:
-    """
-    Args:
-        skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
-    Returns:
-        operator_dictionary :: {operator_name: (LiftedPDDLAction, pid2type: dict)}
-    """
-    operator_dictionary = {}
-    for lifted_skill, operator_metas in skill2operator.items():
-        for i, operator_meta in enumerate(operator_metas): # inner tuple :: tuple[LifetdPDDLAction, dict[int, str]]
-            operator_name = f"{str(lifted_skill)}_{i}"
-            operator_dictionary[operator_name]= operator_meta
-
-    return operator_dictionary
-    
 def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     """
     Args:
@@ -68,7 +22,7 @@ def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     return {str(pred): pred.semantic for pred in lifted_pred_list}
 
 class SkillSequenceProposing():
-    def __init__(self, lifted_pred_list={}, tasks={}, grounded_predicate_truth_value_log={}, skill2operator={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/spot.yaml"):
+    def __init__(self, lifted_pred_list={}, tasks={}, grounded_predicate_truth_value_log={}, skill2operator={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
         '''
         DONE:
         5) Hyperparameters for LLM
@@ -102,8 +56,8 @@ class SkillSequenceProposing():
             'frequency_penalty': 0.35,
             'top_p': 1.0,
             # 'max_tokens':550,
-            'engine': 'gpt-4o',
-            'engine': 'o1',
+            # 'engine': 'gpt-4o',
+            'engine': 'o3-mini',
             'stop': ''
         }
 
@@ -114,7 +68,7 @@ class SkillSequenceProposing():
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
-        self.all_skill_embeddings = self.embedding_model.encode(list(self.skill_dictionary.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
+        self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
         self.all_obj_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
@@ -146,17 +100,18 @@ class SkillSequenceProposing():
     def create_foundation_model_prompt(self):
         skill_prompts = []
         for skill in self.skill_dictionary:
-            args = self.skill_dictionary[skill]['arguments']
-            skill_prompt = skill + '\n' + '\n'.join([a + ': ' + args[a] for a in args.keys()])
+            types = skill.types
+            skill_prompt = str(skill) + '\n' + '\n'.join([t + ': ' + skill.semantics[t] for t in types])
             skill_prompts.append(skill_prompt)
         
         least_explored_skills = self.get_least_explored_skills()
         prompt_context = self.prompt_dict["prompt_context"]
-        prompt = self.prompt_dict["prompt"]
+        prompt = self.prompt_dict["prompt_new"]
         prompt = prompt.replace("[SKILL_PROMPT]", "\n\n".join(skill_prompts))\
                         .replace("[OBJECT_IN_SCENE]", str("\n".join(self.objects_in_scene_with_types)))\
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
                         .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
+        breakpoint()
         return prompt, prompt_context
     '''
     AUXILLIARY: functions to update the predicate dictionary and skill_dictionary after refinement
@@ -223,7 +178,7 @@ class SkillSequenceProposing():
         for (idx1, idx2) in zip(min_k_2d_indices[0], min_k_2d_indices[1]):
             skill1 = list(self.skill_to_index.keys())[idx1]
             skill2 = list(self.skill_to_index.keys())[idx2]
-            least_explored_pairs.append('( ' + skill1 + ', ' + skill2 +' )')
+            least_explored_pairs.append('( ' + str(skill1) + ', ' + str(skill2) +' )')
 
         return least_explored_pairs
 
@@ -568,7 +523,7 @@ class SkillSequenceProposing():
         if lifted_pred_list is not None:
             self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
         if skill2operator is not None:
-            self.operator_dictionary = skill2operator_to_operator_dictionary(skill2operator)
+            self.operator_dictionary = skill2operator
         self.update_obj_set(new_object_list)
         self.update_curr_obs(curr_observation_path)
 
