@@ -1,0 +1,96 @@
+# This yaml file contains meta data for a test task.
+---
+env: spot
+
+skills:
+  GoTo: !Skill
+    name: GoTo
+    types:
+      - location
+    params: !!python/tuple []
+    semantics: 
+      location: the target location to go to.
+
+  Pick: !Skill
+    name: Pick
+    types:
+      - pickupable
+    params: !!python/tuple []
+    semantics: 
+      pickupable: the object to be picked up.
+
+  Place: !Skill
+    name: Place
+    types:
+      - pickupable
+      - receptacle
+    params: !!python/tuple []
+    semantics:
+      pickupable: the object to be dropped.
+      receptacle: the receptacle onto which object is dropped.
+
+  Open: !Skill
+    name: Open
+    types:
+      - openable
+    params: !!python/tuple []
+    semantics:
+      openable: the container that can be opened and closed.
+
+  Close: !Skill
+    name: Close
+    types:
+      - openable
+    params: !!python/tuple []
+    semantics:
+      openable: the container that can be opened and closed.
+
+  OpenDoor: !Skill
+    name: OpenDoor
+    types:
+      - door
+    params: !!python/tuple []
+    semantics:
+      door: the door that will be opened.
+  
+  Erase: !Skill
+    name: Erase
+    types:
+      - eraser
+      - erasable
+    params: !!python/tuple []
+    semantics:
+      eraser: the util that can erase things from a surface.
+      erasable: the erasable surface.
+    
+objects:
+  Door:
+    types:
+      - location
+      - door
+
+  Cabinet:
+    types:
+      - location
+      - openable
+  
+  Eraser:
+    types:
+      - pickupable
+      - eraser
+    
+  WhiteBoard:
+    types:
+      - location
+      - erasable
+
+  Table:
+    types:
+      - location
+      - receptacle
+
+Env_description: 'The robot is in a room with door locked. An eraser is in a closed cabinet. A whiteboard is outside the room.'
+
+Initial_observation:
+  img_fpath: 
+    - 'test_imgs/init_state/dorfl.png'
