@@ -24,7 +24,7 @@ def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     return {str(pred): pred.semantic for pred in lifted_pred_list}
 
 class SkillSequenceProposing():
-    def __init__(self, lifted_pred_list={}, tasks={}, grounded_predicate_truth_value_log={}, skill2operator={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
+    def __init__(self, lifted_pred_list={}, skill2operator={}, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
         '''
         DONE:
         5) Hyperparameters for LLM
@@ -37,12 +37,10 @@ class SkillSequenceProposing():
         self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
         self.operator_dictionary = skill2operator
         self.skill_dictionary = {lifted_skill: {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
-        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: this should be useless
+        self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()}
 
         #global object set for the scene
-        self.objects_in_scene = list(self.env_config['objects'].keys())
-        self.objects_in_scene_with_types = [f"{obj}: {str(types)}" for obj, types in self.env_config['objects'].items()]
-        self.object_type_dict = self.env_config['objects'] # TODO: use type_dict for everything regarding objects
+        self.object_type_dict = self.env_config['objects']
         self.env_description = self.env_config['Env_description']
         self.curr_observation  = self.env_config['Initial_observation']['img_fpath']
        
@@ -69,9 +67,9 @@ class SkillSequenceProposing():
         #embedding model for grounding LLM output to groundable/executable skills and objects
         # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.device = torch.device('mps') # for my m1 macbook: mps
-        # self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
-        # self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
-        # self.all_param_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
+        self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
+        self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
+        self.all_param_embeddings = self.embedding_model.encode(list(self.objects_type_dict.keys()), batch_size=32, convert_to_tensor=True, device=self.device)
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
         self.curr_skill_count = 0
@@ -105,12 +103,13 @@ class SkillSequenceProposing():
             types = skill.types
             skill_prompt = str(skill) + '\n' + '\n'.join([t + ': ' + skill.semantics[t] for t in types])
             skill_prompts.append(skill_prompt)
+        objects_with_types = [f"{obj}: {str(types)}" for obj, types in self.env_config['objects'].items()]
         
         least_explored_skills = self.get_least_explored_skills()
         prompt_context = self.prompt_dict["prompt_context"]
         prompt = self.prompt_dict["prompt_new"]
         prompt = prompt.replace("[SKILL_PROMPT]", "\n\n".join(skill_prompts))\
-                        .replace("[OBJECT_IN_SCENE]", str("\n".join(self.objects_in_scene_with_types)))\
+                        .replace("[OBJECT_IN_SCENE]", str("\n".join(objects_with_types)))\
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
                         .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
         breakpoint()
@@ -118,9 +117,9 @@ class SkillSequenceProposing():
     '''
     AUXILLIARY: functions to update the predicate dictionary and skill_dictionary after refinement
     '''
-    def update_obj_set(self, new_object_set):
-        if new_object_set is not None:
-            self.objects_in_scene = new_object_set
+    def update_obj_set(self, object_type_dict):
+        if object_type_dict is not None:
+            self.objects_type_dict = object_type_dict
 
     def update_curr_obs(self, new_obs_path):
         if new_obs_path is not None:
@@ -349,12 +348,12 @@ class SkillSequenceProposing():
 
                 #get the closest similarity argument embedding
                 for i, parameter in enumerate(parameters):
-                    if parameter not in self.objects_in_scene: # TODO: apply type_dict here
+                    if parameter not in self.object_type_dict.keys(): # TODO: apply type_dict here
                         query_param_embedding = self.embedding_model.encode(parameter, convert_to_tensor=True, device=self.device)
                         cos_scores = st_utils.pytorch_cos_sim(query_param_embedding.to(self.device), self.all_param_embeddings.to(self.device))[0]
                         cos_scores = cos_scores.detach().cpu().numpy()
                         closest_param_idx = np.argsort(-cos_scores)[0]
-                        closest_param = self.objects_in_scene[closest_param_idx]
+                        closest_param = list(self.objects_type_dict.keys())[closest_param_idx]
                     else:
                         closest_param = parameter
                     parameters[i] = closest_param          
