@@ -33,7 +33,7 @@ class SkillSequenceProposing():
         self.prompt_dict = load_from_file(prompt_fpath)
         #predicate dictionary: {predicate: definition/description}
         self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
-        self.operator_dictionary = skill2operator
+        self.operator_dictionary = skill2operator # TODO: make it empty dict with skill name as keys
         self.skill_dictionary = {lifted_skill: {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
         self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: this should be useless
 
@@ -56,8 +56,8 @@ class SkillSequenceProposing():
             'frequency_penalty': 0.35,
             'top_p': 1.0,
             # 'max_tokens':550,
-            # 'engine': 'gpt-4o',
-            'engine': 'o3-mini',
+            'engine': 'gpt-4o',
+            # 'engine': 'o3-mini',
             'stop': ''
         }
 
@@ -65,11 +65,11 @@ class SkillSequenceProposing():
         self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         #embedding model for grounding LLM output to groundable/executable skills and objects
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.device = torch.device('mps') # for my m1 macbook: mps
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
         self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
-        self.all_obj_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
+        self.all_param_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
         self.curr_skill_count = 0
@@ -359,7 +359,7 @@ class SkillSequenceProposing():
     OVERALL SCORING: Function to run general scoring at the task level, combining coverage and chainability
     '''
     def generate_scores_and_choose_task(self, task_dictionary):
-        #run the 3 scoring functions
+        #run the 2 scoring functions
         task_chainabilities = self.compute_chainability(task_dictionary)
         task_entropy_gains, task_skill_counts = self.compute_shannon_entropy(task_dictionary)
 
@@ -420,7 +420,6 @@ class SkillSequenceProposing():
 
         #NOTE: output the task list that is grounded and decomposed into a dictionary of {task: [[list of skills with arguments], max executable steps]}
         def load_image(image_paths):
-
             encoded_images = []
             for image_path in image_paths:
                 with open(image_path, "rb") as image_file:
@@ -429,28 +428,22 @@ class SkillSequenceProposing():
             return encoded_images
         
         def create_payload(prompt_context: str, prompt: str, encoded_images):
-
             messages = [
                 {"role": "system", "content": prompt_context},
                 {"role": "user", "content": [] }
             ]
-
             for encoded_image in encoded_images:
                 messages[1]["content"].append(
                 {'type':'image_url', 'image_url':{'url': f"data:image/png;base64,{encoded_image}"}}
                 )
-            
             messages[1]["content"].append({'type': 'text', 'text': prompt})
-
             return messages
 
         encoded_images = load_image(image_paths)
         messages = create_payload(prompt_context, prompt, encoded_images)
-
         # response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
         response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'],)
         response = response.choices[0].message.content
-
         return response
 
     def construct_skill_sequences(self, foundation_model_output):
@@ -484,41 +477,42 @@ class SkillSequenceProposing():
             match = re.match(r"(\w+)\((.*)\)", line.strip())
             if match and curr_task is not None:
                 skill_name = match.group(1)  # The function name
-                arguments = match.group(2).split(",")  # The arguments, split by commas
-                # if skill_name not in self.skill_dictionary:
+                parameters = match.group(2).split(",")  # The parameters, split by commas
 
-                #get the closest similarity skill embedding
-                query_skill_embedding = self.embedding_model.encode(skill_name, convert_to_tensor=True, device=self.device)
-                cos_scores = st_utils.pytorch_cos_sim(query_skill_embedding.to(self.device), self.all_operator_embeddings.to(self.device))[0]
-                cos_scores = cos_scores.detach().cpu().numpy()
-                closest_operator_idx = np.argsort(-cos_scores)[0]
-                breakpoint()
-                closest_grounded_skill = list(self.skill_dictionary.keys())[closest_operator_idx].split('(')[0]
-                closest_grounded_skill_abstract = list(self.skill_dictionary.keys())[closest_operator_idx]
-                max_args = len(re.match(r"(\w+)\((.*)\)", closest_grounded_skill_abstract).group(2).split(","))
+                # construct skill objects, if skill/parameter names don't match, ground it to the closest one
+                if skill_name not in [skill.name for skill in self.skill_dictionary]:
+                    #get the closest similarity skill embedding
+                    query_skill_embedding = self.embedding_model.encode(skill_name, convert_to_tensor=True, device=self.device)
+                    cos_scores = st_utils.pytorch_cos_sim(query_skill_embedding.to(self.device), self.all_skill_embeddings.to(self.device))[0]
+                    cos_scores = cos_scores.detach().cpu().numpy()
+                    closest_skill_idx = np.argsort(-cos_scores)[0]
+                    closest_skill_name: Skill = list(self.skill_dictionary.keys())[closest_skill_idx]
+                else:
+                    closest_skill_name = skill_name
+
+                # assuming every different skill has different names
+                lifted_skill: Skill = [skill for skill in self.skill_dictionary if skill.name== closest_skill_name][0]
 
                 #get the closest similarity argument embedding
-                for i, arg in enumerate(arguments):
-                    query_arg_embedding = self.embedding_model.encode(arg, convert_to_tensor=True, device=self.device)
-                    cos_scores = st_utils.pytorch_cos_sim(query_arg_embedding.to(self.device), self.all_arg_embeddings.to(self.device))[0]
-                    cos_scores = cos_scores.detach().cpu().numpy()
-                    closest_grounded_arg = np.argsort(-cos_scores)[0]
-                    closest_grounded_arg = self.objects_in_scene[closest_grounded_arg]
-
-                    arguments[i] = closest_grounded_arg
-                # else:
-
-                
-                task_dictionary[curr_task]['lifted'].append(closest_grounded_skill_abstract)
-                task_dictionary[curr_task]['grounded'].append(closest_grounded_skill + '(' + ','.join(arguments[:max_args])+')')
-
+                for i, parameter in enumerate(parameters):
+                    if parameter not in self.objects_in_scene: # TODO: apply type_dict here
+                        query_param_embedding = self.embedding_model.encode(parameter, convert_to_tensor=True, device=self.device)
+                        cos_scores = st_utils.pytorch_cos_sim(query_param_embedding.to(self.device), self.all_param_embeddings.to(self.device))[0]
+                        cos_scores = cos_scores.detach().cpu().numpy()
+                        closest_param_idx = np.argsort(-cos_scores)[0]
+                        closest_param = self.objects_in_scene[closest_param_idx]
+                    else:
+                        closest_param = parameter
+                    parameters[i] = closest_param          
+                grounded_skill: Skill = lifted_skill.ground_with(parameters)
+                task_dictionary[curr_task].append(grounded_skill)
             elif len(line) > 0 and 'Skill Sequence' in line:
-                task_dictionary[line] = {'grounded':[], 'lifted':[]}
+                task_dictionary[line] = []
                 curr_task = line
-        
+        # breakpoint()
         return task_dictionary
 
-    def run_skill_sequence_proposing(self, tasks=None, lifted_pred_list=None, grounded_predicate_truth_value_log=None, skill2operator=None, new_object_list=None, curr_observation_path=None):
+    def run_skill_sequence_proposing(self, lifted_pred_list=None, skill2operator=None, new_object_list=None, curr_observation_path=None):
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
         if lifted_pred_list is not None:
             self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
@@ -533,7 +527,8 @@ class SkillSequenceProposing():
         foundation_model_output = self.run_foundation_model(prompt_context, prompt, self.curr_observation)
         #Step 3: parse and ground FM output into a task dictionary
         task_dictionary = self.construct_task_dictionary(foundation_model_output)
-        #Step 4: generate scores + combine for pareto optimal way for coverage, chainability and sufficience for all tasks + choose the best most pareto-optimal sequence to run
+
+        #Step 4: generate scores + combine for pareto optimal way for coverage and chainability for all tasks + choose the best most pareto-optimal sequence to run
         chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
 
         return chosen_skill_sequence
