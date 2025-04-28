@@ -4,12 +4,14 @@ import numpy as np
 import os
 import copy
 import re
+from typing import Union
+from collections import defaultdict
 from sentence_transformers import SentenceTransformer, util as st_utils
 import torch
 import base64
 
-from RCR_bridge import LiftedPDDLAction, RCR_bridge
-from data_structure import Skill, Predicate, PredicateState
+from RCR_bridge import LiftedPDDLAction, RCR_bridge, PDDLState, generate_possible_groundings
+from data_structure import Skill, Predicate, PredicateState, Parameter
 from utils import load_from_file
 
 def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
@@ -33,7 +35,7 @@ class SkillSequenceProposing():
         self.prompt_dict = load_from_file(prompt_fpath)
         #predicate dictionary: {predicate: definition/description}
         self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
-        self.operator_dictionary = skill2operator # TODO: make it empty dict with skill name as keys
+        self.operator_dictionary = skill2operator
         self.skill_dictionary = {lifted_skill: {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
         self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()} # TODO: this should be useless
 
@@ -65,11 +67,11 @@ class SkillSequenceProposing():
         self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         #embedding model for grounding LLM output to groundable/executable skills and objects
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = torch.device('mps') # for my m1 macbook: mps
-        self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
-        self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
-        self.all_param_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('mps') # for my m1 macbook: mps
+        # self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
+        # self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
+        # self.all_param_embeddings = self.embedding_model.encode(self.objects_in_scene, batch_size=32, convert_to_tensor=True, device=self.device)
 
         #other metrics to track: number of skills executed and logging frequency for predicates at certain skill intervals
         self.curr_skill_count = 0
@@ -123,11 +125,10 @@ class SkillSequenceProposing():
     def update_curr_obs(self, new_obs_path):
         if new_obs_path is not None:
             self.curr_observation = new_obs_path
-            
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
     '''
-    def compute_entropy_for_task(self, skill_sequence: list[str], executable_sequence: list[bool]):
+    def compute_entropy_for_task(self, skill_sequence: list[Skill], executable_list: list[bool]):
         """
         new_shannon_entropy :: entropy value after executing the skill sequence
         new_skill_pair_count :: updated skill pair count matrix
@@ -135,9 +136,9 @@ class SkillSequenceProposing():
         new_skill_pair_count = copy.deepcopy(self.attempted_skill_pair_count)
         p1 = 0; p2 = min(1, len(skill_sequence))
         while p2 < len(skill_sequence):
-            if executable_sequence[p2] is True and executable_sequence[p1] is True:
-                skill1_idx = self.skill_to_index[skill_sequence[p1]]
-                skill2_idx = self.skill_to_index[skill_sequence[p2]]
+            if executable_list[p2] is True and executable_list[p1] is True:
+                skill1_idx = self.skill_to_index[skill_sequence[p1].lifted()]
+                skill2_idx = self.skill_to_index[skill_sequence[p2].lifted()]
                 new_skill_pair_count[skill1_idx, skill2_idx] += 1
             p1 = p2
             p2 += 1
@@ -158,203 +159,80 @@ class SkillSequenceProposing():
         for task in task_dictionary.keys():
             skill_sequence = task_dictionary[task]['lifted']
             skill_sequence = [self.operator_to_skill[action] for action in skill_sequence]
-            executable_sequence = task_dictionary[task]['executable_sequence']
-            entropy, counts = self.compute_entropy_for_task(skill_sequence, executable_sequence)
+            executable_list = task_dictionary[task]['executable_list']
+            entropy, counts = self.compute_entropy_for_task(skill_sequence, executable_list)
             task_entropy_gains.append(entropy - curr_shannon_entropy) #entropy gain is maximum of difference
             task_skill_counts.append(counts)
         
         return np.array(task_entropy_gains), task_skill_counts
 
     def get_least_explored_skills(self, k=5):
-        flattened_count = self.attempted_skill_pair_count.flatten()
-        # Step 2: Get the indices that would sort the array
-        sorted_indices = np.argsort(flattened_count)
-        # Step 3: Get the indices of the top 'k' smallest elements
-        min_k_indices = sorted_indices[:k]
-        # Step 4: Convert the flattened indices back to 2D indices
-        min_k_2d_indices = np.unravel_index(min_k_indices, self.attempted_skill_pair_count.shape)
+        # Find the minimum value in the matrix
+        min_value = np.min(self.attempted_skill_pair_count)
+        # Find all indices where the value equals the minimum
+        min_indices = np.argwhere(self.attempted_skill_pair_count == min_value)
+        # If there are more than k minimum entries, randomly select k of them
+        if len(min_indices) > k:
+            selected_indices = min_indices[np.random.choice(len(min_indices), size=k, replace=False)]
+        else:
+            selected_indices = min_indices
 
         least_explored_pairs = []
-        for (idx1, idx2) in zip(min_k_2d_indices[0], min_k_2d_indices[1]):
-            skill1 = list(self.skill_to_index.keys())[idx1]
-            skill2 = list(self.skill_to_index.keys())[idx2]
-            least_explored_pairs.append('( ' + str(skill1) + ', ' + str(skill2) +' )')
+        skill_list = list(self.skill_to_index.keys())
+        for idx1, idx2 in selected_indices:
+            skill1 = skill_list[idx1]
+            skill2 = skill_list[idx2]
+            least_explored_pairs.append(f'({skill1}, {skill2})')
 
         return least_explored_pairs
-
     '''
     CHAINABILITY
     '''
-    def get_skill_sequence_executability(self, skill_sequence: list[Skill], last_state: PredicateState):
+    def get_skill_sequence_executability(self, skill_sequence: list[Skill], init_state: PredicateState) -> list[bool]:
+        """
+        self.operator_dictionary :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
+        """
+        def apply_skill(grounded_skill, pddl_state: PDDLState, pid2type, type_dict) -> Union[bool, PDDLState]:
+            """
+            Check if there exist an operator that makes the skill executable.
+            Returns:
+                bool :: if the skill is executable
+                pddl_state :: next state if executable, the original state otehrwise
+            """
+            for lifted_operator, pid2type in self.operator_dictionary[grounded_skill.lifted()]:
+                possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
+                for grounding in possible_groundings:
+                    param_name2param_object = {str(param): param.get_grounded_parameter(grounding[int(str(param).split("_p")[-1])]) for param in lifted_operator.parameters if not str(param).startswith("_")} | {'_p1': Parameter(None, "", None)}
+                    grounded_operator: LiftedPDDLAction = lifted_operator.get_grounded_action(param_name2param_object, 0)
+                    if grounded_operator.check_applicability(pddl_state):
+                        return True, grounded_operator.apply(pddl_state)
+            return False, pddl_state
+            
         executable_list = []
+        bridge = RCR_bridge()
+        pddl_state = bridge.predicatestate_to_pddlstate(init_state)
         for grounded_skill in skill_sequence:
-            for operator in self.operator_dictionary[grounded_skill.lifted()]:
-                if operator.preconditions.applicability(last_state):
-                    executable_list.append(True)
-                    break
-        pass
-    def generate_incremental_predicate_for_task(self, skill_sequence, lifted_skill_sequence):
-        '''
-        Chainabilty: relies on the non-abstract state changes to be abstract
-        '''
-        #maintain dicitonary of updated predicates so far: {predicate: known assignemnt from precondition/effects of skills that are executed}
-        abstract_current_predicates = {}
-        #skill dictionary: {skill name: {arguments: {argument: description}, preconditions: [predicate name], effects_positive: [predicate name], effects_negative: [predicate name]}}
-        initial_observation = self.initial_observation # TODO
-        for p in self.predicate_dictionary:
-            abstract_current_predicates[p] = 1
-
-        current_predicates = {}
-        #list of predicates for each step
-        predicate_sequence = []
-        max_executable = 0
-        executable_sequence = []
-
-        abstract_executable = True
-        executable = True
-        # TODO: change the logic of choosing operators, always check if 
-        #iterate through the skill sequence and add/change predicate labels until something is not executable
-        for i, skill in enumerate(skill_sequence):
-
-            #generate abstract skill shell
-            lifted_skill = lifted_skill_sequence[i]
-
-            #extract arguments for skill in case of chainability
-            match = re.match(r"(\w+)\((.*)\)", skill)
-            arguments = match.group(2).split(",")
-
-            match = re.match(r"(\w+)\((.*)\)", lifted_skill)
-            abstract_arguments = match.group(2).split(",")
-
-            #find correlating arguments with abstract/lifted arguments
-            abstract_to_grounded_args = {k.strip():v.strip() for (k,v) in zip(abstract_arguments, arguments)}
-
-            abstract_preconditions = self.operator_dictionary[lifted_skill]['preconditions']
-            abstract_effects_pos  = self.operator_dictionary[lifted_skill]['effects_positive']
-            abstract_effects_neg = self.operator_dictionary[lifted_skill]['effects_negative']
-          
-            #turn predicates true assuming skill can be executed
-            for pre, value in abstract_preconditions.items():
-                if pre in abstract_current_predicates and abstract_current_predicates[pre] != int(value):
-                    abstract_executable = False
-                    break
-                abstract_current_predicates[pre] = int(value)
-            
-            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
-            
-
-            if not abstract_executable:
-                abstract_executable = True
-            else:
-                
-                #turn predicates positive or negative based on effects
-
-                for eff in abstract_effects_neg:
-                    abstract_current_predicates[eff] = 0
-                
-                for eff in abstract_effects_pos:
-                    abstract_current_predicates[eff] = 1
-
-            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
-            
-            for pre, value in abstract_preconditions.items():
-
-                match = re.match(r"(\w+)\((.*)\)", pre)
-                pred_name = match.group(1)
-                pred_args = '('+pre.split('(')[1]
-
-
-                for a in abstract_to_grounded_args.keys():
-                    pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
-
-                pre = pred_name + pred_args
-
-                if (pre in current_predicates and current_predicates[pre] != int(value)):
-                    executable = False
-                    break
-              
-                current_predicates[pre] = int(value)
-                 
-            executable_sequence.append(executable)
-            if not executable:
-                executable = True
-            else:
-                max_executable += 1
-
-                #turn predicates positive or negative based on effects
-                for eff in abstract_effects_neg:
-
-                    match = re.match(r"(\w+)\((.*)\)", eff)
-                    pred_name = match.group(1)
-                    #pred_args = match.group(2).split(",")
-                    pred_args = '('+eff.split('(')[1]
-
-                    for a in abstract_to_grounded_args.keys():
-                        pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
-                   
-                    eff = pred_name + pred_args
-                    current_predicates[eff] = 0
-                
-                for eff in abstract_effects_pos:
-
-                    match = re.match(r"(\w+)\((.*)\)", eff)
-                    pred_name = match.group(1)
-                    #pred_args = match.group(2).split(",")
-                    pred_args = '('+eff.split('(')[1]
-
-                    for a in abstract_to_grounded_args.keys():
-                        pred_args = pred_args.replace(a, abstract_to_grounded_args[a])
-                
-                    eff = pred_name + pred_args
-                    current_predicates[eff] = 1
-
-            predicate_sequence.append(np.array(list(abstract_current_predicates.values())))
-            
-        return predicate_sequence, max_executable, executable_sequence
-
-    def compute_task_chainability(self, executable_sequence, max_executable):
-        return abs(float(max_executable / (len(executable_sequence) if len(executable_sequence) > 0 else 1)) - 0.5)
+            executable, pddl_state = apply_skill(grounded_skill, pddl_state)
+            executable_list.append(executable)
+        return executable_list
+    
+    # TODO: make this negative and test
+    def chainability_per_sequence(self, executable_list):
+        return abs(float(sum(executable_list)/ (len(executable_list) if len(executable_list) > 0 else 1)) - 0.5)
     
     def compute_chainability(self, skill_sequence_dictionary):
         """
         Chainability counted as the ratio executable skills in the sequence
         """
-        task_chainabilities = []
-
-        for skill_sequence in skill_sequence_dictionary:
-            task_chainability = self.chainability_per_task(skill_sequence)
-            task_chainabilities.append(task_chainability)
-            
-
-        return np.array(task_chainabilities)
+        skill_sequence_chainabilities = []
+        for skill_sequence_name, skill_sequence_meta in skill_sequence_dictionary.items():
+            skill_sequence = skill_sequence_meta["skill_sequence"]
+            executable_list = self.get_skill_sequence_executability(skill_sequence, self.init_state) # TODO: udpate init state
+            skill_sequence_dictionary[skill_sequence_name]["executable_list"] = executable_list
+            skill_sequence_chainability = self.chainability_per_sequence(executable_list)
+            skill_sequence_chainabilities.append(skill_sequence_chainability)
+        return np.array(skill_sequence_chainabilities)
         
-    def compute_chainability_and_sufficience(self, task_dictionary):
-        
-        #track to select task with maximum chainability and sufficience
-        task_chainabilities = []
-        task_sufficience_logprobs = []
-
-        #compute chainability and sufficience score for each task
-        for task in task_dictionary.keys():
-            
-            skill_sequence = task_dictionary[task]['grounded']
-            lifted_skill_sequence = task_dictionary[task]['lifted']
-
-            predicate_sequence, max_executable, executable_sequence = self.generate_incremental_predicate_for_task(skill_sequence, lifted_skill_sequence)
-
-            #update the task dictionary with maximum number of steps that can be executed
-            task_dictionary[task]['max_executable'] = max_executable
-            task_dictionary[task]['executable_sequence'] = executable_sequence
-
-            #compute and aggregate the chainability and sufficience prob per task
-            chainability = self.compute_task_chainability(executable_sequence, max_executable)
-            sufficience_logprob = self.compute_task_sufficience_probability(predicate_sequence)
-
-            task_chainabilities.append(chainability)
-            task_sufficience_logprobs.append(sufficience_logprob)
-        
-        return np.array(task_chainabilities), np.array(task_sufficience_logprobs)
-
     '''
     OVERALL SCORING: Function to run general scoring at the task level, combining coverage and chainability
     '''
@@ -371,10 +249,8 @@ class SkillSequenceProposing():
         pareto_front_set = {0: (task_entropy_gains[0], task_chainabilities[0])}
 
         curr_idx = 1
-
         for (eg_new, chain_new) in zip(task_entropy_gains[1:], task_chainabilities[1:]):
             domination = False
-
             for k in list(pareto_front_set.keys()):
                 (eg2, chain2) = pareto_front_set[k]
                 #if the new score combo dominates something from the pareto-front set, remove the original example from pareto-front set 
@@ -385,8 +261,7 @@ class SkillSequenceProposing():
                 #if pareto set already dominates new example then skip
                 elif (eg2 >= eg_new) and (chain2 <= chain_new) and (eg2 > eg_new or chain2 < chain_new):
                     domination = True
-                    continue 
-                
+                    continue   
             #if some variables dominated then new example is part of pareto set 
             if not domination:
                 pareto_front_set[curr_idx] = (eg_new, chain_new)
@@ -404,7 +279,6 @@ class SkillSequenceProposing():
             entropy_score = (entr - min_entropy_gain)/(max_entropy_gain - min_entropy_gain) if (max_entropy_gain - min_entropy_gain) > 0 else 0
             chainability_score = (max_chainability - chain) / (max_chainability - min_chainability)  if (max_chainability - min_chainability) > 0 else 0
             combined_score = entr_alpha * (entropy_score) + chain_alpha * (chainability_score)
-
             if combined_score > max_score:
                 max_score = combined_score
                 max_score_idx = k
@@ -413,6 +287,7 @@ class SkillSequenceProposing():
         self.curr_skill_count += len(task_dictionary[list(task_dictionary.keys())[max_score_idx]]['grounded'])
         self.attempted_skill_pair_count = task_skill_counts[max_score_idx]
         return list(task_dictionary.values())[max_score_idx]['grounded']
+    
     '''
     FOUNDATION MODEL: Functions to run LLM (GPT4-O) as well as generate dynamic prompting structure using least explored tasks
     '''
@@ -446,28 +321,7 @@ class SkillSequenceProposing():
         response = response.choices[0].message.content
         return response
 
-    def construct_skill_sequences(self, foundation_model_output):
-        output_text = foundation_model_output.split('\n')
-        skill_sequence_dictionary = {}
-        curr_skill_sequence = None
-        for line in output_text:
-            match = re.match(r"(\w+)\((.*)\)", line.strip())
-            if match and curr_skill_sequence is not None:
-                skill_name = match.group(1)
-                arguments = match.group(2).split(",")
-
-                # ground skill into known skill if wrong
-                if skill_name not in self.skill_dictionary:
-                    #get the closest similarity skill embedding
-                    query_skill_embedding = self.embedding_model.encode(skill_name, convert_to_tensor=True, device=self.device)
-                    cos_scores = st_utils.pytorch_cos_sim(query_skill_embedding.to(self.device), self.all_skill_embeddings.to(self.device))[0]
-                    cos_scores = cos_scores.detach().cpu().numpy()
-                    closest_operator_idx = np.argsort(-cos_scores)[0]
-                    closest_grounded_skill = list(self.skill_dictionary.keys())[closest_operator_idx].split('(')[0]
-                    closest_grounded_skill_abstract = list(self.skill_dictionary.keys())[closest_operator_idx]
-                    max_args = len(re.match(r"(\w+)\((.*)\)", closest_grounded_skill_abstract).group(2).split(","))
-
-    def construct_task_dictionary(self, foundation_model_output):
+    def construct_skill_sequence_dictionary(self, foundation_model_output) -> dict[str, dict[str, list[Skill]]]:
         #use RoBERTa embeddings to get the most similar skills and object names in case of mismatch
         output_text = foundation_model_output.split('\n')
         task_dictionary = {}
@@ -476,8 +330,8 @@ class SkillSequenceProposing():
         for line in output_text:
             match = re.match(r"(\w+)\((.*)\)", line.strip())
             if match and curr_task is not None:
-                skill_name = match.group(1)  # The function name
-                parameters = match.group(2).split(",")  # The parameters, split by commas
+                skill_name = match.group(1)
+                parameters = match.group(2).split(",")
 
                 # construct skill objects, if skill/parameter names don't match, ground it to the closest one
                 if skill_name not in [skill.name for skill in self.skill_dictionary]:
@@ -505,11 +359,11 @@ class SkillSequenceProposing():
                         closest_param = parameter
                     parameters[i] = closest_param          
                 grounded_skill: Skill = lifted_skill.ground_with(parameters)
-                task_dictionary[curr_task].append(grounded_skill)
+                task_dictionary[curr_task]["skill_sequence"].append(grounded_skill)
             elif len(line) > 0 and 'Skill Sequence' in line:
-                task_dictionary[line] = []
+                task_dictionary[line] = defaultdict(list)
                 curr_task = line
-        # breakpoint()
+
         return task_dictionary
 
     def run_skill_sequence_proposing(self, lifted_pred_list=None, skill2operator=None, new_object_list=None, curr_observation_path=None):
@@ -526,10 +380,9 @@ class SkillSequenceProposing():
         #Step 2: run foundation model using the generated prompt
         foundation_model_output = self.run_foundation_model(prompt_context, prompt, self.curr_observation)
         #Step 3: parse and ground FM output into a task dictionary
-        task_dictionary = self.construct_task_dictionary(foundation_model_output)
-
+        skill_sequence_dictionary = self.construct_skill_sequence_dictionary(foundation_model_output)
         #Step 4: generate scores + combine for pareto optimal way for coverage and chainability for all tasks + choose the best most pareto-optimal sequence to run
-        chosen_skill_sequence = self.generate_scores_and_choose_task(task_dictionary)
+        chosen_skill_sequence = self.generate_scores_and_choose_task(skill_sequence_dictionary)
 
         return chosen_skill_sequence
     
