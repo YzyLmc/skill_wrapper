@@ -61,7 +61,7 @@ objects:
   PeanutButter:
     types:
       - openable
-      - pickupbale
+      - pickupable
   Knife:
     types:
       - pickupable

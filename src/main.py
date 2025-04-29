@@ -13,7 +13,7 @@ from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates
 from ai2thor_task_exec import convert_task_to_code
 
-def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args):
+def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args):
     """
     Propose a skill sequence and execute the skill sequence
     """
@@ -95,7 +95,7 @@ def main():
         # main loop
         for i in range(int(start_num), args.num_iter):
             # propose skill sequence and execute
-            tasks = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
+            tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
             # invent predicates
             skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 

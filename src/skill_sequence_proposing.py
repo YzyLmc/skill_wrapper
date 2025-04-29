@@ -90,6 +90,9 @@ class SkillSequenceProposing():
 
         Args:
             tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+        Returns:
+            skill_pair_count :: numpy array
+            skill_count :: int
         """
         # skill pair count matrix
         skill_pair_count = np.zeros((len(self.skill_dictionary.keys()), len(self.skill_dictionary.keys())))
@@ -139,18 +142,9 @@ class SkillSequenceProposing():
                         .replace("[OBJECT_IN_SCENE]", str("\n".join(objects_with_types)))\
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
                         .replace("[LEAST_EXPLORED_SKILLS]", ','.join(least_explored_skills))
-        breakpoint()
+        
         return prompt, prompt_context
-    '''
-    AUXILLIARY: functions to update the predicate dictionary and skill_dictionary after refinement
-    '''
-    def update_obj_set(self, object_type_dict):
-        if object_type_dict is not None:
-            self.objects_type_dict = object_type_dict
 
-    def update_curr_obs(self, new_obs_path):
-        if new_obs_path is not None:
-            self.curr_observation = new_obs_path
     '''
    COVERAGE:  Functions for entropy computation + Functions to determine least explored tasks
     '''
@@ -215,6 +209,7 @@ class SkillSequenceProposing():
         """
         self.operator_dictionary :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
         """
+
         def apply_skill(grounded_skill, pddl_state: PDDLState, pid2type, type_dict) -> Union[bool, PDDLState]:
             """
             Check if there exist an operator that makes the skill executable.
@@ -372,14 +367,25 @@ class SkillSequenceProposing():
 
                 # TODO: implement typing, if typing doesn't match ground to closest matched object
                 #       but at the same time try to make sure FM won't propose such skills, otherwise coverage will be problematic
-                #get the closest similarity argument embedding
+                # get the closest similarity argument embedding
                 for i, parameter in enumerate(parameters):
+                    need_grounding = False
                     if parameter not in self.objects_type_dict.keys():
+                        need_grounding = True
+                    elif lifted_skill.types[i] not in self.objects_type_dict[parameter]["types"]:
+                        need_grounding = True
+                    if need_grounding:
                         query_param_embedding = self.embedding_model.encode(parameter, convert_to_tensor=True, device=self.device)
                         cos_scores = st_utils.pytorch_cos_sim(query_param_embedding.to(self.device), self.all_param_embeddings.to(self.device))[0]
                         cos_scores = cos_scores.detach().cpu().numpy()
-                        closest_param_idx = np.argsort(-cos_scores)[0]
+                        idx = 0
+                        closest_param_idx = np.argsort(-cos_scores)[idx]
                         closest_param = list(self.objects_type_dict.keys())[closest_param_idx]
+                        while lifted_skill.types[i] not in self.objects_type_dict[closest_param]["types"] and idx < len(self.objects_type_dict) - 1:
+                            idx += 1
+                            closest_param_idx = np.argsort(-cos_scores)[idx]
+                            closest_param = list(self.objects_type_dict.keys())[closest_param_idx]
+
                     else:
                         closest_param = parameter
                     parameters[i] = closest_param
@@ -391,23 +397,31 @@ class SkillSequenceProposing():
 
         return list(skill_sequence_dictionary.values())
 
-    def run_skill_sequence_proposing(self, lifted_pred_list=None, skill2operator=None, new_object_list=None, curr_observation_path=None):
+    def run_skill_sequence_proposing(self, lifted_pred_list=None, skill2operator=None, tasks=None, curr_observation_path=None, init_state: PredicateState=None) -> list[Skill]:
         #Step 0: before running algorithm, update the predicate and skill dictionary available to the FM for prompting and skill generation
         if lifted_pred_list is not None:
             self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
         if skill2operator is not None:
             self.operator_dictionary = skill2operator
-        self.update_obj_set(new_object_list)
-        self.update_curr_obs(curr_observation_path)
+        if init_state is not None:
+            self.init_state = init_state
+        if curr_observation_path is not None:
+            self.curr_observation_path = curr_observation_path
+        if tasks is not None:
+            self.attempted_skill_pair_count, self.curr_skill_count = self.get_skill_pair_matrix_from_tasks(tasks)
 
         #Step 1: create prompt with least explored skill pairs and object set
         prompt, prompt_context = self.create_foundation_model_prompt()
         #Step 2: run foundation model using the generated prompt
         foundation_model_output = self.run_foundation_model(prompt_context, prompt, self.curr_observation)
-        breakpoint()
         #Step 3: parse and ground FM output into a task dictionary
         skill_sequences = self.construct_skill_sequences(foundation_model_output)
-        breakpoint()
+        for i, skill_sequence in enumerate(skill_sequences):
+            print(f"Output skill sequence {i}")
+            for skill in skill_sequence:
+                print(skill)
+            print('\n')
+
         #Step 4: generate scores + combine for pareto optimal way for coverage and chainability for all tasks + choose the best most pareto-optimal sequence to run
         chosen_skill_sequence = self.generate_scores_and_choose_skill_sequence(skill_sequences)
 
@@ -417,5 +431,5 @@ if __name__ == '__main__':
     skill_sequence_proposing = SkillSequenceProposing()
     curr_observation_path = []
     chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing()
-    print(chosen_skill_sequence)
+    [print(p) for p in chosen_skill_sequence]
     breakpoint()
