@@ -39,11 +39,15 @@ def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, groun
             logging.info('Task done. You should check the images labels')
             breakpoint()
 
-    # TODO: settle logging method and update tasks here
-    tasks = update_tasks(tasks)
+    # NOTE: The execution script should save a yaml file to 
+    #   {args.save_dir}/tasks_{args.env}.yaml
+    # in the format of:
+    #   dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+    # The file will be read and returned for predicate invention
+    tasks = load_from_file(args.save_dir)
     return tasks
 
-def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args, log_data=None):
+def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args):
     '''
     run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement. 
@@ -62,7 +66,7 @@ def main():
     log_save_path = setup_logging(args.save_dir, env_config["env"]) # configure logging
 
     # main loop
-    if env_config["env"] == "ai2thor":
+    if env_config["env"] in ["dorfl", "spot"]:
         model = GPT4(engine=args.model)
         if args.continue_learning:
             # TODO: continue learning not implemented for the new system
@@ -118,6 +122,7 @@ if __name__ == "__main__":
     parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
     parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")
+    parser.add_argument("--invent_pred_only", type=bool, action="store_true", help="Read from existing data and invent predicates.")
     args = parser.parse_args()
 
     main()
