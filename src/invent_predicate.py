@@ -347,16 +347,17 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     # NOTE: socring now only done to a grounded skill instead of across all grounded of the lifted skill
     # TODO: scoring might need change entirely
     add_new_pred = score_by_partition(new_pred, lifted_skill, hypothetical_skill2task2state, pred_type, threshold)
-
+    breakpoint()
     if add_new_pred:
         logging.info(f"Predicate {new_pred} added to predicate set by {pred_type} check")
         lifted_pred_list.append(new_pred)
+        grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
         new_pred_accepted = True
     else:
         logging.info(f"Predicate {new_pred} is NOT added to predicate set by {pred_type} check")
         skill2triedpred[lifted_skill].append(new_pred)
     
-    return lifted_pred_list, skill2triedpred, new_pred_accepted
+    return lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log
 
 
 def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred={}, max_t=3):
@@ -374,10 +375,10 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     logging.info("About to enter precondition check")
     while mismatch_pairs and t < max_t:
         # Always solve the first mismatch pair
-        lifted_pred_list, skill2triedpred, new_pred_accepted = invent_predicate_one(mismatch_pairs[0], model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred)
+        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(mismatch_pairs[0], model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred)
         if new_pred_accepted: break
         t += 1
-    
+
     # check effect
     t = 0
     pred_type = "eff"
@@ -385,7 +386,7 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type=pred_type)
     logging.info("About to enter effect check")
     while mismatch_pairs and t < max_t:
-        lifted_pred_list, skill2triedpred, new_pred_accepted = invent_predicate_one(mismatch_pairs[0], model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred)
+        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(mismatch_pairs[0], model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred)
         if new_pred_accepted: break
         t += 1
     

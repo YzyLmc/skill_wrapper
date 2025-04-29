@@ -36,9 +36,6 @@ prompt: |
   PickUp(Apple, CounterTop)
   
   Skill Sequence 2:
-
-  Propose a set of skill sequences for a robot to execute. The robot is attempting to learn the preconditions and effects for predefined operators. 
-
 prompt_new: |
   The robot can navigate anywhere freely but only has two grippers. The robot has access to the following skills with their associated parameter types:
  
