@@ -7,19 +7,8 @@ import json
 import csv
 from data_structure import yaml
 import os
-from pathlib import Path
-import string
-from string import ascii_lowercase
-from collections import defaultdict
-import numpy as np
 import dill
-import random
-import sys
-import copy
-from copy import deepcopy
-import itertools
-from PIL import Image
-from retrying import retry
+import re
 
 # OpenAI API Key
 api_key=os.getenv("OPENAI_API_KEY")
@@ -69,6 +58,9 @@ def save_to_file(data, fpth, mode=None):
         with open(fpth, mode if mode else 'w', newline='') as wfile:
             writer = csv.writer(wfile)
             writer.writerows(data)
+    elif ftype == 'yaml':
+        with open(fpth, 'w') as wfile:
+            yaml.dump(data, wfile)
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
 
@@ -264,6 +256,29 @@ def clean_logging(save_path, keyword_list=['HTTP']):
             if not any(kw in line for kw in keyword_list):
                 file.write(line)
 
+def load_tasks(load_path, task_config):
+    """
+    tasks are saved separately since predicate invention takes it as input.
+
+    Args:
+        task_config :: dict('env': str, 'skills': Skill, 'objects': dict, 'Env_description': str, 'Initial_observation': dict)
+        tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+    """
+    tasks = load_from_file(f"{load_path}/tasks.yaml")
+    # reassembly skill string to skill objects
+    for task_name, task_meta in tasks.items():
+        for step in task_meta:
+            if not step == 0:
+                skill_string = tasks[task_name][step]["skill"]
+                match = re.match(r"(\w+)\((.*)\)", skill_string.strip())
+                skill_name = match.group(1)
+                parameters = match.group(2).split(",")
+                # assuming every different skill has different names
+                lifted_skill = [skill for skill in task_config['skills'].values() if skill.name==skill_name][0]
+                tasks[task_name][step]["skill"] = lifted_skill.ground_with(parameters)
+    
+    return tasks
+
 def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_directory):
     """
     Save results as seprate yaml file. 
@@ -284,7 +299,10 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
     # TODO: auto rename in case of overwriting
     logging.info(f"results have been saved to {save_directory}")
 
-def load_results(): # for continue learning purpose
+def load_results(load_path):
+    """
+    Load operators, predicate list, and truth value log
+    """
     pass
 
 if __name__ == "__main__":

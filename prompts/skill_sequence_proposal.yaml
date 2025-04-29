@@ -30,21 +30,18 @@ dorfl:
     (3) at least 1 unexplored skill pair is used in each task 
     (4) all tasks have at least 8 skills in sequence.
 
-    Output only the task name and the sequence of skills to execute, 
-    ensuring to follow the naming/syntax/arguments for skills provided. 
-    Output 1 skill every new line, following the format below:
-    Skill Sequence 1: 
-    GoTo(CounterTop)
-    PickUp(Apple, CounterTop)
-    
-    Skill Sequence 2:
-
-    Propose a set of skill sequences for a robot to execute. The robot is attempting to learn the preconditions and effects for predefined operators. 
-
-  prompt_new: |
-    The robot can navigate anywhere freely but only has two grippers. The robot has access to the following skills with their associated parameter types:
+  Output only the task name and the sequence of skills to execute, 
+  ensuring to follow the naming/syntax/arguments for skills provided. 
+  Output 1 skill every new line, following the format below:
+  Skill Sequence 1: 
+  GoTo(CounterTop)
+  PickUp(Apple, CounterTop)
   
-    [SKILL_PROMPT]
+  Skill Sequence 2:
+prompt_new: |
+  The robot can navigate anywhere freely but only has two grippers. The robot has access to the following skills with their associated parameter types:
+ 
+  [SKILL_PROMPT]
 
     The list of objects the robot has previously encountered in the environment with their parameter types are: 
     [OBJECT_IN_SCENE]
