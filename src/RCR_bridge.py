@@ -1189,6 +1189,7 @@ class RCR_bridge:
     def __init__(self, obj2pid: dict[str, int]={}, obj2param: dict[str, Parameter]={}):
         self.obj2pid = obj2pid
         self.obj2param = obj2param
+        self.pid2type = {}
     def predicatestate_to_pddlstate(self, pred_state: PredicateState) -> PDDLState:
         """
         Convert a PredicateState object into PDDLState
@@ -1244,15 +1245,16 @@ class RCR_bridge:
                 for pred in state.iter_predicates():
                     obj_set.update(pred.params)
 
-        assert all([p in obj_set for p in skill.params]), "skill's parameter should be inside certain predicate"
-
+        # assert all([p in obj_set for p in skill.params]), f"skill {str(skill)} parameter should be in certain predicate {obj_set}"
+        # NOTE: it's possible that the skill is Place(Apple, Table) while the only predicate is graspable(Apple)
         obj_id = 0
         if flush:
             self.obj2pid = {}
         # params in the skill first
-        for obj in skill.params:
+        for i, obj in enumerate(skill.params):
             if not obj in self.obj2pid:
                 self.obj2pid[obj] = obj_id
+                self.pid2type[obj_id] = skill.types[i]
                 obj_id += 1
         
         # other params
@@ -1300,7 +1302,11 @@ class RCR_bridge:
         """
         pid2type = {}
         for obj, pid in self.obj2pid.items():
-            pid2type[pid] = self.obj2param[obj].type
+            if obj in self.obj2param:
+                pid2type[pid] = self.obj2param[obj].type
+            else:
+                assert pid in self.pid2type, f"parameter must either be in the skill or the predicates of abstarct states, but {obj} is not in {list(self.pid2type.values())}"
+                pid2type[pid] = self.pid2type[pid]
         return pid2type
     
 def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> list[dict[str, int]]:

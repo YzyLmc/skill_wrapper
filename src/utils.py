@@ -250,7 +250,8 @@ def clean_logging(save_path, keyword_list=['HTTP']):
     This function will naively remove the lines that contains thos prefix
     """
     # Clean the lines start with 'HTTP'
-    lines = load_from_file(save_path)
+    with open(save_path, 'r') as file:
+        lines = file.readlines()
     with open(save_path, 'w') as file:
         for line in lines:
             if not any(kw in line for kw in keyword_list):
@@ -272,7 +273,7 @@ def load_tasks(load_path, task_config):
                 skill_string = tasks[task_name][step]["skill"]
                 match = re.match(r"(\w+)\((.*)\)", skill_string.strip())
                 skill_name = match.group(1)
-                parameters = match.group(2).split(",")
+                parameters = match.group(2).split(", ")
                 # assuming every different skill has different names
                 lifted_skill = [skill for skill in task_config['skills'].values() if skill.name==skill_name][0]
                 tasks[task_name][step]["skill"] = lifted_skill.ground_with(parameters)

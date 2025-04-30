@@ -55,7 +55,7 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
     for lifted_skill in skill2operator:
-        skill2triedpred = {} # reset tried_predicate buffer after each skill
+        skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
         skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
@@ -76,8 +76,7 @@ def main():
         else:   
             # start from scratch
             lifted_pred_list = []
-            skill2operator = {lifted_skill: None for lifted_skill in task_config['skills'].values()}
-
+            skill2operator = {lifted_skill: None for lifted_skill in list(task_config['skills'].values())}
         # init skill sequence proposing system
         # skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
         
@@ -89,6 +88,7 @@ def main():
 
         # TODO: read or init if start from scratch
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
+        assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
         tasks = {}
         grounded_predicate_truth_value_log = {}
 
@@ -99,14 +99,13 @@ def main():
                 tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
             else:
                 assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention"
-                tasks = load_tasks(args.load_fpath, task_config)
-            # invent predicates
+                tasks = load_tasks(args.load_fpath, task_config)            # invent predicates
             skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
 
             logging.info(f"iteration #{i+1} is done")
-            operator_string_list = [f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for lifted_skill, operator_tuple in skill2operator.items()]
+            operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
             logging.info("Operators learned this round:")
-            logging.info('\n'.join(operator_string_list))
+            for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
 
             if args.step_by_step:
@@ -120,14 +119,15 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", "chatgpt-4o-latest"], default="gpt-4o-2024-08-06")
-    parser.add_argument("--num_iter", type=int, default=5, help="num of iter run the full refinement and proposal loop.")
+    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
+    parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
     parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
     parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")
     parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
+    parser.add_argument("--propose_skill_sequence_only", action="store_true", help="Read from exsiting data and invent predicates") # TODO: implement this
     args = parser.parse_args()
 
     main()

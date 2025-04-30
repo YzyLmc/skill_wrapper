@@ -104,7 +104,8 @@ class Predicate:
         grounded_pred = Predicate(
             name=self.name,
             types=self.types,
-            params=params
+            params=params,
+            semantic=self.semantic
         )
 
         return grounded_pred

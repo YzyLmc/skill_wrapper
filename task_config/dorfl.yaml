@@ -78,6 +78,9 @@ objects:
   Shelf:
     types:
       - location
+  Robot:
+    types:
+      - robot
 
 Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
 
