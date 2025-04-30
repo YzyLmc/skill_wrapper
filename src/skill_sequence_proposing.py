@@ -70,8 +70,8 @@ class SkillSequenceProposing():
         self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
         #embedding model for grounding LLM output to groundable/executable skills and objects
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.device = torch.device('mps') # for my m1 macbook: mps
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('mps') # for my m1 macbook: mps
         self.embedding_model = SentenceTransformer('stsb-roberta-large').to(self.device)
         self.all_skill_embeddings = self.embedding_model.encode([skill.name for skill in list(self.skill_dictionary.keys())], batch_size=32, convert_to_tensor=True, device=self.device)
         self.all_param_embeddings = self.embedding_model.encode(list(self.objects_type_dict.keys()), batch_size=32, convert_to_tensor=True, device=self.device)

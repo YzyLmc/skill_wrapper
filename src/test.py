@@ -29,14 +29,17 @@ lifted_pred_list = [
 
 pred_state = PredicateState(lifted_pred_list)
 
-with open("skill.yaml", "w") as f:
-    yaml.dump(lifted_skill, f)
+# with open("skill.yaml", "w") as f:
+#     yaml.dump(lifted_skill, f)
 
-with open("skill.yaml", "r") as f:
-    loaded_data = yaml.load(f, Loader=yaml.Loader)
-breakpoint()
-
+# with open("skill.yaml", "r") as f:
+#     loaded_data = yaml.load(f, Loader=yaml.Loader)
+# breakpoint()
+pred = Predicate(' \nisWithinReach', ('robot', 'pickupable'))
+lifted_pred_list = [pred]
+type_dict = {"Robot":['robot'], 'PeanutButter': ['openable', 'pickupable'], 'Knife': ['pickupable', 'utensil'], 'Bread': ['food'], 'Cup': ['receptacle'], 'Table': ['location'], 'Shelf': ['location']}
 groundings = possible_grounded_preds(lifted_pred_list, type_dict)
+breakpoint()
 grounded_skill = skill.ground_with(["Banana", "Table"])
 pred_to_update = calculate_pred_to_update(groundings, grounded_skill)
 

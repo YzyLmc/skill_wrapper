@@ -1,0 +1,9 @@
+A robot has been programmed with a skill `[SKILL]`, and it has tried to execute the skill for twice, where the change of the states have been abstracted into symbolic representations with predicates. However, the symbolic representations of both state changes are the same but the results of the two executions are different (one succeed and the other fail), which indicates the existing predicate set is not sufficient to describe the effect of the skill. Given the current symbolic state of both states, please propose a new predicate, whose truth value will potentially change after the skill execution, to distinguish the two states and the semantic meaning of the predicate in one sentence together in one line.
+Example format:
+`example_predicate`: example_semantic_meaning.
+For both symbolic states:
+Before: `[PRED_DICT]`
+After: `[PRED_DICT]`
+Note that it means no predicate has been proposed if the symbolic states are empty. Also, you should avoid the predicates have been tried before if this list is not empty: `[TRIED_PRED]`.
+
+New predicate:

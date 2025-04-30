@@ -164,7 +164,8 @@ if __name__ == "__main__":
     #         'DropAt(Vase,Sofa)', 
     #         'DropAt(Vase,Sofa)', 
     #         'PickUp(Bowl,DiningTable)']
-    task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'PickUp(Vase,CoffeeTable)']
+    task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'GoTo(Sofa, CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'GoTo(CoffeeTable, Sofa)', 'DropAt(Vase, Sofa)']
+    task = ['GoTo(Sofa, CoffeeTable)', 'PickUp(Vase,CoffeeTable)', 'GoTo(CoffeeTable, Sofa)', 'DropAt(Vase, Sofa)', 'GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)']
     generated_code = convert_task_to_code(task)
     print(generated_code)
     breakpoint()
