@@ -163,7 +163,9 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
     logging.info('looking for empty grounded predicates')
     # update if there are new tasks
     for task_id, steps in tasks.items():
+        new_task = False
         if task_id not in grounded_predicate_truth_value_log:
+            new_task = True
             grounded_predicate_truth_value_log[task_id] = {}
             for step in steps:
                 grounded_predicate_truth_value_log[task_id][step] = PredicateState(grounded_pred_list)
@@ -192,7 +194,7 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                         truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred) if state["skill"].lifted() == skill\
                                         else None
                     elif step == 0:
-                        truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred, init=True)
+                        truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred, init=True) # TODO: think more about init step
                     else:
                         truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred)
                     # logging.info(f"updated truth value of predicate {grounded_pred}: {truth_value}")
@@ -201,8 +203,9 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
             
             # 3.copy all empty predicates from previous state
                 elif not step == 0: # if is a non-init state, update the predicates
-                    truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred)
-                    grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+                    if (new_task) or (not new_task and grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None):
+                        truth_value = eval_pred(model, state["image"], state["skill"], grounded_pred)
+                        grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
             unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
             if not skill:
