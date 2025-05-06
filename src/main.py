@@ -13,14 +13,14 @@ from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates
 from ai2thor_task_exec import convert_task_to_code
 
-def propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args):
+def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, args):
     """
     Propose a skill sequence and execute the skill sequence
     """
     t = 0
     task_success = False
     while t < 10 and not task_success:
-        chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator)
+        chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(lifted_pred_list, skill2operator, tasks)
         t += 1
         logging.info(f'Task: {chosen_skill_sequence}')
         try:
@@ -72,13 +72,7 @@ def main():
         model = GPT4(engine=args.model)
 
         # init skill sequence proposing system
-        # skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
-        
-        if args.continue_learning:
-            raise NotImplementedError("Continue learning not implemented yet")
-            # start_num = str(max([int(key) for key in log_data.keys() if key.isdigit()]))
-        else:
-            start_num = "0"
+        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
 
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
         assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
@@ -86,10 +80,10 @@ def main():
         tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
 
         # main loop
-        for i in range(int(start_num), args.num_iter):
+        for i in range(args.num_iter):
             if not args.invent_pred_only:
                 # propose skill sequence and execute
-                tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, grounded_predicate_truth_value_log, skill2operator, args)
+                tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args)
             else:
                 assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention."
 

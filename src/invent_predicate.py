@@ -603,10 +603,6 @@ if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-11-20')
     # mock symbolic state
     type_dict = {"Robot": ["robot"], "Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
-    skill_1 = {'name': 'PickUp', 'types':['object'], 'params':[]}
-    skill_2 = {"name": "GoTo", "types": ['location'], 'params':[]}
-    skill_3 = {"name": "PlaceAt", "types": ['object', 'location'], 'params':[]}
-    skill_list = [skill_1, skill_2, skill_3]
     type_dict = {
         "Robot": ["robot"], 
         "Apple": ['object'], 
@@ -630,54 +626,56 @@ if __name__ == '__main__':
         Predicate("EnoughBattery", []),
         Predicate('handEmpty', [])
     ]
-
     pred_state = PredicateState(lifted_pred_list)
-    breakpoint()
-    
-    example_lifted_predicates = [
-        {'name':"At", 'types':["object", "location"], 'params':[], 'semantic': "At sem"},
-        {'name':"CloseTo", 'types':["robot", "location"], 'params':[], 'semantic': "CloseTo sem"},
-        {'name':"HandOccupied", 'types':[], 'params':[], 'semantic': "HandOccupied sem"},
+
+    # predicate invention tuning
+    # pickleft()
+    image_pair = [
+        'test_tasks/task_imgs/1/1.jpg',
+        'test_tasks/task_imgs/1/5.jpg'
     ]
-    add_predicates = [
-        {'name': "IsHolding", "types":["object"], 'params':[], 'semantic': "IsHolding sem"},
-        {'name': "EnoughBattery", "types": [], 'params':[], 'semantic': "EnoughBattery sem"},
-        {'name':'handEmpty', 'types':[],'params':[], 'semantic': "The robot's hand is empty"}
+    grounded_skills = [
+        Skill('PickLeft', ['pickupable'], ['Knife']),
+        Skill('PickLeft', ['pickupable'], ['PeanutButter'])
     ]
-    test_pred_state = PredicateState(example_lifted_predicates)
+    successes = [
+        False,
+        True
+    ]
+    lifted_pred_list = []
+    pred_type = 'precond'
 
-    test_pred = {'name':"At", 'types':["object", "location"], 'params':[]}
-    test_pred_keyified = PredicateState._keyify(test_pred)
-    test_pred_restored = PredicateState.restore_pred_from_key(test_pred_keyified)
+    # open()
+    image_pair = [
+        'test_tasks/task_imgs/1/3.jpg',
+        'test_tasks/task_imgs/1/6.jpg'
+    ]
+    grounded_skills = [
+        Skill('Open', ['openable'], ['PeanutButter']),
+        Skill('Open', ['openable'], ['PeanutButter'])
+    ]
+    successes = [
+        False,
+        True
+    ]
+    lifted_pred_list = []
+    pred_type = 'precond'
 
-    value = test_pred_state.get_pred_value(test_pred)
+    # scoop
+    image_pair = [
+        'test_tasks/task_imgs/1/5.jpg',
+        'test_tasks/task_imgs/1/10.jpg'
+    ]
+    grounded_skills = [
+        Skill('Scoop', ['utensil', 'openable'], ['Knife', 'PeanutButter']),
+        Skill('Scoop', ['utensil', 'openable'], ['Knife', 'PeanutButter'])
+    ]
+    successes = [
+        False,
+        True
+    ]
+    lifted_pred_list = []
+    pred_type = 'precond'
 
-    test_pred_state.add_pred_list(add_predicates)
-    # caculate possible predicates based on lifed predicates and type dict
-    possible_preds = possible_grounded_preds(test_pred_state.get_pred_list(lifted=True), type_dict)
-    # add grounded predicates to PredicateState
-    test_pred_state.add_pred_list(possible_preds)
-    
-    grounded_skill = {"name": "PlaceAt", "types": ['object', 'location'], 'params':['Banana', 'Couch']}
-    pred_to_update = calculate_pred_to_update(possible_preds, grounded_skill)
-
-    # test partitioning and scoring
-    # construct multiple PredicateState instances
-    s_0 = deepcopy(test_pred_state)
-    # breakpoint()
-    s_0.set_pred_value(
-        {'name':"At", 'types':["object", "location"], 'params':['Banana', 'Couch']}, True
-    )
-    s_1 = deepcopy(s_0)
-    s_1.set_pred_value(
-        {'name':"IsHolding", 'types':["object"], 'params':['Banana']}, True
-    )
-    # test PredicateState hashable function
-    hash_state_dict = {s_0: 0, s_1:1}
+    new_pred = generate_pred(image_pair, grounded_skills, successes, model, lifted_pred_list, pred_type)
     breakpoint()
-    # manually construct grounded_predicate_truth_value_log ::dict:: {task:{step:PredicateState}}
-    grounded_predicate_truth_value_log = {
-        '1': {
-
-        }
-    }

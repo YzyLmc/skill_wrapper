@@ -1,11 +1,33 @@
-A robot has been programmed with the skill `[LIFTED_SKILL]` two times, and the first execution of `[GROUNDED_SKILL_1]` [SUCCESS_1] while the second execution of `[GROUNDED_SKILL_2]` [SUCCESS_2], which indicates the existing predicate set is not sufficient to describe the precondition of the skill.
-Your task is to propose a high-level and generalized predicate and the semantic meaning of the predicate given the images before two executions. The predicates should contain 0~2 parameters ('robot' must be included as a parameter if the predicate is about the relationship between the robot and the environment, and empty parenthesis is allowed), and it should describe important aspects of the skill, such as the spatial relationship between different arguments of the skill, and physical constraints (whether the robot has empty hands, whether it's close enough to or far away from the target), but not any low-level predicates that involve path clearance, obstruction detection, nor obstacle checking to check accessibility or reachability, since we don't have measure of those.
-Example format:
-`example_predicate`: example_semantic_meaning.
-Current predicate set: 
-`[PRED_LIST]`
-(it means no predicate has been proposed if the list above is empty)
-You should only use the parameters of the skills if the new predicate is parametrized. Also, you should avoid similar predicates that are already in the current predicate set, and you shouldn't talk about skill executions when defining the semantic of predicates since predicate is a description of the world state.
-Tried predicates:
-`[TRIED_PRED]`
-New predicate regarding the precondition of the skill `[LIFTED_SKILL]`:
+A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the preconditions for successful execution of this skill.
+
+Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+
+Predicates should meet these criteria:
+
+- The predicate must be grounded in visual state only (e.g., “gripper is open,” “object is above table,” “robot is holding object”).
+
+- Describe object state or spatial relations relevant to task success (e.g., gripper open/closed, object on left/right of gripper, object touching/supporting another object, etc.)
+
+- Do not infer properties like affordances (is_graspable), alignment, or success likelihood that are vaguely defined and cannot be determined with common sense. 
+
+- Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
+
+- Use at most 2 parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-environment relation.
+
+- Avoid predicates that assume internal properties like is_graspable, is_properly_aligned, or any accessibility/reachability reasoning that cannot be determined visually.
+
+- The semantic meaning should be a grounded and objective description of the predicate in terms of the physical scene (e.g., “the object is fully enclosed by the robot's gripper”), not about execution success or skill dynamics.
+
+Format your output as follows:
+
+`predicate_name(parameters)`: semantic_meaning.
+
+for example:
+`CloseTo(robot, object)`: the robot is close to the object.
+
+Current predicates: [PRED_LIST]
+Previously proposed but rejected predicates: [TRIED_PRED]
+
+Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+New predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
