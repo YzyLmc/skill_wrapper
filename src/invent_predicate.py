@@ -74,10 +74,6 @@ def eval_pred(model, img: str, grounded_skill: Skill, grounded_pred: Predicate, 
         grounded_pred::dict:: grounded predicate with parameter type, e.g., {'name':"At", 'params':["location"]}
     '''
 
-    ### test purpose
-    # import random
-    # return random.choice([True, False])
-
     def construct_prompt(prompt, grounded_skill, grounded_pred):
         "replace placeholders in the prompt"
         # Predicate might have parameters don't belong to the skill
@@ -157,7 +153,6 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
     #    1. the predicate is newly added (assuming all possible grounded predicates are added, including the init step)
     #    2. a task is newly executed
     # NOTE: the dictionary could be partially complete because some truth values will be directly reused from the scoring function
-    # TODO: more efficient udpate, only the ones in lifted_pred_list?
     # generate all possible grounded predicates that match object types
     grounded_pred_list = possible_grounded_preds(lifted_pred_list, type_dict)
     logging.info('looking for empty grounded predicates')
@@ -241,7 +236,6 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 last_state = deepcopy(state)
     return skill2task2state
 
-# TODO: Heavy unit test
 def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> list[list[tuple, tuple]]:
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
@@ -280,7 +274,7 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
     bridge = RCR_bridge()
     # All grounded skills
-    # TODO: detect mismatch across grounded skill or lifted skill? Now across grounded
+    # TODO: detect mismatch across grounded skill or lifted skill? Now across lifted
     task2in_alpha: dict[str, bool] = {} # alpha is the union of grounding of precondition or effect of operators corresponding to one skill
     task2success: dict[str, bool] = {}
     task_step_tuple_list = []
@@ -325,8 +319,7 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     Args:
         mismatch_pair :: two task step tuples that triggered predicate invention
     """
-    # TODO: try different predicate invention: e.g., images, comparisons.
-    # task_step_tuple = tuple[str, int]
+    # task_step_tuple :: tuple[str, int]
     task_0, index_0 = mismatch_pair[0]
     task_1, index_1 = mismatch_pair[1]
     state_0 = tasks[task_0][index_0]

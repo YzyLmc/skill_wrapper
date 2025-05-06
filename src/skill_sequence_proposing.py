@@ -24,26 +24,26 @@ def lifted_pred_list_to_predicate_dictionary(lifted_pred_list):
     return {str(pred): pred.semantic for pred in lifted_pred_list}
 
 class SkillSequenceProposing():
-    def __init__(self, lifted_pred_list={}, skill2operator={}, tasks=None, init_state=None, prompt_fpath="prompts/skill_sequence_proposal.yaml", env_config_fpath="task_config/dorfl.yaml"):
+    def __init__(self, lifted_pred_list={}, skill2operator={}, tasks=None, init_state=None, prompt_fpath="prompts/skill_sequence_proposal.yaml", task_config_fpath="task_config/dorfl.yaml"):
         '''
         DONE:
         5) Hyperparameters for LLM
         1) Coverage ==> what type of entropy? do we take final entropy or difference in entropy for information gain? (maybe value function type: where repeatedly taking samples of same pair leads to stagnation)
         1.5) Choice of skill pairs for "least explored" in task proposing prompt
         '''
-        self.env_config = load_from_file(env_config_fpath)
+        self.task_config = load_from_file(task_config_fpath)
         self.prompt_dict = load_from_file(prompt_fpath)
         #predicate dictionary: {predicate: definition/description}
         self.predicate_dictionary = lifted_pred_list_to_predicate_dictionary(lifted_pred_list)
         self.operator_dictionary = skill2operator
-        self.skill_dictionary = {lifted_skill: {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.env_config['skills'].values()}
+        self.skill_dictionary = {lifted_skill: {'arguments': {ptype: sem for ptype, sem in lifted_skill.semantics.items()}} for lifted_skill in self.task_config['skills'].values()}
         self.operator_to_skill = {k: re.sub(r'_\d+', '', k) for (k,v) in self.operator_dictionary.items()}
         self.init_state = init_state
 
         #global object set for the scene
-        self.objects_type_dict = self.env_config['objects']
-        self.env_description = self.env_config['Env_description']
-        self.curr_observation  = self.env_config['Initial_observation']['img_fpath']
+        self.objects_type_dict = self.task_config['objects']
+        self.env_description = self.task_config['Env_description']
+        self.curr_observation  = self.task_config['Initial_observation']['img_fpath']
 
         #global frequency count for all pairs of skills 
         self.skill_to_index = {x: i for i,x in enumerate(self.skill_dictionary.keys())}
@@ -111,33 +111,17 @@ class SkillSequenceProposing():
 
         return skill_pair_count, skill_count
 
-    def parse_skill_sequence(self, proposed_skill_sequence: str):
-        # Function parses the skill sequence proposed by the LLM, removing the skills with 'False' label and returning only skill names
-        # Split by lines
-        lines = proposed_skill_sequence.strip().split('\n')
-
-        # Filter and collect only skills labeled "True"
-        skills = []
-        for line in lines:
-            if " - True:" in line:
-                skill = line.split(" - True:")[0]
-                skills.append(skill)
-
-        # Print each skill on a new line
-        output = "\n".join(skills)
-        return output
-
     def create_foundation_model_prompt(self):
         skill_prompts = []
         for skill in self.skill_dictionary:
             types = skill.types
             skill_prompt = str(skill) + '\n' + '\n'.join([t + ': ' + skill.semantics[t] for t in types])
             skill_prompts.append(skill_prompt)
-        objects_with_types = [f"{obj}: {str(types)}" for obj, types in self.env_config['objects'].items()]
+        objects_with_types = [f"{obj}: {str(types)}" for obj, types in self.task_config['objects'].items()]
         
         least_explored_skills = self.get_least_explored_skills()
-        prompt_context = self.prompt_dict[self.env_config['env']]["system_prompt"]
-        prompt = self.prompt_dict[self.env_config['env']]["prompt"]
+        prompt_context = self.prompt_dict[self.task_config['env']]["system_prompt"]
+        prompt = self.prompt_dict[self.task_config['env']]["prompt"]
         prompt = prompt.replace("[SKILL_PROMPT]", "\n\n".join(skill_prompts))\
                         .replace("[OBJECT_IN_SCENE]", str("\n".join(objects_with_types)))\
                         .replace("[ENV_DESCRIPTION]", self.env_description)\
@@ -362,7 +346,7 @@ class SkillSequenceProposing():
                 else:
                     closest_skill_name = skill_name
 
-                # assuming every different skill has different names
+                # assuming every different skills has different names
                 lifted_skill: Skill = [skill for skill in self.skill_dictionary if skill.name== closest_skill_name][0]
 
                 # TODO: implement typing, if typing doesn't match ground to closest matched object

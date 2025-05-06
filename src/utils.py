@@ -300,11 +300,31 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
     # TODO: auto rename in case of overwriting
     logging.info(f"results have been saved to {save_directory}")
 
-def load_results(load_path):
+def load_results(load_fpath, task_config):
     """
-    Load operators, predicate list, and truth value log
+    Load tasks, operators, predicate list, and truth value log
     """
-    pass
+    try:
+        tasks = load_tasks(load_fpath, task_config)
+    except:
+        tasks = {}
+
+    try:
+        skill2operator = load_from_file(f"{load_fpath}/skill2operator.pkl")
+    except:
+        skill2operator = {lifted_skill: None for lifted_skill in list(task_config['skills'].values())}
+
+    try:
+        lifted_pred_list = load_from_file(f"{load_fpath}/lifted_pred_list.yaml")
+    except:
+        lifted_pred_list = []
+
+    try:
+        grounded_predicate_truth_value_log = load_from_file(f"{load_fpath}/grounded_predicate_truth_value_log.yaml")
+    except:
+        grounded_predicate_truth_value_log = {}
+    
+    return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
 if __name__ == "__main__":
     gpt = GPT4(engine="o1")
