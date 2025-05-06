@@ -124,7 +124,7 @@ if __name__ == "__main__":
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
     parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")
     parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
-    parser.add_argument("--propose_skill_sequence_only", action="store_true", help="Read from exsiting data and invent predicates") # TODO: implement this
+    parser.add_argument("--propose_skill_sequence_only", action="store_true", help="Read from existing data and invent predicates") # TODO: implement this
     args = parser.parse_args()
 
     main()
