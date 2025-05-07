@@ -56,23 +56,24 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     '''
     for lifted_skill in skill2operator:
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
-        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time)
+        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time, args=args)
     # TODO: final filtering the predicate list and recalculate operators
+    # TODO: calculate operators for all skills after each iteration of skills since the predicate might be already sufficient
 
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
 def main():
     # init env
     task_config = load_from_file(args.task_config_fpath)
-
+    args.env = task_config["env"]
     log_save_path = setup_logging(args.save_dir, task_config["env"]) # configure logging
 
     # main loop
-    if task_config["env"] in ["dorfl", "spot"]:
+    if args.env in ["dorfl", "spot"]:
         model = GPT4(engine=args.model)
 
         # init skill sequence proposing system
-        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
+        # skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
 
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
         assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"

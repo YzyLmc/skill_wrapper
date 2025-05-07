@@ -2,8 +2,9 @@
 ---
 
 dorfl: |
-  A robot arm is executing a skill `[GROUNDED_SKILL]`. Given the following vidusl observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
+  A robot with two arms is executing skills in a table top setting. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
   `[LIFTED_PRED]`: [SEMANTIC]
+
 franka: |
-  A robot arm is executing a skill `[GROUNDED_SKILL]`. Given the following vidusl observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
+  A robot arm is executing skills in a table top setting. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
   `[LIFTED_PRED]`: [SEMANTIC]
