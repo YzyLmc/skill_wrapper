@@ -255,7 +255,7 @@ def in_alpha(possible_groundings, pddl_state_list: list[PDDLState, PDDLState], o
             applicable = grounded_operator.check_applicability(pddl_state_list[0])
             if applicable: # state has to satisfy precondition first in order to apply action
                 next_state = grounded_operator.apply(pddl_state_list[0])
-                breakpoint()
+                # breakpoint()
                 if next_state == pddl_state_list[1]:
                     return True
             else:
@@ -349,8 +349,8 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
         logging.info(f"Predicate {new_pred} is NOT added to predicate set because contain more then 2 parameters")
         skill2triedpred[lifted_skill].append(new_pred)
         return lifted_pred_list, skill2triedpred, False, grounded_predicate_truth_value_log
-    elif new_pred in lifted_pred_list:
-        logging.info(f"Predicate {new_pred} is already in the predicate set")
+    elif new_pred in lifted_pred_list or new_pred in skill2triedpred[lifted_skill]:
+        logging.info(f"Predicate {new_pred} is already in the predicate set or tried before.")
         return lifted_pred_list, skill2triedpred, False, grounded_predicate_truth_value_log
     
     new_pred_accepted = False
@@ -366,6 +366,7 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
         logging.info(f"Predicate {new_pred} added to predicate set by {pred_type} check")
         lifted_pred_list.append(new_pred)
         grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
+        grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args) # udpate for all skills
         new_pred_accepted = True
     else:
         logging.info(f"Predicate {new_pred} is NOT added to predicate set by {pred_type} check")
@@ -410,7 +411,7 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
         skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks)
 
     logging.info(f"Done inventing predicates for skill {str(lifted_skill)}")
-    # TODO: final filtering the predicate list and recalculate operators
+    # Not flushing tried predicate cache right now
     return skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log
 
 def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_truth_value_log, tasks, pred_type: str, type_dict, threshold:  dict[str, float]) -> bool:

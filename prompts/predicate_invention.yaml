@@ -32,11 +32,12 @@ dorfl:
     `CloseTo(robot, location)`: the robot is close to the location.
 
     Current predicates: [PRED_LIST]
+    
     Previously proposed but rejected predicates: [TRIED_PRED]
 
     Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    New predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
 
   eff: |
     A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution shown in the first image (before) and the second (after), the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution shown in the third image (before) and the fourth (after), [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the effects for successful execution of this skill.
@@ -69,8 +70,9 @@ dorfl:
     `CloseTo(robot, location)`: the robot is close to the location.
 
     Current predicates: [PRED_LIST]
+
     Previously proposed but rejected predicates: [TRIED_PRED]
 
     Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    New predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:
