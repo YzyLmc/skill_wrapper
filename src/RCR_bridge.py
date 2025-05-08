@@ -1227,6 +1227,7 @@ class RCR_bridge:
 
             if pred_state.get_pred_value(pred) == True:
                 true_set.add(grounded_relation)
+                # breakpoint()
             elif pred_state.get_pred_value(pred) == False:
                 false_set.add(grounded_relation)
         return PDDLState(true_set, false_set)
@@ -1273,7 +1274,7 @@ class RCR_bridge:
         return operator
 
     @staticmethod
-    def map_param_name_to_param_object(operator: LiftedPDDLAction, obj2pid: dict[str, int], type_dict: list[str, list[str]] = {}, obj2param: dict[str, Parameter] = {}) -> dict[str, Parameter]:
+    def map_param_name_to_param_object(operator: LiftedPDDLAction, obj2pid: dict[str, int], obj2param: dict[str, Parameter] = {}) -> dict[str, Parameter]:
         """
         Generate a grounding corresponding to an object to parameter mapping for grounding lifted operators.
         At least one of type_dict and obj2param must be provided.
@@ -1490,9 +1491,17 @@ if __name__ == "__main__":
         "Table": ["location"],
         "Orange": ["object"]
     }
-    # grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid, obj2param=bridge.obj2param)
+    
+    grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid, obj2param=bridge.obj2param)
     grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid)
     grounded_operator = test_operator.get_grounded_action(grounding,0)
-    applicability = grounded_operator.check_applicability(pddlstate_1)
-    next_state = grounded_operator.apply(pddlstate_1)
+    # applicability = grounded_operator.check_applicability(pddlstate_1)
+    # next_state = grounded_operator.apply(pddlstate_1)
+    # breakpoint()
+    # test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
+    # test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
+    # test_ps = PredicateState([test_pred_1, test_pred_2])
+    # test_ps.set_pred_value(test_pred_1, False)
+    # test_ps.set_pred_value(test_pred_2, False)
+    # pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
     breakpoint()

@@ -1,16 +1,13 @@
 'refinement and proposal loop'
 'remember to change the for loop in update_tasks() if you have changed the input skill'
 import argparse
-import os
-from copy import deepcopy
 import logging
 from collections import defaultdict
-import re
 
 from data_structure import Skill, yaml
 from utils import GPT4, load_from_file, setup_logging, clean_logging, save_results, load_results
 from skill_sequence_proposing import SkillSequenceProposing
-from invent_predicate import invent_predicates
+from invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
 from ai2thor_task_exec import convert_task_to_code
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, args):
@@ -57,10 +54,11 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     for lifted_skill in skill2operator:
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
         skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time, args=args)
-    # TODO: final filtering the predicate list and recalculate operators
-    # TODO: calculate operators for all skills after each iteration of skills since the predicate might be already sufficient
+        
+    filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log,tasks)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks,filtered_lifted_pred_list)
 
-    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+    return skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log
 
 def main():
     # init env

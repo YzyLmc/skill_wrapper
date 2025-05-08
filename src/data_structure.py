@@ -183,6 +183,19 @@ class PredicateState:
         if lifted:
             pred_list = list(set([pred.lifted() for pred in pred_list]))
         return pred_list
+    
+    def filter_pred_list(self, keep_list: list[Predicate]):
+        '''
+        Removes all predicates from the state except those in keep_list.
+        '''
+        keep_set = set(keep_list)
+        new_pred_dict = {}
+
+        for pred in keep_set:
+            if pred in self.pred_dict:
+                new_pred_dict[pred] = self.pred_dict[pred]
+
+        self.pred_dict = new_pred_dict
 
 # Customized yaml config
 # Save and load data structures
