@@ -1,14 +1,14 @@
 (define (domain skillwrapper)
 
-    (:requirements :adl)
+	(:requirements :adl)
 
-    (:types
-        <types>
-    )
+	(:types
+		<types>
+	)
 
-    (:predicates
-        <predicates>
-    )
+	(:predicates
+		<predicates>
+	)
 
-    <actions>
+	<actions>
 )

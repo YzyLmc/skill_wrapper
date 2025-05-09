@@ -62,10 +62,10 @@ def create_domain_file(
     yaml_data: list,
 ):
     all_predicates = [parse_predicate(P) for P in yaml_data['predicates']]
-    print(all_predicates)
+    # print(all_predicates)
 
     all_operators = [O.pop() for _, O in yaml_data['operators'].items()]
-    print(all_operators)
+    # print(all_operators)
 
     all_objects = yaml_data['objects']['objects']
 
@@ -77,7 +77,23 @@ def create_domain_file(
         for obj_type in all_objects[obj_name]['types']:
             object_types.add(f'{obj_name} - {obj_type}')
 
-    print(object_types)
+    # print(object_types)
+
+    with open(f'{method}_domain.pddl', 'w') as nf:
+        prototype_content = None
+
+        # -- read all content from the prototype file:
+        with open('domain_prototype.pddl', 'r') as df:
+            prototype_content = df.read()
+
+        # -- find and replace placeholders in the prototype file:
+        new_content = prototype_content.replace('<actions>', "\n\n".join(all_operators))
+        new_content = new_content.replace('<types>', "\n\t\t".join(list(object_types)))
+        new_content = new_content.replace('<predicates>', "\n\t\t".join(all_predicates))
+
+        # -- write content to new PDDL file:
+        nf.write(new_content)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
