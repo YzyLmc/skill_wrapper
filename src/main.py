@@ -54,11 +54,12 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     for lifted_skill in skill2operator:
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
         skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time, args=args)
-        
-    filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log,tasks)
-    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks,filtered_lifted_pred_list)
 
-    return skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log
+    # filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log,tasks)
+    # breakpoint()
+    # skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks,filtered_lifted_pred_list)
+
+    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
 def main():
     # init env

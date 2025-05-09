@@ -128,7 +128,7 @@ def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes
     # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
     new_pred = Predicate(pred.split("(")[0], pred.split("(")[1].strip(")").split(", ")) # lifted
     new_pred.semantic = sem
-    breakpoint()
+    # breakpoint()
     return new_pred
 
 # Adding to precondition or effect are different prompts
@@ -184,14 +184,18 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
             for grounded_pred in pred_to_update:
                 # only update empty predicates
                 if grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None:
-                    if skill and step != 0:
-                        truth_value = eval_pred(state["image"], grounded_pred, model, args=args) if state["skill"].lifted() == skill\
-                                        else None
-                    else:
-                        truth_value = eval_pred(state["image"], grounded_pred, model, args=args)
-                    # logging.info(f"updated truth value of predicate {grounded_pred}: {truth_value}")
-                    if truth_value is not None:
-                        grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+                    # if skill and step != 0:
+                    #     # evaluate the predicate before and after the skill execution
+                    #     truth_value = eval_pred(state["image"], grounded_pred, model, args=args) if state["skill"].lifted() == skill or steps[step-1]["skill"].lifted() == skill\
+                    #                     else None
+                    # else:
+                    #     truth_value = eval_pred(state["image"], grounded_pred, model, args=args)
+                    
+                    # if truth_value is not None:
+                    #     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+
+                    truth_value = eval_pred(state["image"], grounded_pred, model, args=args)
+                    grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
             
             # 3.copy all empty predicates from previous state
                 elif not step == 0: # if is a non-init state, update the predicates
@@ -207,7 +211,6 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                 truth_value = grounded_predicate_truth_value_log[task_id][step-1].get_pred_value(grounded_pred)
                 grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
-    logging.info('Done updating predicate truth values')
     return grounded_predicate_truth_value_log
 
 def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, success_only: bool=False):
@@ -251,15 +254,17 @@ def in_alpha(possible_groundings, pddl_state_list: list[PDDLState, PDDLState], o
             applicable = grounded_operator.check_applicability(pddl_state_list[0])
             if applicable:
                 return True
-        elif pred_type == "eff":
-            applicable = grounded_operator.check_applicability(pddl_state_list[0])
-            if applicable: # state has to satisfy precondition first in order to apply action
-                next_state = grounded_operator.apply(pddl_state_list[0])
-                # breakpoint()
-                if next_state == pddl_state_list[1]:
-                    return True
-            else:
-                return False
+        elif pred_type == "eff": # TODO: implement new effect check
+            if pddl_state_list[1].true_set - pddl_state_list[0].true_set == grounded_operator.effect.add_set \
+                and pddl_state_list[1].false_set - pddl_state_list[0].false_set == grounded_operator.effect.delete_set:
+                return True
+            # applicable = grounded_operator.check_applicability(pddl_state_list[0])
+            # if applicable: # state has to satisfy precondition first in order to apply action
+            #     next_state = grounded_operator.apply(pddl_state_list[0])
+            #     if next_state == pddl_state_list[1]:
+            #         return True
+            # else:
+            #     return False
     return False
 
 def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> list[list[tuple, tuple]]:
@@ -380,20 +385,20 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     Invent one pred for precondition and one for effect.
     '''
     # check precondition first
-    # t = 0
-    # pred_type = "precond"
-    # grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args)
-    # mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type=pred_type)
-    # logging.info("About to enter precondition check")
-    # new_pred_accepted = False
-    # while mismatch_pairs and t < max_t:
-    #     # Always solve the first mismatch pair
-    #     lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred, args=args)
-    #     if new_pred_accepted: break
-    #     t += 1
+    t = 0
+    pred_type = "precond"
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args)
+    mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type=pred_type)
+    logging.info("About to enter precondition check")
+    new_pred_accepted = False
+    while mismatch_pairs and t < max_t:
+        # Always solve the first mismatch pair
+        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred, args=args)
+        if new_pred_accepted: break
+        t += 1
     
-    # if mismatch_pairs and new_pred_accepted:
-    #     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks)
+    if mismatch_pairs and new_pred_accepted:
+        skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks)
 
     # check effect
     t = 0
@@ -454,7 +459,6 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
 
     result = True if score/task_num > threshold[pred_type] else False
     logging.info(f"Predicate is {'' if result else 'not'} added. Score = {score/task_num}")
-    breakpoint()
     return result
 
 def score_by_partition_final(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
