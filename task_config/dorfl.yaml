@@ -86,4 +86,4 @@ Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knif
 
 Initial_observation:
   img_fpath: 
-    - 'test_imgs/init_state/dorfl.png'
+    - 'test_tasks/test_imgs/init_state/dorfl.png'

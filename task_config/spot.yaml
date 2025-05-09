@@ -97,4 +97,4 @@ Env_description: 'The robot is in a room with door locked. An eraser is in a clo
 
 Initial_observation:
   img_fpath: 
-    - 'test_imgs/init_state/dorfl.png'
+    - 'test_tasks/test_imgs/init_state/dorfl.png'

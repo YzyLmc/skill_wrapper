@@ -67,11 +67,11 @@ def main():
     log_save_path = setup_logging(args.save_dir, task_config["env"]) # configure logging
 
     # main loop
-    if args.env in ["dorfl", "spot"]:
+    if args.env in ["dorfl", "spot", "franka"]:
         model = GPT4(engine=args.model)
 
         # init skill sequence proposing system
-        # skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
+        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
 
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
         assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"

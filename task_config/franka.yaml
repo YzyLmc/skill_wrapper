@@ -1,0 +1,79 @@
+# This yaml file contains meta data for a test task.
+---
+env: franka
+
+skills:
+  Pick: !Skill
+    name: Pick
+    types:
+      - pickupable
+    params: !!python/tuple []
+    semantics: 
+      pickupable: the object to be picked up.
+
+  PlaceBack: !Skill
+    name: PlaceBack
+    types:
+      - pickupable
+    params: !!python/tuple []
+    semantics: 
+      pickupable: the object to be placed back.
+
+  Squeeze: !Skill
+    name: Squeeze
+    types:
+      - squeezable
+    params: !!python/tuple []
+    semantics:
+      squeezable: the object to be squeezed.
+
+  Pour: !Skill
+    name: Pour
+    types:
+      - pourable
+      - container
+    params: !!python/tuple []
+    semantics:
+      pourable: the object to pour liquid from.
+      container: the container to pour liquid to.
+
+  Stir: !Skill
+    name: Stir
+    types:
+      - utensil
+      - container
+    params: !!python/tuple []
+    semantics:
+      utensil: The utensil used to stir the liquid.
+      container: the container contains liquid that need to be stirred.
+
+    
+objects:
+  Teapot:
+    types:
+      - pickupable
+      - pourable
+  
+  Lemon:
+    types:
+      - pickupable
+      - squeezable
+  
+  Spoon:
+    types:
+    - pickupbale
+    - utensil
+  
+  Mug:
+   types:
+   - container
+  
+  Robot:
+    types:
+      - robot
+
+Env_description: 'The robot arm is set up on the table. The teapot, mug, lemon, and spoon are all on the table.'
+
+Initial_observation:
+  img_fpath: 
+    - 'test_tasks/test_imgs/init_state/dorfl.png'
