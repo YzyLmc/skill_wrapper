@@ -1,0 +1,56 @@
+- !Predicate
+  name: is_graspable
+  params: !!python/tuple []
+  semantic: "The object `pickupable` is in a position and orientation that allows\
+    \ the `robot` to successfully grasp it with its left gripper."
+  types: !!python/tuple
+  - robot
+  - pickupable
+- !Predicate
+  name: is_properly_aligned
+  params: !!python/tuple []
+  semantic: "The `target` object is in the correct position and orientation relative\
+    \ to the `robot` for the skill `[SKILL]` to be successfully executed."
+  types: !!python/tuple
+  - robot
+  - target
+- !Predicate
+  name: is_within_reachable_zone
+  params: !!python/tuple []
+  semantic: 'The object `pickupable` is located within the spatial zone that the `robot`
+    can physically reach with its right gripper.'
+  types: !!python/tuple
+  - robot
+  - pickupable
+- !Predicate
+  name: has_proper_tool_attachment
+  params: !!python/tuple []
+  semantic: 'The `tool` is correctly attached to the `robot` in a manner that allows
+    the skill `[SKILL]` to be executed effectively.'
+  types: !!python/tuple
+  - robot
+  - tool
+- !Predicate
+  name: is_stably_positioned
+  params: !!python/tuple []
+  semantic: 'The object `pickupable` is in a stable position that allows the `robot`
+    to successfully grasp it with its left gripper.'
+  types: !!python/tuple
+  - robot
+  - pickupable
+- !Predicate
+  name: has_proper_contact
+  params: !!python/tuple []
+  semantic: 'The `robot` has established the necessary physical contact with the `target`
+    object to perform the skill `[SKILL]`.'
+  types: !!python/tuple
+  - robot
+  - target
+- !Predicate
+  name: is_within_grasping_orientation
+  params: !!python/tuple []
+  semantic: 'The object `pickupable` is oriented in a way that allows the `robot`
+    to successfully grasp it with its right gripper.'
+  types: !!python/tuple
+  - robot
+  - pickupable

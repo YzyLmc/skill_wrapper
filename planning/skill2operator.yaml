@@ -1,0 +1,24 @@
+? !Skill
+  name: PickLeft
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+  types:
+  - pickupable
+: - "(:action a6 \n:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p1 - pickupable\
+    \  ?robot_p2 - robot )\n:precondition (and \n\t(not (= ?pickupable_p0 ?pickupable_p1))\n\
+    \t(robot_pickupable_is_graspable ?robot_p2 ?pickupable_p0)\n\t(robot_pickupable_is_graspable\
+    \ ?robot_p2 ?pickupable_p1)\n) \n:effect (and \n  ) \n)\n"
+? !Skill
+  name: PickRight
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+  types:
+  - pickupable
+: - "(:action a8 \n:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p2 - pickupable\
+    \  ?robot_p1 - robot )\n:precondition (and \n\t(not (= ?pickupable_p0 ?pickupable_p2))\n\
+    \t(robot_pickupable_is_graspable ?robot_p1 ?pickupable_p0)\n\t(robot_pickupable_is_graspable\
+    \ ?robot_p1 ?pickupable_p2)\n\t(not (robot_pickupable_is_stably_positioned ?robot_p1\
+    \ ?pickupable_p0))\n\t(not (robot_pickupable_is_within_reachable_zone ?robot_p1\
+    \ ?pickupable_p2))\n) \n:effect (and \n  ) \n)\n"
