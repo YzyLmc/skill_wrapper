@@ -151,7 +151,7 @@ class PredicateState:
         if pred_obj in self.pred_dict:
             self.pred_dict[pred_obj] = value
         else:
-            raise Exception("Predicate not found!")
+            raise Exception("Predicate {pred_obj} not found!")
 
     def get_pred_value(self, pred_obj):
         return self.pred_dict.get(pred_obj, {})

@@ -433,14 +433,19 @@ class Relation(object):
         return GroundedRelation(parameter1,parameter2,self.cr,self.region,self.discretizer)
     
     def __str__(self): 
-        return "({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(self.cr), self.parameter1_type, self.parameter2_type )
+        t1 = f"{self.parameter1_type}_" if self.parameter1_type else ""
+        t2 = f"{self.parameter2_type}_" if self.parameter2_type else ""
+        p1 = self.parameter1_type if self.parameter1_type else ""
+        p2 = self.parameter2_type if self.parameter2_type else ""
+    
+        return "({}{}{} {} {})".format(t1, t2, str(self.cr), p1, p2) 
 
     def __eq__(self,o): 
-        if self.parameter1_type == o.parameter1_type and self.parameter2_type == o.parameter2_type and self.region == o.region:
+        if self.parameter1_type == o.parameter1_type and self.parameter2_type == o.parameter2_type and self.cr == o.cr:
             if self.cr == 0 or o.cr == 0:
                 return self.cr == o.cr
             return True
-        elif self.parameter1_type == o.parameter2_type and self.parameter2_type == o.parameter1_type and self.region == o.region:
+        elif self.parameter1_type == o.parameter2_type and self.parameter2_type == o.parameter1_type and self.cr == o.cr:
             if self.cr == 0 or o.cr == 0:
                 return self.cr == o.cr
             return True
@@ -451,10 +456,10 @@ class Relation(object):
         return self.__str__() < o.__str__()
         
     def __hash__(self):
-        if self.cr != 0:
-            return hash("({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(self.region), self.parameter1_type, self.parameter2_type ))
+        if self.cr != None:
+            return hash("({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(self.cr), self.parameter1_type, self.parameter2_type ))
         else:
-            return hash("({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(len(self.region)), self.parameter1_type, self.parameter2_type ))
+            return hash("({}_{}_{} ?x - {} ?y - {})".format(self.parameter1_type,self.parameter2_type, str(len(self.cr)), self.parameter1_type, self.parameter2_type ))
 
     def __deepcopy__(self,memodict={}):
         region_to_copy = copy.deepcopy(self.region)
@@ -499,9 +504,9 @@ class GroundedRelation(Relation):
     def __eq__(self,o):
         if not super(GroundedRelation,self).__eq__(o):
             return False 
-        elif self.parameter1 == o.parameter1 and self.parameter2 == o.parameter2 and self.region == o.region:
+        elif self.parameter1 == o.parameter1 and self.parameter2 == o.parameter2 and self.cr == o.cr:
             return True
-        elif self.parameter1 == o.parameter2 and self.parameter2 == o.parameter1 and self.region == o.region:
+        elif self.parameter1 == o.parameter2 and self.parameter2 == o.parameter1 and self.cr == o.cr:
             return True
         else: 
             return False
@@ -515,12 +520,12 @@ class GroundedRelation(Relation):
         parameter2_str = self.parameter2
 
         if self.cr != 0:
-            return hash("({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(self.region), parameter1_str, parameter2_str))        
+            return hash("({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(self.cr), parameter1_str, parameter2_str))        
         else:
-            return hash("({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(len(self.region)), parameter1_str, parameter2_str))        
+            return hash("({}_{}_{} {} {})".format(self.parameter1_type, self.parameter2_type, str(len(self.cr)), parameter1_str, parameter2_str))        
 
     def get_lifted_relation(self):
-        return Relation(self.parameter1_type,self.parameter2_type,self.cr, self.region,self.discretizer)
+        return Relation(self.parameter1_type,self.parameter2_type, self.cr, self.region,self.discretizer)
 
     def get_next_region(self):
         if self.cr!= 0: 
@@ -551,7 +556,7 @@ class LiftedPDDLAction(object):
     @staticmethod
     def get_action_from_cluster(cluster, param_ids={}):
 
-        # cluster: List[PDDLState], List[PDDLState]
+        # cluster: list[list[PDDLState, PDDLState]]
 
         cluster_e_add = set()
         cluster_e_delete = set()
@@ -1190,7 +1195,7 @@ class RCR_bridge:
         self.obj2pid = obj2pid
         self.obj2param = obj2param
         self.pid2type = {}
-    def predicatestate_to_pddlstate(self, pred_state: PredicateState) -> PDDLState:
+    def predicatestate_to_pddlstate(self, pred_state: PredicateState, grounding: dict[int, str]=None) -> PDDLState:
         """
         Convert a PredicateState object into PDDLState
             obj2pid :: mapping object name to parameter. 
@@ -1200,7 +1205,8 @@ class RCR_bridge:
             assert isinstance(t, tuple)
             return t + (arg,) * (2 - len(t)) if len(t) < 2 else t
         
-        obj2pid = self.obj2pid | {None:-1}
+        obj2pid = {v:k for k,v in grounding.items()} if grounding is not None else self.obj2pid
+        obj2pid |= {None:-1}
         true_set = set()
         false_set = set()
         for pred in pred_state.iter_predicates():
@@ -1210,24 +1216,23 @@ class RCR_bridge:
 
             lifted_relation = Relation(p1type, p2type, pred.name)
 
-            if p1name not in self.obj2param:
-                # create new parameter for the object
-                p1_param = Parameter(obj2pid[p1name], p1type, p1name)
-                self.obj2param[p1name] = p1_param
-            else:
-                p1_param = self.obj2param[p1name]
+            # if p1name not in self.obj2param:
+            # create new parameter for the object
+            p1_param = Parameter(obj2pid[p1name], p1type, p1name)
+            # self.obj2param[p1name] = p1_param
+            # else:
+            #     p1_param = self.obj2param[p1name]
 
-            if p2name not in self.obj2param:
-                p2_param = Parameter(obj2pid[p2name], p2type, p2name)
-                self.obj2param[p2name] = p2_param
-            else:
-                p2_param = self.obj2param[p2name]
+            # if p2name not in self.obj2param:
+            p2_param = Parameter(obj2pid[p2name], p2type, p2name)
+                # self.obj2param[p2name] = p2_param
+            # else:
+            #     p2_param = self.obj2param[p2name]
 
             grounded_relation = lifted_relation.get_grounded_relation(p1_param, p2_param)
 
             if pred_state.get_pred_value(pred) == True:
                 true_set.add(grounded_relation)
-                # breakpoint()
             elif pred_state.get_pred_value(pred) == False:
                 false_set.add(grounded_relation)
         return PDDLState(true_set, false_set)
@@ -1246,7 +1251,6 @@ class RCR_bridge:
                 for pred in state.iter_predicates():
                     obj_set.update(pred.params)
 
-        # assert all([p in obj_set for p in skill.params]), f"skill {str(skill)} parameter should be in certain predicate {obj_set}"
         # NOTE: it's possible that the skill is Place(Apple, Table) while the only predicate is graspable(Apple)
         obj_id = 0
         if flush:
@@ -1257,7 +1261,7 @@ class RCR_bridge:
                 self.obj2pid[obj] = obj_id
                 self.pid2type[obj_id] = skill.types[i]
                 obj_id += 1
-        
+
         # other params
         for obj in obj_set:
             if not obj in self.obj2pid:
@@ -1299,8 +1303,13 @@ class RCR_bridge:
     
     def get_pid_to_type(self) -> dict[int, str]:
         """
-        pid to type mapping is useful for generating possible groundings for precondition check
+        pid to type mapping is useful for generating possible groundings for precondition check.
         """
+        # NOTE: One note on determining types when creating operators:
+        #       If the parameter can only be in the skill, in the predicate, or in both.
+        #       - If only in the skill, the type from the skill will be already the lowest hierarchy
+        #       - If only in the predicate, we have handled finding lowest hierarchy before this
+        #       - If in both, we use the predicates' type first
         pid2type = {}
         for obj, pid in self.obj2pid.items():
             if obj in self.obj2param:
@@ -1355,153 +1364,87 @@ def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> l
 if __name__ == "__main__":
     # test data structures
     # start with the base one
-
-    # lifted relation
-    # is_red_relation = Relation("object", None, "IsRed")
-
-    # light_room_relation = Relation(None, None, "LightRoom")
-    # at_relation = Relation("object", "location", "At")
-    # close_to_relation = Relation("robot", "location", "CloseTo")
-    # # ground relation
-    # obj2pid = {
-    #     "Robot": 0,
-    #     "Apple": 1,
-    #     "Table": 2,
-    #     "Banana": 3,
-    #     "Orange": 4
-    # }
-
-    # robot_param = Parameter(obj2pid["Robot"], "robot", "Robot")
-    # apple_param = Parameter(obj2pid["Apple"], "object", "Apple")
-    # table_param = Parameter(obj2pid["Table"], "location", "Table")
-    # banana_param = Parameter(obj2pid["Banana"], "object", "Banana")
-    # orange_param = Parameter(obj2pid["Orange"], "object", "Orange")
-
-    # none_param = Parameter(None, "", None)
-
-    # is_red_relation_grounded_apple = is_red_relation.get_grounded_relation(apple_param, none_param)
-    # light_room_relation_grounded = light_room_relation.get_grounded_relation(none_param, none_param)
-
-    # at_relation_grounded_apple_table = at_relation.get_grounded_relation(apple_param, table_param)
-    # at_relation_grounded_banana_table = at_relation.get_grounded_relation(banana_param, table_param)
-    # at_relation_grounded_orange_table = at_relation.get_grounded_relation(orange_param, table_param)
-
-    # close_to_relation_grounded_robot_table = close_to_relation.get_grounded_relation(robot_param, table_param)
-    # # transition 0
-    # # PDDL state 0
-    # true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
-    # false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
-
-    # grounded_state_0 = PDDLState(true_set, false_set)
-    # # PDDL state 1
-    # true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, at_relation_grounded_banana_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
-    # false_set  = {light_room_relation_grounded}
-
-    # grounded_state_1 = PDDLState(true_set, false_set)
-    # transition_0 = [grounded_state_0, grounded_state_1]
-
-    # # transition 1
-    # # PDDL state 0
-    # true_set = {close_to_relation_grounded_robot_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table}
-    # false_set  = {at_relation_grounded_apple_table, light_room_relation_grounded, at_relation_grounded_banana_table}
-    # grounded_state_3 = PDDLState(true_set, false_set)
-    # # PDDL state 1
-    # true_set = {close_to_relation_grounded_robot_table, at_relation_grounded_apple_table, is_red_relation_grounded_apple, at_relation_grounded_orange_table, at_relation_grounded_banana_table}
-    # false_set  = {light_room_relation_grounded}
-    # grounded_state_4 = PDDLState(true_set, false_set)
-    # transition_1 = [grounded_state_3, grounded_state_4]
-
-    # # test cluster: list[list[PDDLState, PDDLState]]
-    # cluster = [
-    #     transition_0,
-    #     transition_1
-    # ]
-
-    # obj2pid = {
-    #     "Robot": 0,
-    #     "Apple": 1,
-    #     "Table": 2,
-    #     "Banana": 3,
-    #     "Orange": 4,
-    # }
-    # grounding = {"_p1": none_param, 'location_p2': table_param, 'object_p1': apple_param, 'object_p3': banana_param, 'object_p4':orange_param, 'robot_p0':robot_param}
-    # operator = LiftedPDDLAction.get_action_from_cluster(cluster, obj2pid)
-    # grounded_operator = operator.get_grounded_action(grounding,0)
-    # applicability = grounded_operator.check_applicability(grounded_state_0)
-    # next_state = grounded_operator.apply(grounded_state_0)
-
-    # breakpoint()
-    ######### CONVERSION TEST
     bridge = RCR_bridge()
-
-    pred_1 = Predicate("At", ["object", "location"])
-    pred_2 = Predicate("IsHolding", ["object"])
-    pred_3 = Predicate("RoomLight",[])
-
     type_dict = {
-        "Robot": ["robot"],
-        "Apple": ["object"],
-        "Table": ["location"],
-        "Banana": ["object"],
-        "Orange": ["object"]
-    }
-
-    obj2pid = {
-        "Robot": 0,
-        "Apple": 1,
-        "Table": 2,
-        "Banana": 3,
-        "Orange": 4,
-    }
-
-    grounded_pred_1 = Predicate.ground_with(pred_1, ["Apple", "Table"], type_dict)
-    grounded_pred_2 = Predicate.ground_with(pred_2, ["Apple"], type_dict)
-    grounded_pred_3 = Predicate.ground_with(pred_3, [], type_dict)
-    grounded_pred_4 = Predicate.ground_with(pred_1, ["Orange", "Table"], type_dict)
-
-    # imaginal transition where PlaceAt("Apple", "Table") will result in apple and orange both on table
-    pred_state_1 = PredicateState([grounded_pred_1, grounded_pred_2, grounded_pred_3, grounded_pred_4])
-    pred_state_1.set_pred_value(grounded_pred_1, False)
-    pred_state_1.set_pred_value(grounded_pred_2, True)
-    pred_state_1.set_pred_value(grounded_pred_3, True)
-    pred_state_1.set_pred_value(grounded_pred_4, False)
-
-    pred_state_2 = copy.deepcopy(pred_state_1)
-    pred_state_2.set_pred_value(grounded_pred_1, True)
-    pred_state_2.set_pred_value(grounded_pred_2, False)
-    pred_state_2.set_pred_value(grounded_pred_4, True)
-
-    pred_state_3 = copy.deepcopy(pred_state_1)
-    pred_state_3.set_pred_value(grounded_pred_3, False)
-    
-    pred_state_4 = copy.deepcopy(pred_state_2)
-    pred_state_4.set_pred_value(grounded_pred_3, False)
-
-    test_transitions = [
-        [pred_state_1, pred_state_2],
-        [pred_state_3, pred_state_4]
-    ]
-
-    grounded_skill = Skill(name="PlaceAt", types=["object", "location"], params=["Orange", "Table"])
-    test_operator= bridge.operator_from_transitions(test_transitions, grounded_skill)
-    pddlstate_1 = bridge.predicatestate_to_pddlstate(pred_state_1)
-    pddlstate_2 = bridge.predicatestate_to_pddlstate(pred_state_2)
-    type_dict = {
-        "Apple": ["object"],
-        "Table": ["location"],
-        "Orange": ["object"]
-    }
-    
-    grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid, obj2param=bridge.obj2param)
-    grounding = RCR_bridge.map_param_name_to_param_object(test_operator, bridge.obj2pid)
-    grounded_operator = test_operator.get_grounded_action(grounding,0)
-    # applicability = grounded_operator.check_applicability(pddlstate_1)
-    # next_state = grounded_operator.apply(pddlstate_1)
-    # breakpoint()
-    # test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
-    # test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
-    # test_ps = PredicateState([test_pred_1, test_pred_2])
-    # test_ps.set_pred_value(test_pred_1, False)
+        'PeanutButter': ['openable', 'pickupable'],
+        'Knife': ['pickupable', 'utensil'],
+        'Bread': ['food'], 
+        'Cup': ['receptacle'], 
+        'Table': ['location'], 
+        'Shelf': ['location'], 
+        'Robot': ['robot']}
+    test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
+    test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
+    test_pred_3 = Predicate('IsOpen', ['openable'], ['PeanutButter'])
+    test_pred_4 = Predicate('HasContent', ['utensil'], ['Knife'])
+    test_pred_5 = Predicate('IsScooped', ['openable'], ['PeanutButter'])
+    test_ps = PredicateState([
+        # test_pred_1,
+        # test_pred_2, 
+        # test_pred_3, 
+        # test_pred_4,
+        test_pred_5,
+        ])
+    # test_ps.set_pred_value(test_pred_1, True)
     # test_ps.set_pred_value(test_pred_2, False)
+    # test_ps.set_pred_value(test_pred_3, True)
+    test_ps.set_pred_value(test_pred_5, False)
+    test_ps_1 = copy.deepcopy(test_ps)
+    test_ps_1.set_pred_value(test_pred_5, True)
+    skill = Skill('Scoop', ["utensil", "openable"], ["Knife", "PeanutButter"])
+    # operator = bridge.operator_from_transitions([[test_ps, test_ps_1]], skill)
     # pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
+    # breakpoint()
+
+    test_pred_1 = Predicate("ClearAbove", ["pickupable"], ["PeanutButter"])
+    test_pred_2 = Predicate("ClearAbove", ["pickupable"], ["Knife"])
+    test_pred_3 = Predicate("Holding", ["robot", "openable"], ["Robot", "PeanutButter"])
+    test_pred_4 = Predicate("LidRemoved", ["openable"], ["PeanutButter"])
+
+    # separate test
+    bridge = RCR_bridge()
+    test_ps_1 = PredicateState(
+        [
+            test_pred_1,
+            test_pred_2, 
+            test_pred_3, 
+            test_pred_4, 
+        ]
+    )
+    test_ps_1.set_pred_value(test_pred_1, True)
+    test_ps_1.set_pred_value(test_pred_2, False)
+    test_ps_1.set_pred_value(test_pred_3, True)
+    test_ps_1.set_pred_value(test_pred_4, True)
+    test_ps_2 = copy.deepcopy(test_ps_1)
+    # skill = Skill("Open", ["openable"], ["PeanutButter"])
+    skill = Skill("Pick", ["pickupable"], ["Knife"])
+    operator = bridge.operator_from_transitions([[test_ps_1, test_ps_2]], skill)
+    # try grounding other objects using the lifted operator
+    test_pred_1 = Predicate("ClearAbove", ["openable"], ["PeanutButter"])
+    test_pred_2 = Predicate("ClearAbove", ["utensil"], ["Knife"])
+    test_pred_3 = Predicate("Holding", ["robot", "openable"], ["Robot", "PeanutButter"])
+    test_pred_4 = Predicate("LidRemoved", ["openable"], ["PeanutButter"])
+
+    # separate test
+    # bridge = RCR_bridge()
+    # test_ps_1 = PredicateState(
+    #     [
+    #         test_pred_1,
+    #         test_pred_2, 
+    #         test_pred_3, 
+    #         test_pred_4, 
+    #     ]
+    # )
+    # test_ps_1.set_pred_value(test_pred_1, True)
+    # test_ps_1.set_pred_value(test_pred_2, False)
+    # test_ps_1.set_pred_value(test_pred_3, True)
+    # test_ps_1.set_pred_value(test_pred_4, True)
+    # test_ps_2 = copy.deepcopy(test_ps_1)
+    grounding = {0: "Knife", 1: "PeanutButter", 2: "Robot"}
+    pddl_state = bridge.predicatestate_to_pddlstate(test_ps_1, grounding)
+    param_name2param_object = {str(param): Parameter(param.pid, param.type, grounding[int(str(param).split("_p")[-1])]) for param in operator.parameters if not str(param).startswith("_")}
+    for param_name, param in param_name2param_object.items(): param_name2param_object[param_name].pid = str(param).split("_p")[-1]
+    param_name2param_object |= {'_p-1': Parameter(None, "", None)}
+    breakpoint()
+    grounded_operator = operator.get_grounded_action(param_name2param_object, 0)
     breakpoint()

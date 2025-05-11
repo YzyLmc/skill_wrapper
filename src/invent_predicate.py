@@ -239,13 +239,15 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 last_state = deepcopy(state)
     return skill2task2state
 
-def in_alpha(possible_groundings, pddl_state_list: list[PDDLState, PDDLState], operator, pred_type: str) -> bool:
+def in_alpha(possible_groundings, transition: list[PredicateState, PredicateState], operator, pred_type: str) -> bool:
     """
     Util function for detect_mismatch and score_by_partition
     There exist a grounding such that the grounded state agree with the operator's precondition/effect
     """
     for grounding in possible_groundings:
-        # param_name2param_object = {str(param): param.get_grounded_parameter(grounding[int(str(param).split("_p")[-1])]) for param in operator.parameters if not str(param).startswith("_")}
+        bridge = RCR_bridge()
+        # map objects to lifted parameters
+        pddl_state_list = [bridge.predicatestate_to_pddlstate(state, grounding) for state in transition]
         param_name2param_object = {str(param): Parameter(param.pid, param.type, grounding[int(str(param).split("_p")[-1])]) for param in operator.parameters if not str(param).startswith("_")}
         for param_name, param in param_name2param_object.items(): param_name2param_object[param_name].pid = str(param).split("_p")[-1]
         param_name2param_object |= {'_p1': Parameter(None, "", None)}
@@ -254,17 +256,10 @@ def in_alpha(possible_groundings, pddl_state_list: list[PDDLState, PDDLState], o
             applicable = grounded_operator.check_applicability(pddl_state_list[0])
             if applicable:
                 return True
-        elif pred_type == "eff": # TODO: implement new effect check
+        elif pred_type == "eff":
             if pddl_state_list[1].true_set - pddl_state_list[0].true_set == grounded_operator.effect.add_set \
                 and pddl_state_list[1].false_set - pddl_state_list[0].false_set == grounded_operator.effect.delete_set:
                 return True
-            # applicable = grounded_operator.check_applicability(pddl_state_list[0])
-            # if applicable: # state has to satisfy precondition first in order to apply action
-            #     next_state = grounded_operator.apply(pddl_state_list[0])
-            #     if next_state == pddl_state_list[1]:
-            #         return True
-            # else:
-            #     return False
     return False
 
 def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> list[list[tuple, tuple]]:
@@ -281,7 +276,6 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
     """
    
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
-    bridge = RCR_bridge()
     # All grounded skills
     task2in_alpha: dict[str, bool] = {} # alpha is the union of grounding of precondition or effect of operators corresponding to one skill
     task2success: dict[str, bool] = {}
@@ -303,8 +297,7 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
                 else:
                     for operator, pid2type in skill2operator[lifted_skill]:
                         possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
-                        pddl_state_list = [bridge.predicatestate_to_pddlstate(state) for state in transition_meta["states"]]
-                        if in_alpha(possible_groundings, pddl_state_list, operator, pred_type):
+                        if in_alpha(possible_groundings, transition_meta["states"], operator, pred_type):
                             state_in_alpha = True
                             break
 
@@ -434,7 +427,6 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
     # if the new operators can make sure fail execution outside alpha and successful execution inside alpha
     hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, success_only=False)
     task_num = 0
-    bridge_new = RCR_bridge()
     score = 0
 
     # for both success and failed tasks
@@ -448,9 +440,7 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                 assert hypothetical_operators, "There must be at least one operator learned"
                 for operator, pid2type in hypothetical_operators:
                     possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
-                    pddl_state_list = [bridge_new.predicatestate_to_pddlstate(state) for state in transition_meta["states"]]
-                    [print(p, task_step_tuple) for p in pddl_state_list]
-                    if in_alpha(possible_groundings, pddl_state_list, operator, pred_type):
+                    if in_alpha(possible_groundings, transition_meta["states"], operator, pred_type):
                         state_in_alpha = True
                         break
 
@@ -579,7 +569,7 @@ def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
         skill2state2partition[grounded_skill] = termination_partition
         skill2eff2partition[grounded_skill] = eff_partition
     # take intersection of both
-    skill2partition: dict[Skill, list[list[tuple]]] = {grounded_skill: apply_both_partition( list(skill2state2partition[grounded_skill].values()), \
+    skill2partition: dict[Skill, list[list[tuple]]] = {grounded_skill: apply_both_partition(list(skill2state2partition[grounded_skill].values()), \
                                                             list(skill2eff2partition[grounded_skill].values()) ) \
                                                             for grounded_skill in skill2eff2partition}
 
@@ -598,7 +588,7 @@ def create_one_operator_from_one_partition(grounded_skill: Skill, task2state, ta
 
     bridge = RCR_bridge()
     transitions = [task2state[task_step_tuple]["states"] for task_step_tuple in task_step_tuple_list]
-
+    # TODO:identify the lowest hierarchy type of each object in precondition and effect...
     return bridge.operator_from_transitions(transitions, grounded_skill, flush=True), bridge.get_pid_to_type()
 
 def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skill2partition):
