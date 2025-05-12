@@ -60,8 +60,8 @@ skills:
 objects:
   PeanutButter:
     types:
-      - openable
       - pickupable
+      - openable
   Knife:
     types:
       - pickupable
