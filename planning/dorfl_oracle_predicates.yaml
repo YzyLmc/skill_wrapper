@@ -1,0 +1,56 @@
+- !Predicate
+  name: hand_empty
+  params: !!python/tuple []
+  semantic: "The robot's gripper (either its left or right gripper) is empty, and it is not\
+    \ holding anything."
+  types: !!python/tuple
+  - hand
+
+- !Predicate
+  name: on_location
+  params: !!python/tuple []
+  semantic: "A `pickupable` object is placed on top of a `location` object."
+  types: !!python/tuple
+  - pickupable
+  - location
+
+- !Predicate
+  name: contains
+  params: !!python/tuple []
+  semantic: "The `pickupable` object contains a `spreadable` object (typically some ingredient) on it."
+  types: !!python/tuple
+  - pickupable
+  - spreadable
+
+- !Predicate
+  name: is_graspable
+  params: !!python/tuple []
+  semantic: "The object `pickupable` is in a position and orientation that allows\
+    \ the `robot` to successfully grasp it with either its left or right gripper."
+  types: !!python/tuple
+  - pickupable
+  - hand
+
+- !Predicate
+  name: is_holding
+  params: !!python/tuple []
+  semantic: "The robot is holding a `pickupable` object in either its left or right gripper."
+  types: !!python/tuple
+  - hand
+  - pickupable
+
+- !Predicate
+  name: is_spread
+  params: !!python/tuple []
+  semantic: "The `food` object contains a `spreadable` object (typically some ingredient)\
+    \ spread on top of it."
+  types: !!python/tuple
+  - spreadable
+  - food
+
+- !Predicate
+  name: is_opened
+  params: !!python/tuple []
+  semantic: "An `openable` object (such as a jar) is opened."
+  types: !!python/tuple
+  - openable

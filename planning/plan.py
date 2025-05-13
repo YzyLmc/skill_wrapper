@@ -23,16 +23,21 @@ def find_plan(
     command = [
         'python3', planner_path, domain_file, problem_file,
         '--search', f'{algorithm}({heuristic}())',
-        '--plan-file', f'trial_{trial}.plan',
+        # '--plan-file', f'"trial_{trial}.plan"',
     ]
 
-    planner_output = None
-    try:
-        planner_output = check_output(command)
-    except CalledProcessError as e:
-        print(f"error code: {e.returncode}\n\t-- Actual message: {e.output}")
+    plan = []
 
-    return planner_output
+    try:
+        _ = check_output(command)
+    except CalledProcessError as e:
+        print(f"error code: {e.returncode}\n\t-- Actual message: {str(e.output)}")
+    else:
+        with open('sas_plan', 'r') as f:
+            for _line in f.readlines():
+                if ';' not in _line: plan.append(_line.strip())
+
+    return plan
 
 
 def run_trials(
@@ -79,7 +84,9 @@ def create_domain_file(
 
     # print(object_types)
 
-    with open(f'{method}_domain.pddl', 'w') as nf:
+    domain_fpath = os.path.join(os.getcwd(), f'{method}_domain.pddl')
+
+    with open(domain_fpath, 'w') as nf:
         prototype_content = None
 
         # -- read all content from the prototype file:
@@ -94,6 +101,8 @@ def create_domain_file(
         # -- write content to new PDDL file:
         nf.write(new_content)
 
+
+    return domain_fpath
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -144,7 +153,7 @@ if __name__ == "__main__":
         sys.exit()
 
     if data_predicates and data_operators and data_objects:
-        create_domain_file(
+        domain_fpath = create_domain_file(
             method='skillwrapper',
             yaml_data={
                 'predicates': data_predicates,
@@ -153,3 +162,12 @@ if __name__ == "__main__":
             }
         )
 
+        solution = find_plan(
+            problem_file="./dorfl_oracle_problem-1.pddl",
+            domain_file=domain_fpath,
+        )
+
+        if solution:
+            print("plan has been found!")
+            for x in range(len(solution)):
+                print(f"{x+1} : {solution[x]}")

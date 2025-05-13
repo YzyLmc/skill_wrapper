@@ -68,10 +68,12 @@ skills:
       utensil: the utensil used to spread ingredients on food.
 
 objects:
-  PeanutButter:
+  Jar:
     types:
       - pickupable
       - openable
+  PeanutButter:
+    types:
       - spreadable
   Knife:
     types:
@@ -88,9 +90,9 @@ objects:
   Shelf:
     types:
       - location
-  Robot:
+  Gripper:
     types:
-      - robot
+      - hand
   utensil:
     types:
       - pickupable

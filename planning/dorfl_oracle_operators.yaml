@@ -1,0 +1,77 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    hand: the robot hand for grasping
+  types:
+  - pickupable
+  - hand
+: - "(:action Pick\n\
+    \ \t\t:parameters (?pickupable - pickupable ?hand - hand)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_graspable ?pickupable ?hand)\n\t\t\t(not (is_holding ?hand ?pickupable))\n\t\t\t(hand_empty ?hand)\n\t\t)\
+    \ \n\t\t:effect (and\n\t\t\t(not (is_graspable ?pickupable ?hand))\n\t\t\t(is_holding ?hand ?pickupable)\n\t\t\t(not (hand_empty ?hand))\n\t\t)\n\t)"
+
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be placed
+    hand: the robot hand for grasping
+    location: the spot where the object will be placed
+  types:
+  - pickupable
+: - "(:action Place\n\
+    \ \t\t:parameters (?pickupable - pickupable ?hand - hand ?location - location)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?hand ?pickupable)\n\t\t\t(not (on_location ?pickupable ?location))\n\t\t\t(not (hand_empty ?hand))\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(not (is_holding ?hand ?pickupable))\n\t\t\t(on_location ?pickupable ?location)\n\t\t\t(is_graspable ?pickupable ?hand)\n\t\t\t(hand_empty ?hand)\n\t\t)\n\t)"
+
+? !Skill
+  name: Spread
+  params: []
+  semantics:
+    utensil: the utensil used to spread ingredients on food.
+    hand: the robot hand for grasping
+    spreadable: the ingredient being spread on food.
+    food: the food that need ingredients to be spread on.
+  types:
+  - utensil
+  - food
+: - "(:action Spread\n\
+    \ \t\t:parameters (?utensil - utensil ?hand - hand ?spreadable - spreadable ?food - food)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?hand ?utensil)\n\t\t\t(contains ?utensil ?spreadable)\n\t\t\t(not (is_spread ?spreadable ?food))\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(not (contains ?utensil ?spreadable))\n\t\t\t(is_spread ?spreadable ?food)\n\t\t)\n\t)"
+
+? !Skill
+  name: Open
+  params: []
+  semantics:
+    openable: the container that can be opened.
+    hand: first hand of the robot
+    hand: second hand of the robot
+  types:
+  - openable
+  - hand
+: - "(:action Open\n\
+    \ \t:parameters (?openable - openable ?arm1 - hand ?arm2 - hand)\
+    \ \n\t\t:precondition (and\n\t\t\t(not (is_opened ?openable))\n\t\t\t(is_holding ?arm1 ?openable)\n\t\t\t(hand_empty ?arm2)\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(is_opened ?openable)\n\t\t)\n\t)"
+
+? !Skill
+  name: Scoop
+  params: []
+  semantics:
+    utensil: a utensil for scooping an ingredient from an openable object
+    hand: first hand of the robot
+    hand: second hand of the robot
+    openable: the container that has the ingredient to be spread
+    spreadable: the ingredient that is being scooped
+  types:
+  - utensil
+  - hand
+  - openable
+  - spreadable
+: - "(:action Scoop\n\
+    \ \t:parameters (?utensil - utensil ?arm1 - hand ?arm2 - hand ?jar - openable ?ingredient - spreadable)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?arm1 ?utensil)\n\t\t\t(is_holding ?arm2 ?jar)\n\t\t\t(is_opened ?jar)\n\t\t\t(contains ?jar ?ingredient)\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(contains ?utensil ?ingredient)\n\t\t)\n\t)"
