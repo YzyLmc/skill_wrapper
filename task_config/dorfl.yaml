@@ -4,67 +4,77 @@ env: dorfl
 
 skills:
   PickLeft: !Skill
-    name: PickLeft
+    name: Pick
     types:
       - pickupable
+      - arm
     params: !!python/tuple []
-    semantics: 
+    semantics:
       pickupable: the object to be picked up.
-
-  PickRight: !Skill
-    name: PickRight
-    types:
-      - pickupable
-    params: !!python/tuple []
-    semantics: 
-      pickupable: the object to be picked up.
+      arm: the robot arm for grasping
 
   Place: !Skill
     name: Place
     types:
       - pickupable
+      - arm
       - location
     params: !!python/tuple []
     semantics:
       pickupable: the object to be dropped.
+      arm: the robot arm for grasping
       location: the receptacle onto which object is dropped.
 
   Open: !Skill
     name: Open
     types:
       - openable
+      - arm
+      - arm
     params: !!python/tuple []
     semantics:
       openable: the container that can be opened.
+      arm: first hand of the robot
+      arm: second hand of the robot
 
   Scoop: !Skill
     name: Scoop
     types:
-      - utensil
-      - openable
+    - utensil
+    - arm
+    - arm
+    - openable
+    - spreadable
     params: !!python/tuple []
     semantics:
       utensil: the utensil used to scoop from a container.
+      arm: first hand of the robot
+      arm: second hand of the robot
       openable: the container that can be opened to be scooped from.
-  
+      spreadable: the ingredient that is being scooped
+
   Spread: !Skill
     name: Spread
     types:
       - utensil
+      - arm
+      - spreadable
       - food
     params: !!python/tuple []
     semantics:
-      utensil: the utensil used to spread ingredients on food.
+      spreadable: the ingredient being spread on food.
       food: the food that need ingredients to be spread on.
-    
+      arm: the robot arm for grasping
+      utensil: the utensil used to spread ingredients on food.
+
 objects:
   PeanutButter:
     types:
       - pickupable
       - openable
+      - spreadable
   Knife:
     types:
-      - pickupable
       - utensil
   Bread:
     types:
@@ -81,9 +91,12 @@ objects:
   Robot:
     types:
       - robot
+  utensil:
+    types:
+      - pickupable
 
 Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
 
 Initial_observation:
-  img_fpath: 
+  img_fpath:
     - 'test_tasks/test_imgs/init_state/dorfl.png'
