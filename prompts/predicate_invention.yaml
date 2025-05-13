@@ -80,3 +80,85 @@ dorfl:
     Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
     One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:
+
+# spot's prompt os identical to dorfl now. Not sure what to change.
+spot:
+  precond: |
+    A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the preconditions for successful execution of this skill.
+
+    Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+
+    Predicates should meet these criteria:
+
+    - The predicate must be grounded in visual state only (e.g., “gripper is open,” “object is above table,” “robot is holding object”).
+
+    - Describe object state or spatial relations relevant to task success (e.g., gripper open/closed, object on left/right of gripper, object touching/supporting another object, etc.)
+
+    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.), alignment, or success likelihood that are vaguely defined and cannot be determined with common sense. 
+
+    - Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
+
+    - Use at most 2 parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-environment relation.
+
+    - Avoid predicates that assume internal properties like is_graspable, is_properly_aligned, or any accessibility/reachability reasoning that cannot be determined visually.
+
+    - The semantic meaning should be a grounded and objective description of the predicate in terms of the physical scene (e.g., “the object is fully enclosed by the robot's gripper”), not about execution success or skill dynamics.
+
+    - The parameters of the predicate must be subset of the parameters of the skill.
+
+    Format your output as follows:
+
+    `predicate_name(parameters)`: semantic_meaning.
+
+    for example:
+    `CloseTo(robot, location)`: the robot is close to the location.
+
+    Current predicates: 
+    [PRED_LIST]
+    
+    Previously proposed but rejected predicates: 
+    [TRIED_PRED]
+
+    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
+
+  eff: |
+    A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution shown in the first image (before) and the second (after), the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution shown in the third image (before) and the fourth (after), [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the effects for successful execution of this skill.
+
+    Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before and after each execution.
+
+    Predicates should meet these criteria:
+
+    - The predicate must be grounded in visual state only (e.g., “gripper is open,” “object is above table,” “robot is holding object”).
+
+    - Describe the changes of object state or spatial relations (e.g., gripper open/closed, object on left/right of gripper, object touching/supporting another object, etc.)
+
+    - Do not infer any properties that cannot be determined visually, such as affordances (is_graspable), alignment, or success likelihood.
+
+    - Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
+
+    - Use at most 2 parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-environment relation.
+
+    - Avoid predicates that assume internal properties like is_graspable, is_properly_aligned, or any accessibility/reachability reasoning that cannot be determined visually.
+
+    - The semantic meaning should be a grounded and objective description of the predicate in terms of the physical scene (e.g., “the object is fully enclosed by the robot's gripper”), not about execution success or skill dynamics.
+
+    - The parameters of the predicate must be subset of the parameters of the skill.
+
+    Format your output as follows:
+
+    `predicate_name(parameters)`: semantic_meaning.
+
+    for example:
+    `CloseTo(robot, location)`: the robot is close to the location.
+
+    Current predicates: 
+    [PRED_LIST]
+
+    Previously proposed but rejected predicates: 
+    [TRIED_PRED]
+
+    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:

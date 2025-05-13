@@ -9,6 +9,8 @@ from data_structure import yaml
 import os
 import dill
 import re
+from collections import defaultdict
+from copy import deepcopy
 
 # OpenAI API Key
 api_key=os.getenv("OPENAI_API_KEY")
@@ -266,19 +268,22 @@ def load_tasks(load_path, task_config):
         tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
     """
     tasks = load_from_file(f"{load_path}/tasks.yaml")
+    converted_tasks = defaultdict(dict)
     # reassembly skill string to skill objects
     for task_name, task_meta in tasks.items():
         for step in task_meta:
-            if not step == 0:
+            converted_tasks[task_name][int(step)] = deepcopy(tasks[task_name][step])
+            if not int(step) == 0:
                 skill_string = tasks[task_name][step]["skill"]
                 match = re.match(r"(\w+)\((.*)\)", skill_string.strip())
                 skill_name = match.group(1)
                 parameters = match.group(2).split(", ")
                 # assuming every different skill has different names
                 lifted_skill = [skill for skill in task_config['skills'].values() if skill.name==skill_name][0]
-                tasks[task_name][step]["skill"] = lifted_skill.ground_with(parameters)
-    
-    return tasks
+                # tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
+                converted_tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
+
+    return converted_tasks
 
 def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_directory):
     """
@@ -304,10 +309,11 @@ def load_results(load_fpath, task_config):
     """
     Load tasks, operators, predicate list, and truth value log
     """
-    try:
-        tasks = load_tasks(load_fpath, task_config)
-    except:
-        tasks = {}
+    # try:
+    #     tasks = load_tasks(load_fpath, task_config)
+    # except:
+    #     tasks = {}
+    tasks = load_tasks(load_fpath, task_config)
 
     try:
         skill2operator = load_from_file(f"{load_fpath}/skill2operator.pkl")

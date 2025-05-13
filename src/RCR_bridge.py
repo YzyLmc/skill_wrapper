@@ -608,13 +608,13 @@ class LiftedPDDLAction(object):
             lr = relation.get_lifted_relation()
             pid1 = param_mapping[relation.parameter1]
             pid2 = param_mapping[relation.parameter2]
-            # cluster_e_add.add(ParameterizedLiftedRelation(pid1,pid2,lr)) # <-
+            cluster_e_add.add(ParameterizedLiftedRelation(pid1,pid2,lr)) # <-
         
         for relation in temp_deleted:
             lr = relation.get_lifted_relation()
             pid1 = param_mapping[relation.parameter1]
             pid2 = param_mapping[relation.parameter2]
-            # cluster_e_delete.add(ParameterizedLiftedRelation(pid1,pid2,lr)) # <-
+            cluster_e_delete.add(ParameterizedLiftedRelation(pid1,pid2,lr)) # <-
 
         relations_union = cluster[0][0].true_set.union(cluster[0][0].false_set)
         for relation in temp_added:
@@ -1230,75 +1230,12 @@ class RCR_bridge:
                 false_set.add(grounded_relation)
         return PDDLState(true_set, false_set)
     
-    def operator_from_transitions(self, transition_tuples: list[list[PredicateState, PredicateState]], skill: Skill, type_dict: dict[str, list[str]], flush=False) -> LiftedPDDLAction:
+    def operator_from_transitions(self, transition_tuples: list[list[PredicateState, PredicateState]], skill: Skill, type_dict: dict[str, list[str]], obj2type, flush=False) -> LiftedPDDLAction:
         """
         Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
             obj2pid :: mapping of the original grounded parameters to ids of the lifted parameters 
                         e.g., id of "object_p4" is 4
         """
-        def unify_obj_type(pddl_transitions: list[list[PDDLState, PDDLState]], skill: Skill, type_dict):
-            """
-            Find the common lowest hierarchy type of each parameters in the precondition and effect and the skill.
-            by precauculate the precondition and effect and determine the lowest hierarchy type of each parameter.
-            Ugly workaround since RCR code handles operator calculation and lifting at the same time
-
-            returns:
-                unified_pddl_transitions :: original pddl transitions with parameter types replaced by common lowest hierarchy type
-            """
-            # effect are the same across all transitions, so only need to calculate one
-            eff_add = pddl_transitions[0][1].true_set - pddl_transitions[0][0].true_set
-            eff_del = pddl_transitions[0][1].false_set - pddl_transitions[0][0].false_set
-
-            # precondition is the intersection of all the init state
-            precond_true = pddl_transitions[0][0].true_set
-            precond_false = pddl_transitions[0][0].false_set
-            for pddl_transition in pddl_transitions:
-                precond_true &= pddl_transition[0].true_set
-                precond_false &= pddl_transition[0].false_set
-
-            # all parameters appeared in all grounded relations in precond and eff
-            obj2type = {}
-            for gr in precond_true | precond_false | eff_add | eff_del:
-                if gr.p1.name is None:
-                    pass
-                elif gr.p1.name not in obj2type:
-                    obj2type[gr.p1.name] = gr.p1.type
-                # type dict is in hierarchical order, greater the index lower the hierarchy
-                elif type_dict[gr.p1.name].index(gr.p1.type) > type_dict[gr.p1.name].index(obj2type[gr.p1.name]):
-                    obj2type[gr.p1.name] = gr.p1.type
-                
-                if gr.p2.name is None:
-                    pass
-                elif gr.p2.name not in obj2type:
-                    obj2type[gr.p2.name] = gr.p2.type
-                # type dict is in hierarchical order, greater the index lower the hierarchy
-                elif type_dict[gr.p2.name].index(gr.p2.type) > type_dict[gr.p2.name].index(obj2type[gr.p2.name]):
-                    obj2type[gr.p2.name] = gr.p2.type
-
-
-            # check if skill has even lower type hierarchy
-            for obj, obj_type in zip(skill.params, skill.types):
-                if obj not in obj2type:
-                    obj2type[obj] = obj_type
-                elif type_dict[obj].index(obj_type) > type_dict[obj].index(obj2type[obj]):
-                    obj2type[obj] = obj_type
-
-            unified_pddl_transitions = copy.deepcopy(pddl_transitions)
-            # replace all parameter types in all relations using obj2type
-            for pddl_transition in unified_pddl_transitions:
-                for pddl_state in pddl_transition:
-                    for relation in pddl_state.true_set:
-                        relation.p1.type = obj2type[relation.p1.name] if relation.p1.name is not None else relation.p1.type
-                        relation.parameter1_type = relation.p1.type
-                        relation.p2.type = obj2type[relation.p2.name] if relation.p2.name is not None else relation.p2.type
-                        relation.parameter2_type = relation.p2.type
-                    for relation in pddl_state.false_set:
-                        relation.p1.type = obj2type[relation.p1.name] if relation.p1.name is not None else relation.p1.type
-                        relation.parameter1_type = relation.p1.type
-                        relation.p2.type = obj2type[relation.p2.name] if relation.p2.name is not None else relation.p2.type
-                        relation.parameter2_type = relation.p2.type
-
-            return obj2type, unified_pddl_transitions
 
         # build obj2pid mapping with skill parameter to be at the beginning (idx 0, 1)
         obj_set = set()
@@ -1330,14 +1267,29 @@ class RCR_bridge:
                 for t in transition_tuples
                                 ]
         
-        obj2type, unified_transition_cluster = unify_obj_type(transition_cluster, skill, type_dict)
+        # obj2type, unified_transition_cluster = self.unify_obj_type(transition_cluster, skill, type_dict)
+
+        # for t in transition_tuples:
+        #     for state in t:
+        #         for grounded_pred in state.pred_dict:
+        #             for idx, obj in enumerate(grounded_pred.params):
+        #                 if obj in obj2type:
+        #                     types_list = list(copy.deepcopy(grounded_pred.types))
+        #                     types_list[idx] = obj2type[obj]
+        #                     grounded_pred.types = tuple(types_list)
+        
+        # unified_transition_cluster = [
+        #     [self.predicatestate_to_pddlstate(t[0]),
+        #     self.predicatestate_to_pddlstate(t[1])] \
+        #         for t in transition_tuples
+        #                         ]
 
         # udpate pid2type and obj2type
         for obj in skill.params:
             self.pid2type[self.obj2pid[obj]] = obj2type[obj]
         self.obj2type = obj2type
 
-        operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(unified_transition_cluster, copy.deepcopy(self.obj2pid))
+        operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(transition_cluster, copy.deepcopy(self.obj2pid))
         return operator
 
     @staticmethod
@@ -1384,6 +1336,100 @@ class RCR_bridge:
                 pid2type[pid] = self.pid2type[pid]
         return pid2type
     
+    def unify_obj_type(self, transitions: list[list[PredicateState, PredicateState]], grounded_skill: Skill, type_dict, flush=False):
+        """
+        Find the common lowest hierarchy type of each parameters in the precondition and effect and the skill.
+        by precauculate the precondition and effect and determine the lowest hierarchy type of each parameter.
+        Ugly workaround since RCR code handles operator calculation and lifting at the same time
+
+        returns:
+            unified_pddl_transitions :: original pddl transitions with parameter types replaced by common lowest hierarchy type
+        """
+        # build obj2pid mapping with skill parameter to be at the beginning (idx 0, 1)
+        obj_set = set()
+        for transition in transitions:
+            for state in transition:
+                for pred in state.iter_predicates():
+                    obj_set.update(pred.params)
+
+        obj_id = 0
+        if flush:
+            self.obj2pid = {}
+        # params in the skill first
+        for i, obj in enumerate(grounded_skill.params):
+            if not obj in self.obj2pid:
+                self.obj2pid[obj] = obj_id
+                self.pid2type[obj_id] = grounded_skill.types[i]
+                obj_id += 1
+
+        # other params
+        for obj in obj_set:
+            if not obj in self.obj2pid:
+                self.obj2pid[obj] = obj_id
+                obj_id += 1
+
+        pddl_transitions = [
+            [self.predicatestate_to_pddlstate(t[0]),
+            self.predicatestate_to_pddlstate(t[1])] \
+                for t in transitions
+                                ]
+
+        # effect are the same across all transitions, so only need to calculate one
+        eff_add = pddl_transitions[0][1].true_set - pddl_transitions[0][0].true_set
+        eff_del = pddl_transitions[0][1].false_set - pddl_transitions[0][0].false_set
+
+        # precondition is the intersection of all the init state
+        precond_true = pddl_transitions[0][0].true_set
+        precond_false = pddl_transitions[0][0].false_set
+        for pddl_transition in pddl_transitions:
+            precond_true &= pddl_transition[0].true_set
+            precond_false &= pddl_transition[0].false_set
+
+        # all parameters appeared in all *grounded relations* in precond and eff
+        obj2type = {}
+        for gr in precond_true | precond_false | eff_add | eff_del:
+            if gr.p1.name is None:
+                pass
+            elif gr.p1.name not in obj2type:
+                obj2type[gr.p1.name] = gr.p1.type
+            # type dict is in hierarchical order, greater the index lower the hierarchy
+            elif type_dict[gr.p1.name].index(gr.p1.type) > type_dict[gr.p1.name].index(obj2type[gr.p1.name]):
+                obj2type[gr.p1.name] = gr.p1.type
+            
+            if gr.p2.name is None:
+                pass
+            elif gr.p2.name not in obj2type:
+                obj2type[gr.p2.name] = gr.p2.type
+            # type dict is in hierarchical order, greater the index lower the hierarchy
+            elif type_dict[gr.p2.name].index(gr.p2.type) > type_dict[gr.p2.name].index(obj2type[gr.p2.name]):
+                obj2type[gr.p2.name] = gr.p2.type
+
+
+        # check if skill has even lower type hierarchy
+        for obj, obj_type in zip(grounded_skill.params, grounded_skill.types):
+            if obj not in obj2type:
+                obj2type[obj] = obj_type
+            elif obj_type in type_dict[obj]:
+                if type_dict[obj].index(obj_type) > type_dict[obj].index(obj2type[obj]):
+                    obj2type[obj] = obj_type
+
+        unified_pddl_transitions = copy.deepcopy(pddl_transitions)
+        # replace all parameter types in all relations using obj2type
+        for pddl_transition in unified_pddl_transitions:
+            for pddl_state in pddl_transition:
+                for grounded_relation in pddl_state.true_set:
+                    grounded_relation.p1.type = obj2type[grounded_relation.p1.name] if grounded_relation.p1.name is not None else grounded_relation.p1.type
+                    grounded_relation.parameter1_type = grounded_relation.p1.type
+                    grounded_relation.p2.type = obj2type[grounded_relation.p2.name] if grounded_relation.p2.name is not None else grounded_relation.p2.type
+                    grounded_relation.parameter2_type = grounded_relation.p2.type
+                for grounded_relation in pddl_state.false_set:
+                    grounded_relation.p1.type = obj2type[grounded_relation.p1.name] if grounded_relation.p1.name is not None else grounded_relation.p1.type
+                    grounded_relation.parameter1_type = grounded_relation.p1.type
+                    grounded_relation.p2.type = obj2type[grounded_relation.p2.name] if grounded_relation.p2.name is not None else grounded_relation.p2.type
+                    grounded_relation.parameter2_type = grounded_relation.p2.type
+        # breakpoint()
+        return obj2type, unified_pddl_transitions
+    
 def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> list[dict[str, int]]:
     """
     required_types: list of types corresponding to total argument slots
@@ -1428,35 +1474,35 @@ def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> l
 
 if __name__ == "__main__":
     # test data structures
-    # start with the base one
-    bridge = RCR_bridge()
-    type_dict = {
-        'PeanutButter': ['openable', 'pickupable'],
-        'Knife': ['pickupable', 'utensil'],
-        'Bread': ['food'], 
-        'Cup': ['receptacle'], 
-        'Table': ['location'], 
-        'Shelf': ['location'], 
-        'Robot': ['robot']}
-    test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
-    test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
-    test_pred_3 = Predicate('IsOpen', ['openable'], ['PeanutButter'])
-    test_pred_4 = Predicate('HasContent', ['utensil'], ['Knife'])
-    test_pred_5 = Predicate('IsScooped', ['openable'], ['PeanutButter'])
-    test_ps = PredicateState([
+    # # start with the base one
+    # bridge = RCR_bridge()
+    # type_dict = {
+    #     'PeanutButter': ['openable', 'pickupable'],
+    #     'Knife': ['pickupable', 'utensil'],
+    #     'Bread': ['food'], 
+    #     'Cup': ['receptacle'], 
+    #     'Table': ['location'], 
+    #     'Shelf': ['location'], 
+    #     'Robot': ['robot']}
+    # test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
+    # test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
+    # test_pred_3 = Predicate('IsOpen', ['openable'], ['PeanutButter'])
+    # test_pred_4 = Predicate('HasContent', ['utensil'], ['Knife'])
+    # test_pred_5 = Predicate('IsScooped', ['openable'], ['PeanutButter'])
+    # test_ps = PredicateState([
         # test_pred_1,
         # test_pred_2, 
         # test_pred_3, 
         # test_pred_4,
-        test_pred_5,
-        ])
+        # test_pred_5,
+        # ])
     # test_ps.set_pred_value(test_pred_1, True)
     # test_ps.set_pred_value(test_pred_2, False)
     # test_ps.set_pred_value(test_pred_3, True)
-    test_ps.set_pred_value(test_pred_5, False)
-    test_ps_1 = copy.deepcopy(test_ps)
-    test_ps_1.set_pred_value(test_pred_5, True)
-    skill = Skill('Scoop', ["utensil", "openable"], ["Knife", "PeanutButter"])
+    # test_ps.set_pred_value(test_pred_5, False)
+    # test_ps_1 = copy.deepcopy(test_ps)
+    # test_ps_1.set_pred_value(test_pred_5, True)
+    # skill = Skill('Scoop', ["utensil", "openable"], ["Knife", "PeanutButter"])
     # operator = bridge.operator_from_transitions([[test_ps, test_ps_1]], skill)
     # pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
     # breakpoint()
@@ -1466,7 +1512,7 @@ if __name__ == "__main__":
     test_pred_3 = Predicate("Holding", ["robot", "pickupable"], ["Robot", "PeanutButter"])
     test_pred_4 = Predicate("LidRemoved", ["openable"], ["PeanutButter"])
 
-    # separate test
+    # # separate test
     bridge = RCR_bridge()
     test_ps_1 = PredicateState(
         [
@@ -1481,11 +1527,33 @@ if __name__ == "__main__":
     test_ps_1.set_pred_value(test_pred_3, True)
     test_ps_1.set_pred_value(test_pred_4, True)
     test_ps_2 = copy.deepcopy(test_ps_1)
-    # skill = Skill("Open", ["openable"], ["PeanutButter"])
+    
+    # # skill = Skill("Open", ["openable"], ["PeanutButter"])
     # skill = Skill("Pick", ["utensil"], ["Knife"])
-    skill = Skill("Scoop", ["pickupable", "pickupable"], ["Knife", "PeanutButter"])
+    skill = Skill("PickLeft", ["pickupable"], ["PeanutButter"])
+    # skill = Skill("Scoop", ["pickupable", "pickupable"], ["Knife", "PeanutButter"])
     type_dict = {'PeanutButter': ['pickupable', 'openable'], 'Knife': ['pickupable', 'utensil'], 'Bread': ['food'], 'Cup': ['receptacle'], 'Table': ['location'], 'Shelf': ['location'], 'Robot': ['robot']}
-    operator = bridge.operator_from_transitions([[test_ps_1, test_ps_2]], skill, type_dict)
+    transitions = [[test_ps_1, test_ps_2]]
+    obj2type, _ = bridge.unify_obj_type(transitions, skill, type_dict)
+    unified_transitions = []
+    for t in transitions:
+        unified_transition = []
+        for state in t:
+            predicate_state = PredicateState([])
+            for grounded_pred, truth_value in state.pred_dict.items():
+                types_list = []
+                for idx, obj in enumerate(grounded_pred.params):
+                    if obj in obj2type:
+                        types_list.append(obj2type[obj])
+                    else:
+                        types_list.append(grounded_pred.types[idx])
+                new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
+                predicate_state.pred_dict[new_grounded_pred] = state.get_pred_value(grounded_pred)
+            unified_transition.append(predicate_state)
+        unified_transitions.append(unified_transition)
+
+
+    operator = bridge.operator_from_transitions(unified_transitions, skill, type_dict, obj2type, flush=True)
     breakpoint()
     # try grounding other objects using the lifted operator
     # test_pred_1 = Predicate("ClearAbove", ["openable"], ["PeanutButter"])
@@ -1494,6 +1562,34 @@ if __name__ == "__main__":
     # test_pred_4 = Predicate("LidRemoved", ["openable"], ["PeanutButter"])
 
     # separate test
+    # bridge = RCR_bridge()
+    # test_ps_1 = PredicateState(
+    #     [
+    #         test_pred_1,
+    #         test_pred_2, 
+    #         test_pred_3, 
+    #         test_pred_4, 
+    #     ]
+    # )
+    # test_ps_1.set_pred_value(test_pred_1, True)
+    # test_ps_1.set_pred_value(test_pred_2, False)
+    # test_ps_1.set_pred_value(test_pred_3, True)
+    # test_ps_1.set_pred_value(test_pred_4, True)
+    # test_ps_2 = copy.deepcopy(test_ps_1)
+    # grounding = {0: "Knife", 1: "PeanutButter", 2: "Robot"}
+    # pddl_state = bridge.predicatestate_to_pddlstate(test_ps_1, grounding)
+    # param_name2param_object = {str(param): Parameter(param.pid, param.type, grounding[int(str(param).split("_p")[-1])]) for param in operator.parameters if not str(param).startswith("_")}
+    # for param_name, param in param_name2param_object.items(): param_name2param_object[param_name].pid = str(param).split("_p")[-1]
+    # param_name2param_object |= {'_p-1': Parameter(None, "", None)}
+    # grounded_operator = operator.get_grounded_action(param_name2param_object, 0)
+    # breakpoint()
+
+    # another test
+    test_pred_1 = Predicate('AboveSurface', ['pickupable'], ['PeanutButter'])
+    test_pred_2 = Predicate('AboveSurface', ['pickupable'], ['Knife'])
+    test_pred_3 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot','PeanutButter'])
+    test_pred_4 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot','Knife'])
+    test_pred_5 = Predicate("LidRemoved", ["openable"], ["PeanutButter"])
     bridge = RCR_bridge()
     test_ps_1 = PredicateState(
         [
@@ -1501,18 +1597,36 @@ if __name__ == "__main__":
             test_pred_2, 
             test_pred_3, 
             test_pred_4, 
+            test_pred_5,
         ]
     )
     test_ps_1.set_pred_value(test_pred_1, True)
     test_ps_1.set_pred_value(test_pred_2, False)
-    test_ps_1.set_pred_value(test_pred_3, True)
-    test_ps_1.set_pred_value(test_pred_4, True)
+    test_ps_1.set_pred_value(test_pred_3, False)
+    test_ps_1.set_pred_value(test_pred_4, False)
+    test_ps_1.set_pred_value(test_pred_5, False)
+
     test_ps_2 = copy.deepcopy(test_ps_1)
-    grounding = {0: "Knife", 1: "PeanutButter", 2: "Robot"}
-    pddl_state = bridge.predicatestate_to_pddlstate(test_ps_1, grounding)
-    param_name2param_object = {str(param): Parameter(param.pid, param.type, grounding[int(str(param).split("_p")[-1])]) for param in operator.parameters if not str(param).startswith("_")}
-    for param_name, param in param_name2param_object.items(): param_name2param_object[param_name].pid = str(param).split("_p")[-1]
-    param_name2param_object |= {'_p-1': Parameter(None, "", None)}
+    test_ps_2.set_pred_value(test_pred_3, True)
+    skill = Skill('PickLeft', ["pickupable"], ["PeanutButter"])
+    transitions = [[test_ps_1, test_ps_2]]
+    obj2type, _ = bridge.unify_obj_type(transitions, skill, type_dict)
+    unified_transitions = []
+    for t in transitions:
+        unified_transition = []
+        for state in t:
+            predicate_state = PredicateState([])
+            for grounded_pred, truth_value in state.pred_dict.items():
+                types_list = []
+                for idx, obj in enumerate(grounded_pred.params):
+                    if obj in obj2type:
+                        types_list.append(obj2type[obj])
+                    else:
+                        types_list.append(grounded_pred.types[idx])
+                new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
+                predicate_state.pred_dict[new_grounded_pred] = state.get_pred_value(grounded_pred)
+            unified_transition.append(predicate_state)
+        unified_transitions.append(unified_transition)
+    operator = bridge.operator_from_transitions(unified_transitions, skill, type_dict, obj2type, flush=True)
     breakpoint()
-    grounded_operator = operator.get_grounded_action(param_name2param_object, 0)
-    breakpoint()
+

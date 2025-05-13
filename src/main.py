@@ -100,10 +100,10 @@ def main():
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
 
             if args.step_by_step:
-                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run to next interation?")
+                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next interation?")
                 breakpoint()
-
         clean_logging(log_save_path)
+
     else:
         raise NotImplementedError(f"Env {task_config['env']} has not been implemented.")
 
@@ -114,7 +114,6 @@ if __name__ == "__main__":
     parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-    # parser.add_argument("--continue_learning", action='store_true')
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
     parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")
     parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
