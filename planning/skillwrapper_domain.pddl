@@ -1,62 +1,102 @@
 (define (domain skillwrapper)
 
-	(:requirements :adl)
+	(:requirements :adl :typing :equality :conditional-effects)
 
 	(:types
-		Door - door
-		Robot - robot
+		spreadable - object
+		PeanutButter - spreadable
+		utensil - object
 		Table - location
-		Cabinet - openable
-		Door - location
-		WhiteBoard - location
-		location - object
-		openable - object
-		WhiteBoard - erasable
-		Table - receptacle
-		robot - object
-		pickupable - object
-		Eraser - pickupable
-		eraser - object
-		Cabinet - location
-		Eraser - eraser
-		erasable - object
+		Jar - pickupable
+		Bread - food
 		receptacle - object
-		door - object
+		food - object
+		openable - object
+		Knife - utensil
+		hand - object
+		Gripper - hand
+		Shelf - location
+		location - object
+		utensil - pickupable
+		pickupable - object
+		Cup - receptacle
+		Jar - openable
 	)
 
 	(:predicates
-		(is_graspable ?robot - robot ?pickupable - pickupable)
-		(is_properly_aligned ?robot - robot ?target - target)
-		(is_within_reachable_zone ?robot - robot ?pickupable - pickupable)
-		(has_proper_tool_attachment ?robot - robot ?tool - tool)
-		(is_stably_positioned ?robot - robot ?pickupable - pickupable)
-		(has_proper_contact ?robot - robot ?target - target)
-		(is_within_grasping_orientation ?robot - robot ?pickupable - pickupable)
+		(hand_empty ?hand - hand)
+		(on_location ?pickupable - pickupable ?location - location)
+		(contains ?pickupable - pickupable ?spreadable - spreadable)
+		(is_graspable ?pickupable - pickupable ?hand - hand)
+		(is_holding ?hand - hand ?pickupable - pickupable)
+		(is_spread ?spreadable - spreadable ?food - food)
+		(is_opened ?openable - openable)
 	)
 
-	(:action a6 
-:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p1 - pickupable  ?robot_p2 - robot )
-:precondition (and 
-	(not (= ?pickupable_p0 ?pickupable_p1))
-	(robot_pickupable_is_graspable ?robot_p2 ?pickupable_p0)
-	(robot_pickupable_is_graspable ?robot_p2 ?pickupable_p1)
-) 
-:effect (and 
-  ) 
-)
+	(:action Pick
+ 		:parameters (?pickupable - pickupable ?hand - hand) 
+		:precondition (and
+			(is_graspable ?pickupable ?hand)
+			(not (is_holding ?hand ?pickupable))
+			(hand_empty ?hand)
+		) 
+		:effect (and
+			(not (is_graspable ?pickupable ?hand))
+			(is_holding ?hand ?pickupable)
+			(not (hand_empty ?hand))
+		)
+	)
 
+(:action Place
+ 		:parameters (?pickupable - pickupable ?hand - hand ?location - location) 
+		:precondition (and
+			(is_holding ?hand ?pickupable)
+			(not (on_location ?pickupable ?location))
+			(not (hand_empty ?hand))
+	) 
+		:effect (and
+			(not (is_holding ?hand ?pickupable))
+			(on_location ?pickupable ?location)
+			(is_graspable ?pickupable ?hand)
+			(hand_empty ?hand)
+		)
+	)
 
-(:action a8 
-:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p2 - pickupable  ?robot_p1 - robot )
-:precondition (and 
-	(not (= ?pickupable_p0 ?pickupable_p2))
-	(robot_pickupable_is_graspable ?robot_p1 ?pickupable_p0)
-	(robot_pickupable_is_graspable ?robot_p1 ?pickupable_p2)
-	(not (robot_pickupable_is_stably_positioned ?robot_p1 ?pickupable_p0))
-	(not (robot_pickupable_is_within_reachable_zone ?robot_p1 ?pickupable_p2))
-) 
-:effect (and 
-  ) 
-)
+(:action Spread
+ 		:parameters (?utensil - utensil ?hand - hand ?spreadable - spreadable ?food - food) 
+		:precondition (and
+			(is_holding ?hand ?utensil)
+			(contains ?utensil ?spreadable)
+			(not (is_spread ?spreadable ?food))
+	) 
+		:effect (and
+			(not (contains ?utensil ?spreadable))
+			(is_spread ?spreadable ?food)
+		)
+	)
 
+(:action Open
+ 	:parameters (?openable - openable ?arm1 - hand ?arm2 - hand) 
+		:precondition (and
+			(not (is_opened ?openable))
+			(is_holding ?arm1 ?openable)
+			(hand_empty ?arm2)
+	) 
+		:effect (and
+			(is_opened ?openable)
+		)
+	)
+
+(:action Scoop
+ 	:parameters (?utensil - utensil ?arm1 - hand ?arm2 - hand ?jar - openable ?ingredient - spreadable) 
+		:precondition (and
+			(is_holding ?arm1 ?utensil)
+			(is_holding ?arm2 ?jar)
+			(is_opened ?jar)
+			(contains ?jar ?ingredient)
+	) 
+		:effect (and
+			(contains ?utensil ?ingredient)
+		)
+	)
 )

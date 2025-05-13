@@ -1,5 +1,6 @@
 import os
 import sys
+from random import randint, choice
 import argparse
 
 from data_structure import yaml
@@ -41,9 +42,29 @@ def find_plan(
 
 
 def run_trials(
+    domain_fpath: str,
     num_trials: int = 10,
 ):
-    pass
+
+    count = 0
+    for T in range(num_trials):
+        problem_fpath = create_problem_file(
+            robot=args.robot,
+            trial=T,
+        )
+
+        solution = find_plan(
+            problem_file=problem_fpath,
+            domain_file=domain_fpath,
+        )
+
+        count += int(len(solution) > 0)
+
+        if solution:
+            print("plan has been found!")
+            for x in range(len(solution)):
+                print(f"{x+1} : {solution[x]}")
+
 
 
 def parse_predicate(pred: str):
@@ -65,7 +86,7 @@ def parse_predicate(pred: str):
 def create_domain_file(
     method: str,
     yaml_data: list,
-):
+) -> str:
     all_predicates = [parse_predicate(P) for P in yaml_data['predicates']]
     # print(all_predicates)
 
@@ -101,8 +122,46 @@ def create_domain_file(
         # -- write content to new PDDL file:
         nf.write(new_content)
 
-
     return domain_fpath
+
+
+def create_problem_file(
+    robot: str = "dorfl",
+    trial: int = 0,
+) -> str:
+
+    if robot == "dorfl":
+        state = [
+            f"(is_graspable j {choice(['left_gripper', 'right_gripper'])})",
+            f"(is_graspable k {choice(['left_gripper', 'right_gripper'])})",
+            ("(hand_empty left_gripper)"if bool(randint(0, 1)) else f"(is_holding left_gripper {choice(['k', 'j'])})") ,
+            ("(hand_empty right_gripper)"if bool(randint(0, 1)) else f"(is_holding right_gripper {choice(['k', 'j'])})") ,
+            ("(contains j pb)" if bool(randint(0, 1)) else ""),
+            ("(is_opened j)" if bool(randint(0, 1)) else ""),
+            "(on_location b t)",
+            "(on_location k t)",
+            "(on_location j t)",
+        ]
+
+    state = list(filter(None, state))
+
+    problem_fpath = f"{robot}_problem_trial-{trial}.pddl"
+
+    with open(problem_fpath, 'w') as nf:
+        prototype_content = None
+
+        # -- read all content from the prototype file:
+        with open(f'{robot}_problem_template.pddl', 'r') as df:
+            prototype_content = df.read()
+
+        # -- find and replace placeholders in the prototype file:
+        new_content = prototype_content.replace('<init_state>', "\n\t".join(state))
+
+        # -- write content to new PDDL file:
+        nf.write(new_content)
+
+    return problem_fpath
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -125,6 +184,13 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help="This specifies the path to the YAML file containing all objects.",
+    )
+
+    parser.add_argument(
+        "--robot",
+        type=str,
+        default="dorfl",
+        help="This specifies the robot being used: ['dorfl', 'spot', 'panda'].",
     )
 
     args = parser.parse_args()
@@ -162,12 +228,9 @@ if __name__ == "__main__":
             }
         )
 
-        solution = find_plan(
-            problem_file="./dorfl_oracle_problem-1.pddl",
-            domain_file=domain_fpath,
+        run_trials(
+            domain_fpath,
+            num_trials=10,
         )
 
-        if solution:
-            print("plan has been found!")
-            for x in range(len(solution)):
-                print(f"{x+1} : {solution[x]}")
+
