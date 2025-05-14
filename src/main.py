@@ -75,7 +75,7 @@ def main():
         skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
 
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
-        assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
+        # assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
         
         tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
 

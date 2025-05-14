@@ -3,7 +3,7 @@
 env: dorfl
 
 skills:
-  PickLeft: !Skill
+  Pick: !Skill
     name: Pick
     types:
       - pickupable
@@ -29,27 +29,19 @@ skills:
     name: Open
     types:
       - openable
-      - arm
-      - arm
     params: !!python/tuple []
     semantics:
       openable: the container that can be opened.
-      arm: first hand of the robot
-      arm: second hand of the robot
 
   Scoop: !Skill
     name: Scoop
     types:
     - utensil
-    - arm
-    - arm
     - openable
     - spreadable
     params: !!python/tuple []
     semantics:
       utensil: the utensil used to scoop from a container.
-      arm: first hand of the robot
-      arm: second hand of the robot
       openable: the container that can be opened to be scooped from.
       spreadable: the ingredient that is being scooped
 
@@ -77,25 +69,20 @@ objects:
       - spreadable
   Knife:
     types:
+      - pickupable
       - utensil
   Bread:
     types:
       - food
-  Cup:
-    types:
-      - receptacle
   Table:
     types:
       - location
-  Shelf:
+  LeftGripper:
     types:
-      - location
-  Gripper:
+      - arm
+  RightGripper:
     types:
-      - hand
-  utensil:
-    types:
-      - pickupable
+      - arm
 
 Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
 

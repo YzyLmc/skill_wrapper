@@ -8,7 +8,7 @@ dorfl:
 
     Predicates should meet these criteria:
 
-    - The predicate must be grounded in visual state only (e.g., “gripper is open,” “object is above table,” “robot is holding object”).
+    - The predicate must be grounded in visual state only (e.g., “gripper is open,” “object is above table,” “arm is holding object”).
 
     - Describe object state or spatial relations relevant to task success (e.g., gripper open/closed, object on left/right of gripper, object touching/supporting another object, etc.)
 
@@ -16,7 +16,7 @@ dorfl:
 
     - Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
 
-    - Use at most 2 parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-environment relation.
+    - Use at most 2 parameters (e.g., predicate(x), predicate(x, y), predicate()), where robot arm must be included for any robot-environment relation.
 
     - Avoid predicates that assume internal properties like is_graspable, is_properly_aligned, or any accessibility/reachability reasoning that cannot be determined visually.
 
@@ -29,7 +29,7 @@ dorfl:
     `predicate_name(parameters)`: semantic_meaning.
 
     for example:
-    `CloseTo(robot, location)`: the robot is close to the location.
+    `CloseTo(arm, location)`: the robot arm is close to the location.
 
     Current predicates: 
     [PRED_LIST]
@@ -56,7 +56,7 @@ dorfl:
 
     - Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
 
-    - Use at most 2 parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-environment relation.
+    - Use at most 2 parameters (e.g., predicate(x), predicate(x, y), predicate()), where robot arm must be included for any robot-environment relation.
 
     - Avoid predicates that assume internal properties like is_graspable, is_properly_aligned, or any accessibility/reachability reasoning that cannot be determined visually.
 
@@ -69,7 +69,7 @@ dorfl:
     `predicate_name(parameters)`: semantic_meaning.
 
     for example:
-    `CloseTo(robot, location)`: the robot is close to the location.
+    `CloseTo(arm, location)`: the robot arm is close to the location.
 
     Current predicates: 
     [PRED_LIST]

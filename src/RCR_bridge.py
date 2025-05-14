@@ -1219,6 +1219,7 @@ class RCR_bridge:
             lifted_relation = Relation(p1type, p2type, pred.name)
 
             # create new parameter for the object
+            assert p1name in obj2pid and p2name in obj2pid, f"{obj2pid} doesn't have {p1name} or {p2name}"
             p1_param = Parameter(obj2pid[p1name], p1type, p1name)
             p2_param = Parameter(obj2pid[p2name], p2type, p2name)
 
