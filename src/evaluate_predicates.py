@@ -15,6 +15,7 @@ def eval_all_predicates(model, lifted_pred_list, type_dict, args):
         print(f'Evaluating predicate {grounded_pred} to be {truth_value}')
         print(f'{i+1}/{len(grounded_preds)} is done')
     save_to_file(predicate_state, f"{args.save_dir}/truth_value.yaml")
+    return predicate_state
 
 def main():
     task_config = load_from_file(args.task_config_fpath)
@@ -23,7 +24,7 @@ def main():
     lifted_pred_list = load_from_file(args.predicate_fpath)
     model = GPT4(engine=args.model)
 
-    eval_all_predicates(model, lifted_pred_list, type_dict, args=args)
+    predicate_state = eval_all_predicates(model, lifted_pred_list, type_dict, args=args)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
