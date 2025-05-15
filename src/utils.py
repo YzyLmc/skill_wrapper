@@ -162,7 +162,7 @@ class GPT4:
         return responses
     
     # @retry(wait_fixed=15000, stop_max_attempt_number=5)
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False):
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False, temp = None):
         '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
         ntries = 0
@@ -173,18 +173,23 @@ class GPT4:
         }
         # breakpoint()
         txts = prompt2msg(query_prompt, vision=True)
-        payload = {
-            "model": self.engine,
-            "messages": [],
-            "max_tokens": max_tokens,
-            "logprobs": logprobs,
-            "temperature": self.temp
-            } if self.engine != "o1" else {
-            "model": self.engine,
-            "messages": [],
-            "logprobs": False
-            }
-        assert not (payload["logprobs"] and self.engine == "o1")
+        if "gpt-4o" in self.engine:
+            payload = {
+                "model": self.engine,
+                "messages": [],
+                "max_tokens": max_tokens,
+                "logprobs": logprobs,
+                "temperature": self.temp
+                }
+            if temp: payload["temperature"] = temp
+        else:
+            payload = {
+                "model": self.engine,
+                "messages": [],
+                "logprobs": False
+                }
+
+        assert not (payload["logprobs"] and self.engine == "o1") # o1 doesn't support temperature
         if logprobs:
             payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
