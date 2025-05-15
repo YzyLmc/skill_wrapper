@@ -60,7 +60,7 @@ class SkillSequenceProposing():
             'presence_penalty': 0.3,
             'frequency_penalty': 0.35,
             'top_p': 1.0,
-            # 'max_tokens':550,
+            'max_tokens':550,
             'engine': 'gpt-4o',
             # 'engine': 'o3-mini',
             'stop': ''
@@ -318,8 +318,8 @@ class SkillSequenceProposing():
 
         encoded_images = load_image(image_paths)
         messages = create_payload(prompt_context, prompt, encoded_images)
-        # response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
-        response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'],)
+        response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
+        # response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'],)
         response = response.choices[0].message.content
         return response
 
@@ -347,7 +347,10 @@ class SkillSequenceProposing():
                     closest_skill_name = skill_name
 
                 # assuming every different skills has different names
-                lifted_skill: Skill = [skill for skill in self.skill_dictionary if skill.name== closest_skill_name][0]
+                try:
+                    lifted_skill: Skill = [skill for skill in self.skill_dictionary if skill.name== closest_skill_name][0]
+                except:
+                    print(f"{closest_skill_name} not in {[skill for skill in self.skill_dictionary]}")
 
                 # TODO: implement typing, if typing doesn't match ground to closest matched object
                 #       but at the same time try to make sure FM won't propose such skills, otherwise coverage will be problematic
