@@ -185,148 +185,148 @@
           success: false,
         },
     },
-  seq_4:
-    {
-      "0":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step0_img.jpg,
-          skill: null,
-          success: null,
-        },
-      "1":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step1_img.jpg,
-          skill: GoTo(Table),
-          success: true,
-        },
-      "2":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step2_img.jpg,
-          skill: GoTo(Cabinet),
-          success: true,
-        },
-      "3":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step3_img.jpg,
-          skill: Close(Cabinet),
-          success: false,
-        },
-      "4":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step4_img.jpg,
-          skill: Pick(Eraser),
-          success: false,
-        },
-      "5":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step5_img.jpg,
-          skill: Open(Cabinet),
-          success: true,
-        },
-      "6":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step6_img.jpg,
-          skill: Pick(Eraser),
-          success: true,
-        },
-      "7":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step7_img.jpg,
-          skill: GoTo(Door),
-          success: true,
-        },
-      "8":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step8_img.jpg,
-          skill: OpenDoor(Door),
-          success: false,
-        },
-      "9":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step9_img.jpg,
-          skill: GoTo(WhiteBoard),
-          success: false,
-        },
-      "10":
-        {
-          image: test_tasks/spot_images/seq_4/seq_4_step10_img.jpg,
-          skill: "Erase(Eraser, WhiteBoard)",
-          success: false,
-        },
-    },
-  seq_5:
-    {
-      "0":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step0_img.jpg,
-          skill: null,
-          success: null,
-        },
-      "1":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step1_img.jpg,
-          skill: Close(Cabinet),
-          success: false,
-        },
-      "2":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step2_img.jpg,
-          skill: GoTo(Table),
-          success: true,
-        },
-      "3":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step3_img.jpg,
-          skill: Open(Cabinet),
-          success: false,
-        },
-      "4":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step4_img.jpg,
-          skill: Close(Cabinet),
-          success: false,
-        },
-      "5":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step5_img.jpg,
-          skill: GoTo(Cabinet),
-          success: true,
-        },
-      "6":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step6_img.jpg,
-          skill: Open(Cabinet),
-          success: true,
-        },
-      "7":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step7_img.jpg,
-          skill: Pick(Eraser),
-          success: true,
-        },
-      "8":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step8_img.jpg,
-          skill: Close(Cabinet),
-          success: false,
-        },
-      "9":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step9_img.jpg,
-          skill: GoTo(Door),
-          success: true,
-        },
-      "10":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step10_img.jpg,
-          skill: OpenDoor(Door),
-          success: false,
-        },
-      "11":
-        {
-          image: test_tasks/spot_images/seq_5/seq_5_step11_img.jpg,
-          skill: "Erase(Eraser, WhiteBoard)",
-          success: false,
-        },
-    },
+  # seq_4:
+  #   {
+  #     "0":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step0_img.jpg,
+  #         skill: null,
+  #         success: null,
+  #       },
+  #     "1":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step1_img.jpg,
+  #         skill: GoTo(Table),
+  #         success: true,
+  #       },
+  #     "2":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step2_img.jpg,
+  #         skill: GoTo(Cabinet),
+  #         success: true,
+  #       },
+  #     "3":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step3_img.jpg,
+  #         skill: Close(Cabinet),
+  #         success: false,
+  #       },
+  #     "4":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step4_img.jpg,
+  #         skill: Pick(Eraser),
+  #         success: false,
+  #       },
+  #     "5":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step5_img.jpg,
+  #         skill: Open(Cabinet),
+  #         success: true,
+  #       },
+  #     "6":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step6_img.jpg,
+  #         skill: Pick(Eraser),
+  #         success: true,
+  #       },
+  #     "7":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step7_img.jpg,
+  #         skill: GoTo(Door),
+  #         success: true,
+  #       },
+  #     "8":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step8_img.jpg,
+  #         skill: OpenDoor(Door),
+  #         success: false,
+  #       },
+  #     "9":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step9_img.jpg,
+  #         skill: GoTo(WhiteBoard),
+  #         success: false,
+  #       },
+  #     "10":
+  #       {
+  #         image: test_tasks/spot_images/seq_4/seq_4_step10_img.jpg,
+  #         skill: "Erase(Eraser, WhiteBoard)",
+  #         success: false,
+  #       },
+  #   },
+  # seq_5:
+  #   {
+  #     "0":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step0_img.jpg,
+  #         skill: null,
+  #         success: null,
+  #       },
+  #     "1":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step1_img.jpg,
+  #         skill: Close(Cabinet),
+  #         success: false,
+  #       },
+  #     "2":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step2_img.jpg,
+  #         skill: GoTo(Table),
+  #         success: true,
+  #       },
+  #     "3":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step3_img.jpg,
+  #         skill: Open(Cabinet),
+  #         success: false,
+  #       },
+  #     "4":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step4_img.jpg,
+  #         skill: Close(Cabinet),
+  #         success: false,
+  #       },
+  #     "5":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step5_img.jpg,
+  #         skill: GoTo(Cabinet),
+  #         success: true,
+  #       },
+  #     "6":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step6_img.jpg,
+  #         skill: Open(Cabinet),
+  #         success: true,
+  #       },
+  #     "7":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step7_img.jpg,
+  #         skill: Pick(Eraser),
+  #         success: true,
+  #       },
+  #     "8":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step8_img.jpg,
+  #         skill: Close(Cabinet),
+  #         success: false,
+  #       },
+  #     "9":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step9_img.jpg,
+  #         skill: GoTo(Door),
+  #         success: true,
+  #       },
+  #     "10":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step10_img.jpg,
+  #         skill: OpenDoor(Door),
+  #         success: false,
+  #       },
+  #     "11":
+  #       {
+  #         image: test_tasks/spot_images/seq_5/seq_5_step11_img.jpg,
+  #         skill: "Erase(Eraser, WhiteBoard)",
+  #         success: false,
+  #       },
+  #   },
 }

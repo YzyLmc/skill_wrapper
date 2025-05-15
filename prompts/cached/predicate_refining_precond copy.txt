@@ -1,0 +1,8 @@
+A robot has been programmed with a skill `[SKILL]`, and it has tried to execute the skill at two different states, where the states have been abstracted into symbolic representations with predicates. However, the symbolic representations of both states are the same but the results of the two executions are different, which indicates the existing predicate set is not sufficient to describe the precondition (conditions that have to be satisfied for executing the skill) of the skill. Given the current symbolic state of both states, please propose a new predicate to distinguish the two states and the semantic meaning of the predicate in one sentence together in one line.
+Example format:
+`example_predicate`: example_semantic_meaning.
+Also, you should avoid the predicates have been tried before if this list is not empty: `[TRIED_PRED]`.
+For both symbolic states:
+`[PRED_DICT]`
+
+New predicate:

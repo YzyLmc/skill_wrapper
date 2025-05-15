@@ -28,7 +28,7 @@ dorfl:
     (1) the tasks purposefully violate skill preconditions often 
     (2) the ordering of skills in each task is unique 
     (3) at least 1 unexplored skill pair is used in each task 
-    (4) all tasks have at least 8 skills in sequence.
+    (4) all tasks have at least 12 skills in sequence.
 
     Output only the task name and the sequence of skills to execute, 
     ensuring to follow the naming/syntax/arguments for skills provided. 

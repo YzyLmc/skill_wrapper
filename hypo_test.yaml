@@ -1,0 +1,93 @@
+1:
+  0: !PredicateState
+    predicates:
+    - predicate: &id002 !Predicate
+        name: EnclosedByGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButter
+        semantic: The object is fully enclosed by the robot's gripper.
+        types: &id001 !!python/tuple
+        - robot
+        - pickupable
+      truth_value: false
+    - predicate: &id003 !Predicate
+        name: EnclosedByGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: The object is fully enclosed by the robot's gripper.
+        types: *id001
+      truth_value: false
+  1: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: false
+    - predicate: *id003
+      truth_value: false
+  2: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: false
+    - predicate: *id003
+      truth_value: false
+  3: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: false
+    - predicate: *id003
+      truth_value: false
+  4: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: false
+    - predicate: *id003
+      truth_value: false
+  5: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: false
+    - predicate: *id003
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: *id002
+      truth_value: true
+    - predicate: *id003
+      truth_value: false

@@ -465,7 +465,7 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                 print(task_step_tuple, state_in_alpha, transition_meta['success'])
                 print(transition_meta["states"][0],'\n')
                 print(transition_meta["states"][1],'\n')
-                breakpoint()
+                # breakpoint()
                 score += 1 if state_in_alpha == transition_meta['success'] else 0
                 task_num += 1
 

@@ -1,0 +1,9 @@
+A robot has been programmed with the skill `[SKILL]`, and it attempted to execute the skill twice. The symbolic representations of both executions are the same while the results are different (one succeeds and the other fails), which indicates the existing predicate set is not sufficient to describe the effect of the skill.
+Your task is to propose a new predicate and the semantic meaning of the predicate in one sentence. The predicates should be parameterized ('robot' is not a parameter, and empty parenthesis is allowed), and it should describe important aspects of the skill, such as the change of the skill induced to the environment after execution.
+Example format:
+`example_predicate`: example_semantic_meaning.
+Current predicate set: `[PRED_DICT]`
+(it means no predicate has been proposed if the symbolic states are empty)
+You should only use the parameters of the skills if the new predicate is parametrized. Also, you should avoid the predicates that have been tried before if this list is not empty: `[TRIED_PRED]`.
+
+New predicate regarding the effect of the skill `[SKILL]`:
