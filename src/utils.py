@@ -314,11 +314,10 @@ def load_results(load_fpath, task_config):
     """
     Load tasks, operators, predicate list, and truth value log
     """
-    # try:
-    #     tasks = load_tasks(load_fpath, task_config)
-    # except:
-    #     tasks = {}
-    tasks = load_tasks(load_fpath, task_config)
+    try:
+        tasks = load_tasks(load_fpath, task_config)
+    except:
+        tasks = {}
 
     try:
         skill2operator = load_from_file(f"{load_fpath}/skill2operator.pkl")
@@ -334,6 +333,8 @@ def load_results(load_fpath, task_config):
         grounded_predicate_truth_value_log = load_from_file(f"{load_fpath}/grounded_predicate_truth_value_log.yaml")
     except:
         grounded_predicate_truth_value_log = {}
+    
+    # TODO: add logging when loading data
     
     return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 

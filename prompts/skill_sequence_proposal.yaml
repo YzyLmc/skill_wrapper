@@ -4,7 +4,7 @@
 
 dorfl:
   system_prompt: >
-    A robot with a two arms is attempting to learn the preconditions and effects 
+    A robot with one arm is attempting to learn the preconditions and effects 
     for a finite set of skills by executing exploratory skill sequences and exploring the environment.
 
   prompt: |
@@ -38,23 +38,40 @@ dorfl:
     PickUp(Apple, CounterTop)
   
     Skill Sequence 2:
-  prompt_new: |
-    The robot can navigate anywhere freely but only has two grippers. The robot has access to the following skills with their associated parameter types:
-  
-    [SKILL_PROMPT]
 
-    The list of objects the robot has previously encountered in the environment with their parameter types are: 
+franka:
+  system_prompt: >
+    A robot with one arm is attempting to learn the preconditions and effects 
+    for a finite set of skills by executing exploratory skill sequences and exploring the environment.
+
+  prompt: |
+    Propose a set of skill sequences for a robot to execute.
+    The robot is attempting to learn the preconditions and effects for a finite set of operators. 
+    The robot can navigate the environment freely but only has one gripper. 
+    The robot has access to the following skills with their associated arguments:
+
+    [SKILL_PROMPT]
+    
+    The list of objects the robot has previously encountered in the environment are: 
     [OBJECT_IN_SCENE]
     [ENV_DESCRIPTION]
 
-    Initial State: Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right. 
-    The pairs of consecutive skills (skill1, skill2) that have been least explored are:
-    [[LEAST_EXPLORED_SKILLS]]
+    The pairs of consecutive skills (skill1, skill2) that have been least explored are: 
+    [[LEAST_EXPLORED_SKILLS]].
 
-    Certain skills have similar names and parameters, but different preconditions and effects. Using the list of objects and the learned skills, generate 5 tasks and their sequence of skills such that: (1) the ordering of skills in each task is unique. (2) at least 1 unexplored skill pair is used in each task. (3) all tasks have at least 12 skills in sequence. (4) if a skill like "GoTo(location)" requires parameter type "location", you **must only** execute the skill on objects that **have exactly same** parameter type "pickupable". Output only the sequence of skills with each skill in a new line. Also output if reasoning is correct with True/False value, following the format below.: 
+    Certain skills have similar names and arguments, but different preconditions and effects. 
+    Using the list of objects and the skill preconditions / effects learned, 
+    generate 5 tasks and their sequence of skills such that: 
+    (1) the tasks purposefully violate skill preconditions often 
+    (2) the ordering of skills in each task is unique 
+    (3) at least 1 unexplored skill pair is used in each task 
+    (4) all tasks have at least 12 skills in sequence.
 
+    Output only the task name and the sequence of skills to execute, 
+    ensuring to follow the naming/syntax/arguments for skills provided. 
+    Output 1 skill every new line, following the format below:
     Skill Sequence 1: 
-    PickRight(PeanutButter) - True: "PickRight(pickupable)" requires "pickupable" type; "PeanutButter" = "pickupable" type
-    Place(PeanutButter, Table)  - True: "Place(pickupable, receptacle)" requires "pickupable, receptacle" type; "PeanutButter" = "pickupable" type, "Table" = "receptacle" type
-
-    Skill Sequence 1:
+    GoTo(CounterTop)
+    PickUp(Apple, CounterTop)
+  
+    Skill Sequence 2:

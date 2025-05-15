@@ -6,46 +6,59 @@ skills:
   Pick: !Skill
     name: Pick
     types:
+      - robot
       - pickupable
     params: !!python/tuple []
     semantics: 
+      robot: robot that executing this skill.
       pickupable: the object to be picked up.
 
   PlaceBack: !Skill
     name: PlaceBack
     types:
+      - robot
       - pickupable
     params: !!python/tuple []
-    semantics: 
-      pickupable: the object to be placed back.
-
-  Squeeze: !Skill
-    name: Squeeze
-    types:
-      - squeezable
-    params: !!python/tuple []
     semantics:
-      squeezable: the object to be squeezed.
+      robot: robot that executing this skill.
+      pickupable: the object to be placed back.
 
   Pour: !Skill
     name: Pour
     types:
+      - robot
       - pourable
       - container
     params: !!python/tuple []
     semantics:
+      robot: robot that executing this skill.
       pourable: the object to pour liquid from.
       container: the container to pour liquid to.
 
-  Stir: !Skill
-    name: Stir
+  Stack: !Skill
+    name: Stack
     types:
-      - utensil
-      - container
+      - robot
+      - bowl
+      - plate
     params: !!python/tuple []
     semantics:
-      utensil: The utensil used to stir the liquid.
-      container: the container contains liquid that need to be stirred.
+      robot: robot that executing this skill.
+      bowl: a smaller bowl that can be stack on a plate.
+      plate: the plate that the bowl can be stacked on.
+
+  Wipe: !Skill
+    name: Wipe
+    types:
+      - robot
+      - sponge
+      - plate
+    params: !!python/tuple []
+    semantics:
+      robot: robot that executing this skill.
+      sponge: sponge object used to wipe the plate.
+      plate: the dirty plate need to be wiped.
+
 
     
 objects:
@@ -54,25 +67,29 @@ objects:
       - pickupable
       - pourable
   
-  Lemon:
-    types:
-      - pickupable
-      - squeezable
-  
-  Spoon:
-    types:
-    - pickupbale
-    - utensil
-  
   Mug:
    types:
-   - container
+    - container
+  
+  Sponge:
+    types:
+      - pickupable
+      - sponge
+  
+  Plate:
+    types:
+      - plate
+
+  Bowl:
+    types:
+      - pickupable
+      - bowl
   
   Robot:
     types:
       - robot
 
-Env_description: 'The robot arm is set up on the table. The teapot, mug, lemon, and spoon are all on the table.'
+Env_description: 'The robot arm is set up on the table. The teapot, mug, sponge, and plate and bowl are all on the table.'
 
 Initial_observation:
   img_fpath: 
