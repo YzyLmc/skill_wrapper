@@ -1,7 +1,0 @@
-!Skill
-name: PlaceAt
-params: []
-semantics: {}
-types:
-- object
-- location
