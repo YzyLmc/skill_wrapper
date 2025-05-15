@@ -19,7 +19,7 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
     while t < 10 and not task_success:
         chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(lifted_pred_list, skill2operator, tasks)
         t += 1
-        logging.info(f'Task: {chosen_skill_sequence}')
+        logging.info(f'Task: {[str(skill) for skill in chosen_skill_sequence]}')
         try:
             if len(chosen_skill_sequence) < 6:
                 continue
