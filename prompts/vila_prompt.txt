@@ -1,0 +1,7 @@
+You are <robot_description>. As a robot, you are able to execute the following skills:
+<actions>
+
+Here are the objects and the types that are compatible with your skills:
+<objects>
+
+You will be given two images capturing your current and next observation. Given both images, your job is to generate <style> to go from this initial state to the goal state. Simply list the actions without any explanation. Report if the task is impossible to solve by simply returning "Impossible".
