@@ -4,7 +4,7 @@
   semantic: "The robot's gripper (either its left or right gripper) is empty, and it is not\
     \ holding anything."
   types: !!python/tuple
-  - hand
+  - arm
 
 - !Predicate
   name: on_location
@@ -29,14 +29,14 @@
     \ the `robot` to successfully grasp it with either its left or right gripper."
   types: !!python/tuple
   - pickupable
-  - hand
+  - arm
 
 - !Predicate
   name: is_holding
   params: !!python/tuple []
   semantic: "The robot is holding a `pickupable` object in either its left or right gripper."
   types: !!python/tuple
-  - hand
+  - arm
   - pickupable
 
 - !Predicate

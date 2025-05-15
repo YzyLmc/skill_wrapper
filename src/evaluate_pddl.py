@@ -33,15 +33,13 @@ def find_plan(
     plan = []
 
     try:
-        output = check_output(command)
+        _ = check_output(command)
     except CalledProcessError as e:
         print(f"error code: {e.returncode}\n\t-- Actual message: {str(e.output)}")
     else:
         with open('sas_plan', 'r') as f:
             for _line in f.readlines():
                 if ';' not in _line: plan.append(_line.strip())
-
-    print(output)
 
     return plan
 
@@ -158,7 +156,8 @@ def create_problem_file(
         predicate_state = eval_all_predicates(model, lifted_pred_list, type_dict, args=args)
 
         for pred in predicate_state.iter_predicates():
-            init_state.append(parse_predicate(pred, is_domain=False))
+            if predicate_state.get_pred_value(pred):
+                init_state.append(parse_predicate(pred, is_domain=False))
 
     else:
         if robot == "dorfl":
@@ -187,7 +186,8 @@ def create_problem_file(
         predicate_state = eval_all_predicates(model, lifted_pred_list, type_dict, args=args)
 
         for pred in predicate_state.iter_predicates():
-            goal_state.append(parse_predicate(pred, is_domain=False))
+            if predicate_state.get_pred_value(pred):
+                    goal_state.append(parse_predicate(pred, is_domain=False))
 
     else:
         if robot == "dorfl":
