@@ -1,0 +1,154 @@
+{
+  seq_1:
+    {
+      "0":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step0_img.jpg,
+          skill: null,
+          success: null,
+        },
+      "1":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step1_img.jpg,
+          skill: "Pick(Robot, Teapot)",
+          success: true,
+        },
+      "2": { image: test_tasks/franka_images/seq_1/seq_1_step2_img.jpg, skill: "Pour(Robot,
+            Teapot, Mug)", success: true },
+      "3":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step3_img.jpg,
+          skill: "PlaceBack(Robot, Teapot)",
+          success: true,
+        },
+      "4":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step4_img.jpg,
+          skill: "Pick(Robot, Sponge)",
+          success: true,
+        },
+      "5":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step5_img.jpg,
+          skill: "Wipe(Robot, Sponge, Plate)",
+          success: true,
+        },
+      "6":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step6_img.jpg,
+          skill: "PlaceBack(Robot, Sponge)",
+          success: true,
+        },
+      "7":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step7_img.jpg,
+          skill: "Pick(Robot, Bowl)",
+          success: true,
+        },
+      "8":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step8_img.jpg,
+          skill: "Stack(Robot, Bowl, Plate)",
+          success: true,
+        },
+      "9":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step9_img.jpg,
+          skill: "Stack(Robot, Bowl, Plate)",
+          success: false,
+        },
+      "10":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step10_img.jpg,
+          skill: "Pick(Robot, Sponge)",
+          success: true,
+        },
+      "11":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step11_img.jpg,
+          skill: "Wipe(Robot, Sponge, Plate)",
+          success: false,
+        },
+    },
+  seq_2:
+    {
+      "0":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step0_img.jpg,
+          skill: null,
+          success: null,
+        },
+      "1":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step1_img.jpg,
+          skill: "Pick(Robot, Teapot)",
+          success: true,
+        },
+      "2":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step2_img.jpg,
+          skill: "Pour(Robot, Teapot, Mug)",
+          success: true,
+        },
+      "3":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step3_img.jpg,
+          skill: "Pick(Robot, Sponge)",
+          success: false,
+        },
+      "4":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step4_img.jpg,
+          skill: "Wipe(Robot, Sponge, Plate)",
+          success: false,
+        },
+      "5":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step5_img.jpg,
+          skill: "PlaceBack(Robot, Bowl)",
+          success: false,
+        },
+      "6":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step6_img.jpg,
+          skill: "Pick(Robot, Bowl)",
+          success: false,
+        },
+      "7":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step7_img.jpg,
+          skill: "Stack(Robot, Bowl, Plate)",
+          success: false,
+        },
+      "8":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step8_img.jpg,
+          skill: "Pour(Robot, Teapot, Mug)",
+          success: false,
+        },
+      "9":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step9_img.jpg,
+          skill: "PlaceBack(Robot, Teapot)",
+          success: true,
+        },
+      "10":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step10_img.jpg,
+          skill: "Wipe(Robot, Sponge, Plate)",
+          success: false,
+        },
+      "11":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step11_img.jpg,
+          skill: "Pick(Robot, Bowl)",
+          success: true,
+        },
+      "12":
+        {
+          image: test_tasks/franka_images/seq_2/seq_2_step12_img.jpg,
+          skill: "Stack(Robot, Bowl, Plate)",
+          success: false,
+        },
+    },
+}
