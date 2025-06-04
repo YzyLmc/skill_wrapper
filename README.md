@@ -52,13 +52,13 @@ The invented predicate set, the truth values of all possible grounded predicates
 - `lifted_pred_list.yaml`: lifted predicates used to construct operators that are invented and passed the scoring function during the invention process.
 - `skill2operator.pkl`: dictionary of skills to their corresponding operators, where the oeprators are saved in the native format using the data structure in RCR.
 - `skill2operator.yaml`: Everything is the same as the previous file, except the operators are saved in string format.
-The truth value log, lifted predicate list, and `skill2operator.yaml` are necessary for running more iterations using the main function; The lifted predicate list and `skill2operator.yaml` are necessary for evaluation scripts using fast downward for planning.
+All files except the log files are necessary for running more iterations using the main function; The lifted predicate list and `skill2operator.yaml` are necessary for evaluation scripts using fast downward for planning.
 
 From the second iteration onward, it's required to load results from previous iterations. To do that, append the following flags to both commands:
 ```
 --load_fpath {PATH_TO_PREVIOUS_RESULT_FILES}
 ```
-Where the path will be `tasks/log` again if the files are saved to the default path.
+Where the path will be `tasks/log` again if the files are saved to the default path. NOTE: You should also put the up-to-date yaml file for skill sequences under the same directory.
 
 An example of result files can be found under `example_dorfl_result/`.
 
