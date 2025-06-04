@@ -1,0 +1,28 @@
+- !Predicate
+  name: ObjectElevated
+  params: !!python/tuple []
+  semantic: The object is not lying flat on the table and has a portion of its surface
+    elevated above the table.
+  types: !!python/tuple
+  - pickupable
+- !Predicate
+  name: FullyEnclosed
+  params: !!python/tuple []
+  semantic: The pickupable object is fully enclosed by the robot's gripper.
+  types: !!python/tuple
+  - arm
+  - pickupable
+- !Predicate
+  name: LidDetached
+  params: !!python/tuple []
+  semantic: The lid of the openable object is no longer visually attached to the main
+    body of the object.
+  types: !!python/tuple
+  - openable
+- !Predicate
+  name: SubstanceOn
+  params: !!python/tuple []
+  semantic: the spreadable substance is visually present on the utensil.
+  types: !!python/tuple
+  - utensil
+  - spreadable

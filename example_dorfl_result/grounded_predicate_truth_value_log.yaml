@@ -1,0 +1,289 @@
+'5_12_12':
+  0: !PredicateState
+    predicates:
+    - predicate: &id003 !Predicate
+        name: ObjectElevated
+        params: !!python/tuple
+        - Jar
+        semantic: The object is not lying flat on the table and has a portion of its
+          surface elevated above the table.
+        types: &id001 !!python/tuple
+        - pickupable
+      truth_value: false
+    - predicate: &id004 !Predicate
+        name: ObjectElevated
+        params: !!python/tuple
+        - Knife
+        semantic: The object is not lying flat on the table and has a portion of its
+          surface elevated above the table.
+        types: *id001
+      truth_value: false
+    - predicate: &id005 !Predicate
+        name: FullyEnclosed
+        params: !!python/tuple
+        - LeftGripper
+        - Jar
+        semantic: The pickupable object is fully enclosed by the robot's gripper.
+        types: &id002 !!python/tuple
+        - arm
+        - pickupable
+      truth_value: false
+    - predicate: &id006 !Predicate
+        name: FullyEnclosed
+        params: !!python/tuple
+        - LeftGripper
+        - Knife
+        semantic: The pickupable object is fully enclosed by the robot's gripper.
+        types: *id002
+      truth_value: false
+    - predicate: &id007 !Predicate
+        name: FullyEnclosed
+        params: !!python/tuple
+        - RightGripper
+        - Jar
+        semantic: The pickupable object is fully enclosed by the robot's gripper.
+        types: *id002
+      truth_value: false
+    - predicate: &id008 !Predicate
+        name: FullyEnclosed
+        params: !!python/tuple
+        - RightGripper
+        - Knife
+        semantic: The pickupable object is fully enclosed by the robot's gripper.
+        types: *id002
+      truth_value: false
+    - predicate: &id009 !Predicate
+        name: LidDetached
+        params: !!python/tuple
+        - Jar
+        semantic: The lid of the openable object is no longer visually attached to
+          the main body of the object.
+        types: !!python/tuple
+        - openable
+      truth_value: false
+    - predicate: &id010 !Predicate
+        name: SubstanceOn
+        params: !!python/tuple
+        - Knife
+        - PeanutButter
+        semantic: the spreadable substance is visually present on the utensil.
+        types: !!python/tuple
+        - utensil
+        - spreadable
+      truth_value: false
+  1: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: false
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: false
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  2: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: false
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  3: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: false
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  4: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: false
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: false
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  5: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: false
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: false
+    - predicate: *id010
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: false
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: true
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: true
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: false
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: true
+  12: !PredicateState
+    predicates:
+    - predicate: *id003
+      truth_value: true
+    - predicate: *id004
+      truth_value: true
+    - predicate: *id005
+      truth_value: true
+    - predicate: *id006
+      truth_value: false
+    - predicate: *id007
+      truth_value: true
+    - predicate: *id008
+      truth_value: false
+    - predicate: *id009
+      truth_value: true
+    - predicate: *id010
+      truth_value: true

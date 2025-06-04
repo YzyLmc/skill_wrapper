@@ -1,0 +1,97 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    arm: the robot arm for grasping
+    pickupable: the object to be picked up.
+  types:
+  - pickupable
+  - arm
+: - "(:action a24 \n:parameters ( ?arm_p0 - arm  ?arm_p2 - arm  ?openable_p1 - openable\
+    \  ?spreadable_p4 - spreadable  ?utensil_p3 - utensil )\n:precondition (and \n\
+    \t(not (= ?arm_p0 ?arm_p2))\n\t(openable_ObjectElevated ?openable_p1 )\n\t(not\
+    \ (arm_openable_FullyEnclosed ?arm_p0 ?openable_p1))\n\t(not (arm_openable_FullyEnclosed\
+    \ ?arm_p2 ?openable_p1))\n\t(not (arm_utensil_FullyEnclosed ?arm_p0 ?utensil_p3))\n\
+    \t(not (arm_utensil_FullyEnclosed ?arm_p2 ?utensil_p3))\n\t(not (openable_LidDetached\
+    \ ?openable_p1 ))\n\t(not (utensil_ObjectElevated ?utensil_p3 ))\n\t(not (utensil_spreadable_SubstanceOn\
+    \ ?utensil_p3 ?spreadable_p4))\n) \n:effect (and \n \t(arm_openable_FullyEnclosed\
+    \ ?arm_p0 ?openable_p1) \n ) \n)\n"
+  - "(:action a25 \n:parameters ( ?arm_p0 - arm  ?arm_p4 - arm  ?openable_p2 - openable\
+    \  ?spreadable_p3 - spreadable  ?utensil_p1 - utensil )\n:precondition (and \n\
+    \t(not (= ?arm_p0 ?arm_p4))\n\t(arm_openable_FullyEnclosed ?arm_p4 ?openable_p2)\n\
+    \t(openable_LidDetached ?openable_p2 )\n\t(openable_ObjectElevated ?openable_p2\
+    \ )\n\t(not (arm_openable_FullyEnclosed ?arm_p0 ?openable_p2))\n\t(not (arm_utensil_FullyEnclosed\
+    \ ?arm_p0 ?utensil_p1))\n\t(not (arm_utensil_FullyEnclosed ?arm_p4 ?utensil_p1))\n\
+    \t(not (utensil_ObjectElevated ?utensil_p1 ))\n\t(not (utensil_spreadable_SubstanceOn\
+    \ ?utensil_p1 ?spreadable_p3))\n) \n:effect (and \n \t(utensil_ObjectElevated\
+    \ ?utensil_p1 ) \n ) \n)\n"
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    arm: the robot arm for grasping
+    location: the receptacle onto which object is dropped.
+    pickupable: the object to be dropped.
+  types:
+  - pickupable
+  - arm
+  - location
+: []
+? !Skill
+  name: Open
+  params: []
+  semantics:
+    openable: the container that can be opened.
+  types:
+  - openable
+: - "(:action a26 \n:parameters ( ?arm_p1 - arm  ?arm_p4 - arm  ?openable_p0 - openable\
+    \  ?spreadable_p3 - spreadable  ?utensil_p2 - utensil )\n:precondition (and \n\
+    \t(not (= ?arm_p1 ?arm_p4))\n\t(arm_openable_FullyEnclosed ?arm_p4 ?openable_p0)\n\
+    \t(openable_ObjectElevated ?openable_p0 )\n\t(not (arm_openable_FullyEnclosed\
+    \ ?arm_p1 ?openable_p0))\n\t(not (arm_utensil_FullyEnclosed ?arm_p1 ?utensil_p2))\n\
+    \t(not (arm_utensil_FullyEnclosed ?arm_p4 ?utensil_p2))\n\t(not (openable_LidDetached\
+    \ ?openable_p0 ))\n\t(not (utensil_ObjectElevated ?utensil_p2 ))\n\t(not (utensil_spreadable_SubstanceOn\
+    \ ?utensil_p2 ?spreadable_p3))\n) \n:effect (and \n \t(openable_LidDetached ?openable_p0\
+    \ ) \n ) \n)\n"
+? !Skill
+  name: Scoop
+  params: []
+  semantics:
+    openable: the container that can be opened to be scooped from.
+    spreadable: the ingredient that is being scooped
+    utensil: the utensil used to scoop from a container.
+  types:
+  - utensil
+  - openable
+  - spreadable
+: - "(:action a27 \n:parameters ( ?arm_p3 - arm  ?arm_p4 - arm  ?openable_p1 - openable\
+    \  ?spreadable_p2 - spreadable  ?utensil_p0 - utensil )\n:precondition (and \n\
+    \t(not (= ?arm_p3 ?arm_p4))\n\t(arm_openable_FullyEnclosed ?arm_p4 ?openable_p1)\n\
+    \t(openable_LidDetached ?openable_p1 )\n\t(openable_ObjectElevated ?openable_p1\
+    \ )\n\t(utensil_ObjectElevated ?utensil_p0 )\n\t(not (arm_openable_FullyEnclosed\
+    \ ?arm_p3 ?openable_p1))\n\t(not (arm_utensil_FullyEnclosed ?arm_p3 ?utensil_p0))\n\
+    \t(not (arm_utensil_FullyEnclosed ?arm_p4 ?utensil_p0))\n\t(not (utensil_spreadable_SubstanceOn\
+    \ ?utensil_p0 ?spreadable_p2))\n) \n:effect (and \n \t(utensil_spreadable_SubstanceOn\
+    \ ?utensil_p0 ?spreadable_p2) \n ) \n)\n"
+? !Skill
+  name: Spread
+  params: []
+  semantics:
+    arm: the robot arm for grasping
+    food: the food that need ingredients to be spread on.
+    spreadable: the ingredient being spread on food.
+    utensil: the utensil used to spread ingredients on food.
+  types:
+  - utensil
+  - arm
+  - spreadable
+  - food
+: - "(:action a28 \n:parameters ( ?arm_p1 - arm  ?arm_p5 - arm  ?openable_p4 - openable\
+    \  ?spreadable_p2 - spreadable  ?utensil_p0 - utensil )\n:precondition (and \n\
+    \t(not (= ?arm_p1 ?arm_p5))\n\t(arm_openable_FullyEnclosed ?arm_p5 ?openable_p4)\n\
+    \t(openable_LidDetached ?openable_p4 )\n\t(openable_ObjectElevated ?openable_p4\
+    \ )\n\t(utensil_ObjectElevated ?utensil_p0 )\n\t(utensil_spreadable_SubstanceOn\
+    \ ?utensil_p0 ?spreadable_p2)\n\t(not (arm_openable_FullyEnclosed ?arm_p1 ?openable_p4))\n\
+    \t(not (arm_utensil_FullyEnclosed ?arm_p1 ?utensil_p0))\n\t(not (arm_utensil_FullyEnclosed\
+    \ ?arm_p5 ?utensil_p0))\n) \n:effect (and \n \t(arm_openable_FullyEnclosed ?arm_p1\
+    \ ?openable_p4) \n ) \n)\n"
