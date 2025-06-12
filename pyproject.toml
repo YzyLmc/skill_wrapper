@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skill_wrapper"
+version = "0.1.0"
+description = "Environment with PyTorch and AI libraries"
+requires-python = ">=3.10,<3.11"
+dependencies = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "openai",
+    "sentence-transformers",
+]
+
+[tool.uv]
+dev-dependencies = []
