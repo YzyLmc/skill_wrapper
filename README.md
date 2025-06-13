@@ -1,11 +1,34 @@
 # SkillWrapper: Autonomously Learning Interpretable Skill Abstractions with Foundation Models
 
-## Installation
-This codebase relies on `openai`, `pytorch`, and `sentence_transformer`. Try installing them by:
+## Updated Installation
+
+If you don't have `uv`, run the first command to install it. Run the second command to create a `uv` virtual environment with the project's dependencies.
+
+```sh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+uv sync
 ```
-conda create -n sw_env python=3.10 pytorch torchvision torchaudio -c pytorch && conda activate sw_env && pip install openai sentence-transformers
+
+TODO: Evaluation requires fast downward dependency.
+
+## Updated Run Instructions
+
+**Phase 1**: Skill Sequence Proposal - Run the command:
+```sh
+uv run src/main.py --task_config_fpath task_config/franka.yaml --propose_skill_sequence_only
 ```
-Evaluation requires fast downward dependency.
+
+TODO: The proposed skill sequences are not automatically saved in files; make sure to manually save them.
+
+**Phase 2**: Execute the Skills - TODO (needs instructions).
+
+Skill execution will produce images capturing the states between skills, and a YAML file storing the metadata needed to run predicate invention.
+
+**Phase 3**: Predicate Proposal - Run the command (TODO: What path should be used for the task config? Does it need to be given the YAML file there?)
+```sh
+uv run src/main.py --task_config_fpath task_config/franka.yaml ----invent_pred_only
+```
+
 ## Files
 ### Source Code Overview
 All source code are under `src/`. Specifically for constructing operators, we have:
@@ -78,4 +101,3 @@ Since the baselines will have different predicates and thus different abstract s
 - Solved: Present 6 solvable planning problems, report the percentage of trials where the method found a valid plan that is executable on the robot.
 - Planning Budget: For the 6 solvable planning problems, report the number of plans return from the planner have been tried executing until find a valid plan. The budget should have a cap, so that the budget can be used up and the number won't explode by one edge case. (This metric is borrowed from VisualPredicator)
 - Impossible: Present 6 impossible planning problems, report the percentage of trials where the method successfully identify the planning problem has no solutions.
-
