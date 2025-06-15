@@ -13,6 +13,11 @@ TODO: Evaluation requires fast downward dependency.
 
 ## Updated Run Instructions
 
+Export your OpenAI key using the command:
+```sh
+export OPENAI_API_KEY=...
+```
+
 **Phase 1**: Skill Sequence Proposal - Run the command:
 ```sh
 uv run src/main.py --task_config_fpath task_config/franka.yaml --propose_skill_sequence_only

@@ -13,6 +13,8 @@ dependencies = [
     "torchaudio",
     "openai",
     "sentence-transformers",
+    "dill",
+    "ai2thor"
 ]
 
 [tool.uv]

@@ -11,6 +11,9 @@ import dill
 import re
 from collections import defaultdict
 from copy import deepcopy
+from pathlib import Path
+import platform
+import torch
 
 # OpenAI API Key
 api_key=os.getenv("OPENAI_API_KEY")
@@ -229,17 +232,36 @@ class GPT4:
         # breakpoint()
         return responses
 
-def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
+def get_save_fpath(directory: Path, fname: str, ftype: str) -> Path:
+    """Create a unique save filepath in the given directory."""
+    if not directory.exists():
+        directory.mkdir(parents=True)
+
     counter = 1
     while True:
-        save_path = f"{directory}/{fname}_{counter}.{ftype}"
-        if not os.path.exists(save_path):
+        save_path = directory / f"{fname}_{counter}.{ftype}"
+        if not save_path.exists():
             break
         counter += 1
+    
+    save_path.touch(exist_ok=False) # We expect this to be unique!
+
     return save_path
 
+def determine_pytorch_device():
+    """Determine which PyTorch device to use."""
+    if torch.cuda.is_available(): # Use CUDA on Linux if available
+        return torch.device("cuda")
+    elif platform.system() == "Darwin": # Use Metal on macOS
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            return torch.device("mps")
+        else:
+            return torch.device("cpu")
+    
+    return torch.device("cpu") # Otherwise, fallback to CPU
+
 def setup_logging(dir_name, env_name) -> str:
-    save_path = get_save_fpath(dir_name, f"{env_name}_log_raw_results", "log")
+    save_path = get_save_fpath(Path(dir_name), f"{env_name}_log_raw_results", "log")
     logging.basicConfig(level=logging.INFO,
                         format='%(message)s',
                         handlers=[
