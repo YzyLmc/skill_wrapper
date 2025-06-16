@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "skill_wrapper"
 version = "0.1.0"
-description = "Environment with PyTorch and AI libraries"
+description = "Autonomously learning interpretable skill abstractions with foundation models"
 requires-python = ">=3.10,<3.11"
 dependencies = [
     "torch",
@@ -16,4 +16,7 @@ dependencies = [
 ]
 
 [tool.uv]
-dev-dependencies = []
+dev-dependencies = ["ruff", "mypy", "typing-extensions"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"] # Include packages at these paths
