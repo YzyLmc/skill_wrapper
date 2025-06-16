@@ -1,0 +1,66 @@
+# New YAML format specifying the structure of the Franka domain
+skills:
+  Pick:
+    parameters:
+      robot:
+        type: robot
+        semantics: the robot executing the skill.
+      object:
+        type: pickable
+        semantics: the object to be picked up.
+
+  PlaceBack:
+    parameters:
+      robot:
+        type: robot
+        semantics: the robot executing the skill.
+      object:
+        type: pickable
+        semantics: the object to be placed back.
+
+  Pour:
+    parameters:
+      robot:
+        type: robot
+        semantics: the robot executing the skill.
+      pour_from:
+        type: pourable
+        semantics: the container to pour liquid from.
+      pour_into:
+        type: container
+        semantics: the container to pour liquid into.
+
+  # TODO: Why are we only able to stack bowls?
+  Stack:
+    parameters:
+      robot:
+        type: robot
+        semantics: the robot executing the skill.
+      bowl:
+        type: bowl
+        semantics: a smaller bowl that can be stacked onto a plate.
+      plate:
+        type: plate
+        semantics: the plate that the bowl can be stacked on.
+
+  Wipe:
+    parameters:
+      robot:
+        type: robot
+        semantics: the robot executing the skill.
+      sponge:
+        type: sponge
+        semantics: the sponge used to wipe the plate.
+      plate:
+        type: plate
+        semantics: the dirty plate to be wiped.
+
+# List all object types appearing in the domain
+types:
+  - pickable
+  - pourable
+  - container
+  - sponge
+  - plate
+  - bowl
+  - robot
