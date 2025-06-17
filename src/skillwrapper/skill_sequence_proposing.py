@@ -58,6 +58,9 @@ class SkillSequenceProposing:
             }
             for lifted_skill in self.task_config["skills"].values()
         }
+        print(self.skill_dictionary)
+        exit()
+
         self.operator_to_skill = {
             k: re.sub(r"_\d+", "", k) for (k, v) in self.operator_dictionary.items()
         }

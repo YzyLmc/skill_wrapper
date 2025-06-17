@@ -4,6 +4,7 @@
 import argparse
 import logging
 from collections import defaultdict
+from pathlib import Path
 
 from ai2thor_task_exec import convert_task_to_code
 from data_structure import Skill, yaml
@@ -96,7 +97,11 @@ def main():
     # init env
     task_config = load_from_file(args.task_config_fpath)
     args.env = task_config["env"]
-    log_save_path = setup_logging(args.save_dir, task_config["env"])  # configure logging
+    log_save_path = setup_logging(
+        Path(args.save_dir),
+        "franka",
+        task_config["env"],
+    )  # configure logging
 
     # main loop
     if args.env in ["dorfl", "spot", "franka"]:

@@ -2,14 +2,21 @@
 
 from __future__ import annotations
 
+import copy
 import inspect
+import os
 import re
 from collections.abc import Callable, KeysView
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, get_type_hints
+from typing import Any, Generic, TypeVar, get_type_hints
 
+import numpy as np
 import yaml
+from openai import OpenAI
+from sentence_transformers import SentenceTransformer
+
+from skillwrapper.utils import determine_pytorch_device
 
 
 ### Meta-Domain Layer - Define domains based on Python method signatures ###
@@ -121,7 +128,7 @@ class SkillParameter:
     semantics: str  # English description of the parameter's meaning
 
 
-Bindings = dict[str, str]  # Map from skill parameter names to their bound concrete objects
+Bindings = dict[str, str]  # Map from parameter names to their bound concrete objects
 
 SkillsProtocol = Any  # Stands in for skill protocols for different domains
 
@@ -319,28 +326,28 @@ class ConcreteObjects:
 
     def __init__(self, objects: dict[str, set[str]]) -> None:
         """Initialize the collection of concrete objects."""
-        self._objects = objects
+        self.objects = objects
 
     @property
     def object_names(self) -> KeysView[str]:
         """Retrieve all object names in this collection."""
-        return self._objects.keys()
+        return self.objects.keys()
 
     @property
     def all_object_types(self) -> set[str]:
         """Compute the set of all object types used in this collection."""
         all_types = set()
-        for types_set in self._objects.values():
+        for types_set in self.objects.values():
             all_types.update(types_set)
         return all_types
 
     def get_object_types(self, object_name: str) -> set[str]:
         """Retrieve the type(s) of the named object."""
-        return self._objects[object_name]
+        return self.objects[object_name]
 
     def __contains__(self, object_name: str) -> bool:
         """Evaluate whether the named object is in this collection."""
-        return object_name in self._objects
+        return object_name in self.objects
 
 
 @dataclass(frozen=True)
@@ -421,3 +428,265 @@ class SkillInstance:
     def execute(self, executor: SkillsProtocol) -> None:
         """Execute this skill instance."""
         self.skill.execute(executor, self.bindings)
+
+
+### Skill Abstractions Layer ###
+
+
+@dataclass(frozen=True)
+class PredicateParameter:
+    """A typed parameter of a predicate."""
+
+    name: str
+    object_type: str
+    semantics: str  # TODO: Does the LLM provide this?
+
+
+StateT = TypeVar("StateT")
+
+
+@dataclass(frozen=True)
+class Predicate(Generic[StateT]):
+    """A symbolic predicate with object-typed parameters."""
+
+    name: str
+    parameters: tuple[PredicateParameter, ...]
+    semantics: str  # TODO: Does the LLM provide this?
+
+    def ground_with(self, bindings: Bindings) -> PredicateInstance:
+        """Ground the predicate using the given parameter bindings."""
+        return PredicateInstance(self, bindings)
+
+    def __str__(self) -> str:
+        """Return a readable string representation of the predicate."""
+        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
+        return f"{self.name}({params})"
+
+
+@dataclass(frozen=True)
+class PredicateInstance(Generic[StateT]):
+    """A predicate grounded using particular concrete objects."""
+
+    predicate: Predicate
+    bindings: Bindings
+
+    def holds_in(self, state: StateT) -> bool:
+        """Evaluate whether the grounded predicate holds in the given state."""
+        raise NotImplementedError("Need to implement: PredicateInstance.holds_in(state)")
+
+
+AbstractState = set[PredicateInstance]  # Abstract state = Set of grounded predicates that are true
+
+
+@dataclass(frozen=True)
+class OperatorParameter:
+    """A typed parameter of an operator."""
+
+    name: str
+    object_type: str
+
+
+@dataclass(frozen=True)
+class Operator(Generic[StateT]):
+    """A lifted abstract action defining an abstract transition model for a skill."""
+
+    name: str
+    parameters: tuple[OperatorParameter, ...]
+    preconditions: set[Predicate]  # Abstract conditions required to execute the operator
+    add_effects: list[Predicate]  # Abstract conditions made true by executing the operator
+    delete_effects: list[Predicate]  # Abstract conditions made false by executing the operator
+
+    def is_applicable(self, bindings: Bindings, state: StateT) -> bool:
+        """Evaluate whether the operator is applicable under the given bindings in a state."""
+        return all(pre.ground_with(bindings).holds_in(state) for pre in self.preconditions)
+
+    def apply(self, bindings: Bindings, abstract_state: AbstractState) -> AbstractState:
+        """Apply the operator's effects, under the given bindings, to update the abstract state."""
+        if not self.preconditions.issubset(abstract_state):
+            raise ValueError(
+                f"Operator {self.name} is not applicable in the given abstract state.",
+            )
+
+        add_effects = {eff.ground_with(bindings) for eff in self.add_effects}
+        delete_effects = {eff.ground_with(bindings) for eff in self.delete_effects}
+
+        return abstract_state.difference(delete_effects).union(add_effects)
+
+
+@dataclass(frozen=True)
+class OperatorInstance:
+    """An operator grounded with concrete objects."""
+
+    operator: Operator
+    bindings: Bindings
+
+    def apply(self, abstract_state: AbstractState) -> AbstractState:
+        """Apply the grounded operator to update the given abstract state."""
+        return self.operator.apply(self.bindings, abstract_state)
+
+
+def predicate_list_to_semantics_dict(predicates: list[Predicate]) -> dict[str, str]:
+    """Convert a list of predicates to a dictionary mapping predicate names to their semantics."""
+    return {p.name: p.semantics for p in predicates}
+
+
+### Skill Sequence Proposal Layer ###
+
+
+@dataclass(frozen=True)
+class SkillTransition(Generic[StateT]):
+    """An observed transition resulting from executing a skill instance in an environment."""
+
+    state_before: StateT  # State from which the skill execution was attempted
+    skill_instance: SkillInstance  # Concrete skill that was (possibly) executed
+    success: bool  # Was the skill successfully executed?
+    state_after: StateT | None  # State after the skill executed, if the skill succeeded
+
+    def __post_init__(self) -> None:
+        """Verify that the constructed transition is valid."""
+        if self.success and self.state_after is None:
+            raise ValueError("A successful skill transition must include an 'after' state.")
+
+    @classmethod
+    def from_yaml(
+        cls,
+        state_type: type[StateT],
+        yaml_data: dict[str, Any],
+        domain: Domain,
+        env: Environment,
+    ) -> SkillTransition:
+        """Load a SkillTransition instance from data loaded from YAML."""
+        for key in ["state_before", "skill_instance", "success"]:
+            if key not in yaml_data:
+                raise KeyError(f"SkillTransition.from_yaml() requires the YAML key: '{key}'")
+
+        state_before = state_type.from_yaml(yaml_data["state_before"])
+        skill_instance = SkillInstance.from_string(yaml_data["skill_instance"], domain, env)
+        success = bool(yaml_data["success"])
+        state_after = state_type.from_yaml(yaml_data["state_after"]) if success else None
+
+        return SkillTransition(state_before, skill_instance, success, state_after)
+
+
+SkillExecutionTrace = list[SkillTransition]  # A sequence of attempted skill executions
+Dataset = list[SkillExecutionTrace]  # A collection of skill execution traces
+
+
+@dataclass(frozen=True)
+class Prompts:
+    """A pair of prompts for an LLM specifying a context and a repeatable task."""
+
+    system_prompt: str
+    task_prompt: str
+
+
+class SkillSequenceProposer:
+    """Proposes exploratory skill sequences using a vision-language model."""
+
+    def __init__(
+        self,
+        domain: Domain,
+        env: Environment,
+        prompt_path: Path,
+        predicates: list[Predicate] | None,
+    ) -> None:
+        """Initialize the skill sequence proposer.
+
+        :param domain: SkillWrapper domain specifying skills and object types
+        :param env: SkillWrapper environment specifying objects and the initial state
+        :param prompt_path: YAML filepath specifying prompts for the VLM
+        :param predicates: List of predicates already learned (or None if first iteration)
+        """
+        self.domain = domain
+        self.env = env
+        self.skill_to_idx = {
+            skill.name: idx for idx, skill in enumerate(self.domain.skills.values())
+        }
+
+        # Map from predicate names to a description of their semantics
+        self.predicate_semantics = (
+            predicate_list_to_semantics_dict(predicates) if predicates else {}
+        )
+
+        ### Parameters kept from original implementation ###
+        self.curr_shannon_entropy = 0.0
+        self.generation_args = {
+            "temperature": 0.6,
+            "presence_penalty": 0.3,
+            "frequency_penalty": 0.35,
+            "top_p": 1.0,
+            "max_tokens": 550,
+            "engine": "gpt-4o",
+            "stop": "",
+        }
+
+        self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.device = determine_pytorch_device()
+
+        # Embedding model is used to ground LLM output to groundable/executable skills and objects
+        self.embedding_model = SentenceTransformer("stsb-roberta-large").to(self.device)
+
+        self.skill_embeddings = self.embedding_model.encode(
+            [skill.name for skill in self.domain.skills.values()],
+            batch_size=32,
+            convert_to_tensor=True,
+            device=self.device,
+        )
+        self.object_name_embeddings = self.embedding_model.encode(
+            list(self.env.objects.object_names),
+            batch_size=32,
+            convert_to_tensor=True,
+            device=self.device,
+        )
+
+        self.h = 1  # KDE parameter
+        # scaling parameters for pareto-optimal task selection
+        self.k = 10  # set period after how many skill executions to switch mode
+        # all alphas are in the range [1,3]
+        self.chainability_alpha = lambda _: 1
+        self.entropy_gain_alpha = lambda x: np.cos((np.pi / self.k) * x) + 2
+
+    def _compute_skill_pair_matrix(self, dataset: Dataset) -> tuple[np.ndarray, int]:
+        """Count the number of skill bigrams from previously executed skill sequences.
+
+        :param dataset: Collection of observed skill execution traces
+        :return: Tuple of (NumPy array of skill pair counts, total skills executed)
+        """
+        skill_pair_counts = np.zeros((len(self.domain.skills), len(self.domain.skills)))
+
+        total_skills_executed = 0
+        for execution_trace in dataset:
+            prev_skill_name = None
+            for transition in execution_trace:
+                curr_skill_name = transition.skill_instance.skill.name
+
+                if prev_skill_name is not None:
+                    idx1 = self.skill_to_idx[prev_skill_name]
+                    idx2 = self.skill_to_idx[curr_skill_name]
+                    skill_pair_counts[idx1, idx2] += 1
+
+                prev_skill_name = curr_skill_name
+                total_skills_executed += 1
+
+        return skill_pair_counts, total_skills_executed
+
+    def create_llm_prompt(self) -> Prompts:
+        """Create prompts for the LLM to propose skill sequences."""
+        skill_prompts = []
+        for skill_name, skill in self.domain.skills.items():
+            param_descriptions = [
+                f"{param.name} (Type {param.object_type}): {param.semantics}"
+                for param in skill.parameters
+            ]
+            skill_prompt = f"{skill_name}\n" + "\n".join(param_descriptions)
+            skill_prompts.append(skill_prompt)
+
+        objects_with_types = [
+            f"{obj_name}: {list(types)}" for obj_name, types in self.env.objects.objects.items()
+        ]
+
+        # objects_with_types = [
+        #     f"{obj}: {list(types)}" for obj, types in self.env.objects.objects.items()
+        # ]
+
+        return Prompts()  # TODO

@@ -266,6 +266,7 @@ def get_save_fpath(directory: Path, fname: str, ftype: str) -> Path:
             break
         counter += 1
 
+    save_path.parent.mkdir(parents=True, exist_ok=True)
     save_path.touch(exist_ok=False)  # We expect this to be unique!
 
     return save_path
@@ -283,8 +284,15 @@ def determine_pytorch_device():
     return torch.device("cpu")  # Otherwise, fallback to CPU
 
 
-def setup_logging(dir_name, env_name) -> str:
-    save_path = get_save_fpath(Path(dir_name), f"{env_name}_log_raw_results", "log")
+def setup_logging(logs_dir: Path, domain_name: str, env_name: str) -> Path:
+    """Set up logging for the given domain and environment.
+
+    :param logs_dir: Directory containing log files
+    :param domain_name: Name of the SkillWrapper domain
+    :param env_name: Name of the SkillWrapper environment
+    :return: Path to the created log file
+    """
+    save_path = get_save_fpath(logs_dir, f"{domain_name}/{env_name}", "log")
     logging.basicConfig(
         level=logging.INFO,
         format="%(message)s",
@@ -293,8 +301,7 @@ def setup_logging(dir_name, env_name) -> str:
             logging.StreamHandler(),
         ],
     )
-    logging.info(f"log files will be saved at {save_path}")
-
+    logging.info(f"Logs will be saved into {save_path}")
     return save_path
 
 
