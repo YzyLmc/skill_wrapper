@@ -14,15 +14,14 @@ dependencies = [
     "openai",
     "sentence-transformers",
     "dill",
-    "ai2thor"
+    "ai2thor",
 ]
 
 [tool.uv]
 dev-dependencies = []
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"] # Include packages at these paths
-
+packages = ["src/skillwrapper"] # Include packages at these paths
 
 ### Configuration for the Ruff formatter/linter ###
 [tool.ruff]
@@ -35,6 +34,7 @@ ignore = [
     "D203",   # No blank line between class definition and its docstring
     "D213",   # Place docstring summary immediately after the opening quotes
     "TRY003", # Permit defining exception messages at point of raising
+    "EM102",  # Allow using f-strings directly within exception constructors
 ]
 unfixable = ["F401"] # Disable 'fix' for unused imports
 
