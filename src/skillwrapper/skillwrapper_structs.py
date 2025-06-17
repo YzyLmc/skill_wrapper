@@ -2,13 +2,28 @@
 
 from __future__ import annotations
 
+import inspect
 import re
 from collections.abc import Callable, KeysView
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, get_type_hints
 
 import yaml
+
+
+### Meta-Domain Layer - Define domains based on Python method signatures ###
+def camel_to_snake(name: str) -> str:
+    """Convert CamelCase to snake_case."""
+    # Insert underscore before uppercase letters that follow lowercase letters
+    s1 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
+    return s1.lower()
+
+
+def snake_to_camel(name: str) -> str:
+    """Convert snake_case to CamelCase."""
+    chunks = name.split("_")
+    return "".join(word.capitalize() for word in chunks)
 
 
 def import_yaml_into_dict(yaml_path: Path, required_keys: set[str]) -> dict[str, Any]:
@@ -34,6 +49,66 @@ def import_yaml_into_dict(yaml_path: Path, required_keys: set[str]) -> dict[str,
     return yaml_data
 
 
+def skill_fn(func: Callable) -> Callable:
+    """Mark a function as implementing a skill."""
+    func._is_skill = True
+    return func
+
+
+def parse_docstring_params(docstring: str) -> dict[str, str]:
+    """Extract parameter semantics from a docstring.
+
+    :param docstring: String containing the docstring of a skill function
+    :return: Map from parameter names to their semantic descriptions
+    """
+    param_docs = {}
+    param_pattern = r":param\s+(\w+):\s*([^\n]+)"
+
+    for match in re.finditer(param_pattern, docstring):
+        param_name = match.group(1)
+        description = match.group(2)
+        param_docs[param_name] = description
+
+    return param_docs
+
+
+def method_to_skill(method: Callable[[Any], Any]) -> Skill:
+    """Convert a protocol method into a Skill definition.
+
+    :param method: Method defining the parameter signature of a skill
+    :return: Constructed Skill instance
+    """
+    skill_name = snake_to_camel(method.__name__)
+    method_params = inspect.signature(method).parameters
+    type_hints = get_type_hints(method)
+
+    # Parse docstring for parameter descriptions
+    docstring = inspect.getdoc(method) or ""
+    param_docs = parse_docstring_params(docstring)
+
+    parameters = []
+    for param_name in method_params:
+        if param_name == "self":
+            continue  # Skip 'self' parameter
+
+        # Get the parameter object type from the type hints
+        param_type = type_hints.get(param_name, Any)
+        object_type = param_type.__name__.capitalize() if hasattr(param_type, "__name__") else None
+        if object_type is None:
+            error = f"Skill '{skill_name}' didn't define a type for parameter '{param_name}'"
+            raise ValueError(error)
+
+        # Get parameter semantics from the method docstring
+        semantics = param_docs.get(param_name)
+        if semantics is None:
+            error = f"Skill '{skill_name}' didn't define semantics for parameter '{param_name}'"
+            raise ValueError(error)
+
+        parameters.append(SkillParameter(param_name, object_type, semantics))
+
+    return Skill(skill_name, tuple(parameters))
+
+
 ### Domain Model Layer - Defines the available skills and their parameters ###
 
 
@@ -46,8 +121,9 @@ class SkillParameter:
     semantics: str  # English description of the parameter's meaning
 
 
-ExecutorProtocol = Any  # TODO: Implement next
 Bindings = dict[str, str]  # Map from skill parameter names to their bound concrete objects
+
+SkillsProtocol = Any  # Stands in for skill protocols for different domains
 
 
 @dataclass(frozen=True)
@@ -56,7 +132,6 @@ class Skill:
 
     name: str
     parameters: tuple[SkillParameter, ...]
-    execute_fn: Callable[[ExecutorProtocol, Bindings], None] | None = field(default=None)
 
     @classmethod
     def from_yaml(cls, skill_name: str, yaml_data: dict[str, Any]) -> Skill:
@@ -70,29 +145,45 @@ class Skill:
 
         return Skill(skill_name, tuple(skill_params))  # Execution function registered separately
 
+    def __str__(self) -> str:
+        """Return a readable string representation of the skill."""
+        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
+        return f"{self.name}({params})"
+
     def to_yaml(self) -> dict[str, Any]:
         """Convert the Skill object into a dictionary of YAML data."""
+        return {self.name: self.params_to_yaml()}
+
+    def params_to_yaml(self) -> dict[str, Any]:
+        """Convert the Skill parameters into a dictionary of YAML data under a `parameters` key."""
         return {
-            self.name: {
-                "parameters": {
-                    param.name: {
-                        "type": param.object_type,
-                        "semantics": param.semantics,
-                    }
-                    for param in self.parameters
-                },
+            "parameters": {
+                param.name: {
+                    "type": param.object_type,
+                    "semantics": param.semantics,
+                }
+                for param in self.parameters
             },
         }
 
-    def execute(self, executor: ExecutorProtocol, bindings: dict[str, str]) -> None:
+    def execute(self, executor: SkillsProtocol, bindings: dict[str, str]) -> None:
         """Execute this skill under the given object bindings.
 
-        :param executor: Protocol defining an interface to robot execution
+        :param executor: Protocol defining an interface to skill execution
         :param bindings: Map from parameter names to bound object names
         """
-        if self.execute_fn is None:
-            raise NotImplementedError(f"No execution function for skill: {self.name}")
-        self.execute_fn(executor, bindings)
+        method_name = camel_to_snake(self.name)  # CamelCase skill name -> snake_case method name
+
+        # Access the executor method dynamically
+        if not hasattr(executor, method_name):
+            raise NotImplementedError(f"Executor has no method: {method_name}")
+
+        method = getattr(executor, method_name)
+        args = [bindings[param.name] for param in self.parameters]
+        method(*args)
+
+
+ObjectTypeSet = set[Any]  # Allow object types to be expressed as strings or NewTypes
 
 
 @dataclass(frozen=True)
@@ -101,6 +192,15 @@ class Domain:
 
     skills: dict[str, Skill]  # Map from skill names to Skill instances
     object_types: set[str]  # Set of object types in the domain
+
+    @staticmethod
+    def extract_type_names(types: ObjectTypeSet) -> set[str]:
+        """Convert a set of NewType objects or strings into a set of type names."""
+        result = set()
+        for t in types:
+            type_name = t.__name__ if hasattr(t, "__name__") else str(t)
+            result.add(type_name.capitalize())
+        return result
 
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> Domain:
@@ -115,6 +215,66 @@ class Domain:
         skills_dict = {skill.name: skill for skill in skills}
 
         return Domain(skills_dict, yaml_data["types"])
+
+    @classmethod
+    def from_protocol(cls, object_types: ObjectTypeSet, protocol: type[Any]) -> Domain:
+        """Extract a SkillWrapper domain from the methods of a Python protocol.
+
+        :param object_types: Set of all object types in the domain
+        :param protocol: Python protocol specifying the signatures of the domain's skills
+        """
+        skills: dict[str, Skill] = {}
+
+        for method_name in dir(protocol):
+            if method_name.startswith("_"):
+                continue
+            method = getattr(protocol, method_name)
+            if hasattr(method, "_is_skill"):
+                skill = method_to_skill(method)
+                skills[skill.name] = skill
+
+        type_names = Domain.extract_type_names(object_types)
+
+        # Extract all object types used by skills
+        used_types = set()
+        for skill in skills.values():
+            for param in skill.parameters:
+                used_types.add(param.object_type)
+
+        # Verify that all extracted types are used by at least one skill
+        unused_types = type_names - used_types
+        if unused_types:
+            raise ValueError(
+                f"Unused object types: {sorted(unused_types)}. "
+                "These types are declared in the domain but not used by any skill.",
+            )
+
+        # Verify that all skills only use types defined for the domain
+        undefined_types = used_types - type_names
+        if undefined_types:
+            raise ValueError(
+                f"Skills use undefined object types: {sorted(undefined_types)}. "
+                "Add these types to the `object_types` set or fix typos in skill signatures.",
+            )
+
+        # Verify that the skill set and object types sets are not empty
+        if not skills:
+            raise ValueError(f"No skills found in the protocol {protocol.__name__}.")
+
+        if not type_names:
+            raise ValueError(f"No object types specified for the domain {protocol.__name__}.")
+
+        return Domain(skills, type_names)
+
+    def export_to_yaml(self, output_path: Path) -> None:
+        """Export the domain as YAML data to the specified filepath."""
+        skills_data = {name: skill.params_to_yaml() for name, skill in self.skills.items()}
+        types_data = list(self.object_types)
+
+        yaml_data = {"skills": skills_data, "types": types_data}
+
+        with output_path.open("w") as file:
+            yaml.dump(yaml_data, file, default_flow_style=False, sort_keys=False)
 
 
 ### Environment Layer - Defines the initial state and objects in a scenario ###
@@ -258,6 +418,6 @@ class SkillInstance:
 
         return SkillInstance(skill, bindings)
 
-    def execute(self, executor: ExecutorProtocol) -> None:
+    def execute(self, executor: SkillsProtocol) -> None:
         """Execute this skill instance."""
         self.skill.execute(executor, self.bindings)

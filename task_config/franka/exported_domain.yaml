@@ -1,4 +1,3 @@
-# New YAML format specifying the structure of the Franka domain (exported from Python protocol)
 skills:
   Pick:
     parameters:
@@ -8,7 +7,6 @@ skills:
       picked:
         type: Pickable
         semantics: Object to be picked up
-
   PlaceBack:
     parameters:
       robot:
@@ -17,7 +15,6 @@ skills:
       placed:
         type: Pickable
         semantics: Object placed back into its original position
-
   Pour:
     parameters:
       robot:
@@ -29,7 +26,6 @@ skills:
       pour_into:
         type: Container
         semantics: Container to pour liquid into
-
   Stack:
     parameters:
       robot:
@@ -41,7 +37,6 @@ skills:
       plate:
         type: Plate
         semantics: Plate that the bowl will be stacked on
-
   Wipe:
     parameters:
       robot:
@@ -53,13 +48,11 @@ skills:
       plate:
         type: Plate
         semantics: Dirty plate to be wiped
-
-# List all object types appearing in the domain
 types:
-  - Pickable
-  - Container
-  - Bowl
-  - Sponge
-  - Pourable
-  - Plate
-  - Robot
+- Pickable
+- Plate
+- Robot
+- Pourable
+- Sponge
+- Bowl
+- Container
