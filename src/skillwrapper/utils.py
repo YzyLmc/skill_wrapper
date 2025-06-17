@@ -1,86 +1,90 @@
-from openai import OpenAI
 import base64
-import requests
-from time import sleep
-import logging
-import json
 import csv
-from data_structure import yaml
+import json
+import logging
 import os
-import dill
+import platform
 import re
 from collections import defaultdict
 from copy import deepcopy
 from pathlib import Path
-import platform
+from time import sleep
+
+import dill
+import requests
 import torch
+from data_structure import yaml
+from openai import OpenAI
 
 # OpenAI API Key
-api_key=os.getenv("OPENAI_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# General utils
 
+# General utils
 def load_from_file(fpath, noheader=True):
     ftype = os.path.splitext(fpath)[-1][1:]
-    if ftype == 'pkl':
-        with open(fpath, 'rb') as rfile:
+    if ftype == "pkl":
+        with open(fpath, "rb") as rfile:
             out = dill.load(rfile)
-    elif ftype == 'txt':
-        with open(fpath, 'r') as rfile:
-            if 'prompt' in fpath:
+    elif ftype == "txt":
+        with open(fpath) as rfile:
+            if "prompt" in fpath:
                 out = "".join(rfile.readlines())
             else:
                 out = [line.strip() for line in rfile.readlines()]
-    elif ftype == 'json':
-        with open(fpath, 'r') as rfile:
+    elif ftype == "json":
+        with open(fpath) as rfile:
             out = json.load(rfile)
-    elif ftype == 'csv':
-        with open(fpath, 'r') as rfile:
+    elif ftype == "csv":
+        with open(fpath) as rfile:
             csvreader = csv.reader(rfile)
             if noheader:
                 fileds = next(csvreader)
             out = [row for row in csvreader]
-    elif ftype == 'yaml':
-        with open(fpath, 'r') as rfile:
+    elif ftype == "yaml":
+        with open(fpath) as rfile:
             out = yaml.load(rfile, Loader=yaml.FullLoader)
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
     return out
 
+
 def save_to_file(data, fpth, mode=None):
     ftype = os.path.splitext(fpth)[-1][1:]
-    if ftype == 'pkl':
-        with open(fpth, mode if mode else 'wb') as wfile:
+    if ftype == "pkl":
+        with open(fpth, mode if mode else "wb") as wfile:
             dill.dump(data, wfile)
-    elif ftype == 'txt':
-        with open(fpth, mode if mode else 'w') as wfile:
+    elif ftype == "txt":
+        with open(fpth, mode if mode else "w") as wfile:
             wfile.write(data)
-    elif ftype == 'json':
-        with open(fpth, mode if mode else 'w') as wfile:
-            json.dump(data, wfile, sort_keys=True,  indent=4)
-    elif ftype == 'csv':
-        with open(fpth, mode if mode else 'w', newline='') as wfile:
+    elif ftype == "json":
+        with open(fpth, mode if mode else "w") as wfile:
+            json.dump(data, wfile, sort_keys=True, indent=4)
+    elif ftype == "csv":
+        with open(fpth, mode if mode else "w", newline="") as wfile:
             writer = csv.writer(wfile)
             writer.writerows(data)
-    elif ftype == 'yaml':
-        with open(fpth, 'w') as wfile:
+    elif ftype == "yaml":
+        with open(fpth, "w") as wfile:
             yaml.dump(data, wfile)
     else:
         raise ValueError(f"ERROR: file type {ftype} not recognized")
 
+
 # def encode_image(image_path):
 #   with open(image_path, "rb") as image_file:
 #     return base64.b64encode(image_file.read()).decode('utf-8')
+
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
     return encoded_image
 
+
 def prompt2msg(query_prompt, vision=False):
-    """
-    Make prompts for GPT-3 compatible with GPT-3.5 and GPT-4.
+    """Make prompts for GPT-3 compatible with GPT-3.5 and GPT-4.
     Support prompts for
         RER: e.g., data/osm/rer_prompt_16.txt
         symbolic translation: e.g., data/prompt_symbolic_batch12_perm/prompt_nexamples1_symbolic_batch12_perm_ltl_formula_9_42_fold0.txt
@@ -89,9 +93,9 @@ def prompt2msg(query_prompt, vision=False):
     :return: message used by chat completion API (gpt-3, gpt-3.5-turbo).
     """
     prompt_splits = query_prompt.split("\n\n") if type(query_prompt) == str else query_prompt
-    
+
     task_description = prompt_splits[0]
-    examples = prompt_splits[1: -1]
+    examples = prompt_splits[1:-1]
     query = prompt_splits[-1]
 
     tag = "text" if vision else "content"
@@ -101,31 +105,36 @@ def prompt2msg(query_prompt, vision=False):
 
     return msg
 
+
 class GPT4:
-    def __init__(self, engine="gpt-4o", temp=0, max_tokens=500, n=1, stop=['\n\n\n']):
+    def __init__(self, engine="gpt-4o", temp=0, max_tokens=500, n=1, stop=["\n\n\n"]):
         self.engine = engine
         self.temp = temp
         self.max_tokens = max_tokens
         self.n = n
         self.stop = stop
+
     # @retry(wait_fixed=15000, stop_max_attempt_number=5)
     def generate(self, query_prompt):
-        '''query_prompt: query with task description and in-contex examples splited with \n\n'''
+        """query_prompt: query with task description and in-contex examples splited with \n\n"""
         complete = False
         ntries = 0
-        if 'o1' in self.engine:
-            msg = [{
-                "role": "user",
-                "content": query_prompt
-            }]
+        if "o1" in self.engine:
+            msg = [
+                {
+                    "role": "user",
+                    "content": query_prompt,
+                },
+            ]
             while not complete and ntries < 15:
                 try:
-                    raw_responses = client.chat.completions.create(model=self.engine,
-                    messages=msg,
-                    # temperature=self.temp,
-                    # n=self.n,
-                    # stop=self.stop,
-                    # max_completion_tokens=self.max_tokens,
+                    raw_responses = client.chat.completions.create(
+                        model=self.engine,
+                        messages=msg,
+                        # temperature=self.temp,
+                        # n=self.n,
+                        # stop=self.stop,
+                        # max_completion_tokens=self.max_tokens,
                     )
                     complete = True
                 except Exception as e:
@@ -142,12 +151,14 @@ class GPT4:
 
             while not complete and ntries < 15:
                 try:
-                    raw_responses = client.chat.completions.create(model=self.engine,
-                    messages=msg,
-                    temperature=self.temp,
-                    n=self.n,
-                    stop=self.stop,
-                    max_tokens=self.max_tokens)
+                    raw_responses = client.chat.completions.create(
+                        model=self.engine,
+                        messages=msg,
+                        temperature=self.temp,
+                        n=self.n,
+                        stop=self.stop,
+                        max_tokens=self.max_tokens,
+                    )
                     complete = True
                 except Exception as e:
                     # print(f"Response content: {response.content}")
@@ -163,16 +174,16 @@ class GPT4:
         else:
             responses = [choice["message"]["content"].strip() for choice in raw_responses.choices]
         return responses
-    
+
     # @retry(wait_fixed=15000, stop_max_attempt_number=5)
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False, temp = None):
-        '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False, temp=None):
+        """Separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input"""
         complete = False
         ntries = 0
 
         headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {api_key}"
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
         }
         # breakpoint()
         txts = prompt2msg(query_prompt, vision=True)
@@ -182,17 +193,18 @@ class GPT4:
                 "messages": [],
                 "max_tokens": max_tokens,
                 "logprobs": logprobs,
-                "temperature": self.temp
-                }
-            if temp: payload["temperature"] = temp
+                "temperature": self.temp,
+            }
+            if temp:
+                payload["temperature"] = temp
         else:
             payload = {
                 "model": self.engine,
                 "messages": [],
-                "logprobs": False
-                }
+                "logprobs": False,
+            }
 
-        assert not (payload["logprobs"] and self.engine == "o1") # o1 doesn't support temperature
+        assert not (payload["logprobs"] and self.engine == "o1")  # o1 doesn't support temperature
         if logprobs:
             payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
@@ -201,9 +213,12 @@ class GPT4:
             msg["content"].append(line_txt)
         for img in imgs:
             base64_img = encode_image(img)
-            line_img = {"type": "image_url", "image_url": {
-            "url": f"data:image/jpeg;base64,{base64_img}"
-          }}
+            line_img = {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/jpeg;base64,{base64_img}",
+                },
+            }
             msg["content"].append(line_img)
         payload["messages"].append(msg)
         complete = False
@@ -211,7 +226,11 @@ class GPT4:
 
         while not complete and ntries < 15:
             try:
-                raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+                raw_responses = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers=headers,
+                    json=payload,
+                ).json()
                 complete = True
                 sleep(0.2)
             except Exception as e:
@@ -228,9 +247,12 @@ class GPT4:
         if self.n == 1:
             responses = [raw_responses["choices"][0]["message"]["content"].strip()]
         else:
-            responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
+            responses = [
+                choice["message"]["content"].strip() for choice in raw_responses["choices"]
+            ]
         # breakpoint()
         return responses
+
 
 def get_save_fpath(directory: Path, fname: str, ftype: str) -> Path:
     """Create a unique save filepath in the given directory."""
@@ -243,56 +265,59 @@ def get_save_fpath(directory: Path, fname: str, ftype: str) -> Path:
         if not save_path.exists():
             break
         counter += 1
-    
-    save_path.touch(exist_ok=False) # We expect this to be unique!
+
+    save_path.touch(exist_ok=False)  # We expect this to be unique!
 
     return save_path
 
+
 def determine_pytorch_device():
     """Determine which PyTorch device to use."""
-    if torch.cuda.is_available(): # Use CUDA on Linux if available
+    if torch.cuda.is_available():  # Use CUDA on Linux if available
         return torch.device("cuda")
-    elif platform.system() == "Darwin": # Use Metal on macOS
+    if platform.system() == "Darwin":  # Use Metal on macOS
         if torch.backends.mps.is_available() and torch.backends.mps.is_built():
             return torch.device("mps")
-        else:
-            return torch.device("cpu")
-    
-    return torch.device("cpu") # Otherwise, fallback to CPU
+        return torch.device("cpu")
+
+    return torch.device("cpu")  # Otherwise, fallback to CPU
+
 
 def setup_logging(dir_name, env_name) -> str:
     save_path = get_save_fpath(Path(dir_name), f"{env_name}_log_raw_results", "log")
-    logging.basicConfig(level=logging.INFO,
-                        format='%(message)s',
-                        handlers=[
-                            logging.FileHandler(save_path, mode='w'),
-                            logging.StreamHandler()
-                        ]
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        handlers=[
+            logging.FileHandler(save_path, mode="w"),
+            logging.StreamHandler(),
+        ],
     )
     logging.info(f"log files will be saved at {save_path}")
 
     return save_path
 
-def clean_logging(save_path, keyword_list=['HTTP']):
-    """
-    There will be redundant messages with certain prefix in the log file.
+
+def clean_logging(save_path, keyword_list=["HTTP"]):
+    """There will be redundant messages with certain prefix in the log file.
     This function will naively remove the lines that contains thos prefix
     """
     # Clean the lines start with 'HTTP'
-    with open(save_path, 'r') as file:
+    with open(save_path) as file:
         lines = file.readlines()
-    with open(save_path, 'w') as file:
+    with open(save_path, "w") as file:
         for line in lines:
             if not any(kw in line for kw in keyword_list):
                 file.write(line)
 
+
 def load_tasks(load_path, task_config):
-    """
-    tasks are saved separately since predicate invention takes it as input.
+    """Tasks are saved separately since predicate invention takes it as input.
 
     Args:
         task_config :: dict('env': str, 'skills': Skill, 'objects': dict, 'Env_description': str, 'Initial_observation': dict)
         tasks :: dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+
     """
     tasks = load_from_file(f"{load_path}/tasks.yaml")
     converted_tasks = defaultdict(dict)
@@ -306,36 +331,51 @@ def load_tasks(load_path, task_config):
                 skill_name = match.group(1)
                 parameters = match.group(2).split(", ")
                 # assuming every different skill has different names
-                lifted_skill = [skill for skill in task_config['skills'].values() if skill.name==skill_name][0]
+                lifted_skill = [
+                    skill for skill in task_config["skills"].values() if skill.name == skill_name
+                ][0]
                 # tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
-                converted_tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
+                converted_tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(
+                    parameters,
+                )
 
     return converted_tasks
 
-def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_directory):
-    """
-    Save results as seprate yaml file. 
+
+def save_results(
+    skill2operator,
+    lifted_pred_list,
+    grounded_predicate_truth_value_log,
+    save_directory,
+):
+    """Save results as seprate yaml file.
     Operators will be save in both pkl files for later usage and string in yaml files for human readability.
 
     Args:
         grounded_predicate_truth_value_log {task_name:{step:PredicateState}}
         lifted_pred_list :: list[Predicate]
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
+
     """
     save_to_file(skill2operator, f"{save_directory}/skill2operator.pkl")
-    readable_operators = {lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas] for lifted_skill, operator_metas in skill2operator.items()}
+    readable_operators = {
+        lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas]
+        for lifted_skill, operator_metas in skill2operator.items()
+    }
     save_to_file(readable_operators, f"{save_directory}/skill2operator.yaml")
 
     save_to_file(lifted_pred_list, f"{save_directory}/lifted_pred_list.yaml")
 
-    save_to_file(grounded_predicate_truth_value_log, f"{save_directory}/grounded_predicate_truth_value_log.yaml")
+    save_to_file(
+        grounded_predicate_truth_value_log,
+        f"{save_directory}/grounded_predicate_truth_value_log.yaml",
+    )
     # TODO: auto rename in case of overwriting
     logging.info(f"results have been saved to {save_directory}")
 
+
 def load_results(load_fpath, task_config):
-    """
-    Load tasks, operators, predicate list, and truth value log
-    """
+    """Load tasks, operators, predicate list, and truth value log"""
     try:
         tasks = load_tasks(load_fpath, task_config)
     except:
@@ -344,7 +384,7 @@ def load_results(load_fpath, task_config):
     try:
         skill2operator = load_from_file(f"{load_fpath}/skill2operator.pkl")
     except:
-        skill2operator = {lifted_skill: None for lifted_skill in list(task_config['skills'].values())}
+        skill2operator = dict.fromkeys(list(task_config["skills"].values()))
 
     try:
         lifted_pred_list = load_from_file(f"{load_fpath}/lifted_pred_list.yaml")
@@ -352,13 +392,16 @@ def load_results(load_fpath, task_config):
         lifted_pred_list = []
 
     try:
-        grounded_predicate_truth_value_log = load_from_file(f"{load_fpath}/grounded_predicate_truth_value_log.yaml")
+        grounded_predicate_truth_value_log = load_from_file(
+            f"{load_fpath}/grounded_predicate_truth_value_log.yaml",
+        )
     except:
         grounded_predicate_truth_value_log = {}
-    
+
     # TODO: add logging when loading data
-    
+
     return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+
 
 if __name__ == "__main__":
     gpt = GPT4(engine="o1")
@@ -368,8 +411,8 @@ if __name__ == "__main__":
     # imgs = ["test_imgs/failure.png"]
     # imgs = ["test_imgs/caption.png"]
     # imgs = ["test_imgs/1.jpg", "test_imgs/3.jpg"]
-    imgs = ['tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_2.jpg']
-    imgs = ['tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_2.jpg']
+    imgs = ["tasks/exps/GoTo/After_GoTo_DiningTable_CoffeeTable_True_2.jpg"]
+    imgs = ["tasks/exps/GoTo/After_GoTo_CoffeeTable_DiningTable_True_2.jpg"]
     # txt = "The robot is executing pickup() action. There are certain PDDL predicates that are related to the task. Please propose them."
     # txt = "The robot exectued an action called pickup(Apple). The two images are egocentric observation of the robot before and after the execution. Can you tell which one is before and which one is after execution?"
     # txt = 'A robot is executing tasks in the envrionment. Here is what the robot sees from an egocentric view. Please provide a general description of the type of the environment, such as household or facotry, and the robots, such as its mobility and embodiement.'
@@ -380,7 +423,7 @@ if __name__ == "__main__":
     # txt = "If this is what you see exactly, is the bread on the left of the gripper or on the right?"
     # txt = "You are a mobile manipulator robot. Is this image from a first-person view or a third-person view?"
     # txt = "If these images are what you see exactly, from the second image to the first image, which direction did the gripper move to, left or right?"
-    
+
     # txt = "You are a robot,  and all the images are exactly what you see. You are commanded to execute PickUp() action, how can you guide the robot from the second image to the first image using the provided actions: MoveGripperLeft, MoveGripperRight, MoveGripperForward, MoveGripperBackward, MoveGripperUp, MoveGripperDown?"
     # txt = "You are a robot,  this image is exactly what you see right now. You are commanded to execute PickUp() action, and you have two actions available: MoveGripperLeft() amd MoveGripperRight(), if this image is exactly what you are seeing from your eyes, what would be your next action?"
     # txt = "What are the objects in this picture?"
@@ -392,7 +435,7 @@ if __name__ == "__main__":
     # """
     # txt = "A robot is executing a skill PickUp(Book, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate HasEmptyHands()? Answer with reasoning and True or False in a separate line. Note that the blue sphere on the gripper is a part of the gripper and is not an object, and it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nHasEmptyHand(): The robot's hands are empty and not holding anything."
     txt = "A robot is executing a skill GoTo(CoffeeTable, DiningTable). Given the following egocentric observation from the robot, what is the truth value of the predicate isClose(CoffeeTable)? Answer with reasoning and True or False in a separate line. Note that the blue sphere on the gripper is a part of the gripper and is not an object, and it's a simulated environment so you can only tell if an object is grasped by determining if it is moved to the air by the gripper. Also, do not assume the object is in the scene.\nisClose(loc): The robot is physically close to the location `loc`."
-    responses = gpt.generate_multimodal(txt, imgs,logprobs=True)
+    responses = gpt.generate_multimodal(txt, imgs, logprobs=True)
     # responses = gpt.generate_multimodal(txt, imgs)
     # responses = gpt.generate(txt)
     print(responses)
