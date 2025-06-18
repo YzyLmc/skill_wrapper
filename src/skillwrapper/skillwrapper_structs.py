@@ -530,6 +530,10 @@ def predicate_list_to_semantics_dict(predicates: list[Predicate]) -> dict[str, s
     return {p.name: p.semantics for p in predicates}
 
 
+### "RCR Bridge" Layer - No clue what that's supposed to mean (SkillWrapper doesn't use RCRs) ###
+
+# TODO: Decipher the generate_possible_groundings() function
+
 ### Skill Sequence Proposal Layer ###
 
 
@@ -589,6 +593,7 @@ class SkillSequenceProposer:
         env: Environment,
         prompt_path: Path,
         predicates: list[Predicate] | None,
+        dataset: Dataset | None,
     ) -> None:
         """Initialize the skill sequence proposer.
 
@@ -596,6 +601,7 @@ class SkillSequenceProposer:
         :param env: SkillWrapper environment specifying objects and the initial state
         :param prompt_path: YAML filepath specifying prompts for the VLM
         :param predicates: List of predicates already learned (or None if first iteration)
+        :param dataset: Existing dataset of skill execution traces (or None if first iteration)
         """
         self.domain = domain
         self.env = env
@@ -607,6 +613,12 @@ class SkillSequenceProposer:
         self.predicate_semantics = (
             predicate_list_to_semantics_dict(predicates) if predicates else {}
         )
+
+        # Initialize frequency counts for all skill instance pairs
+        if dataset is None:
+            dataset = []  # Empty dataset => All skill counts will remain zero
+        self.skill_pairs_matrix = self._compute_skill_pair_matrix(dataset)
+        self.total_skills_executed = sum(len(trace) for trace in dataset)
 
         ### Parameters kept from original implementation ###
         self.curr_shannon_entropy = 0.0
@@ -622,6 +634,12 @@ class SkillSequenceProposer:
 
         self.model = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         self.device = determine_pytorch_device()
+
+        # TODO: Use prompt_path
+        # TODO: OBJECT_IN_SCENE changed to OBJECTS_IN_SCENE
+        self.system_prompt = "None"  # TODO
+        self.task_prompt = "None"  # TODO
+        self.env_description = "None"  # TODO
 
         # Embedding model is used to ground LLM output to groundable/executable skills and objects
         self.embedding_model = SentenceTransformer("stsb-roberta-large").to(self.device)
@@ -646,15 +664,14 @@ class SkillSequenceProposer:
         self.chainability_alpha = lambda _: 1
         self.entropy_gain_alpha = lambda x: np.cos((np.pi / self.k) * x) + 2
 
-    def _compute_skill_pair_matrix(self, dataset: Dataset) -> tuple[np.ndarray, int]:
+    def _compute_skill_pair_matrix(self, dataset: Dataset) -> np.ndarray:
         """Count the number of skill bigrams from previously executed skill sequences.
 
         :param dataset: Collection of observed skill execution traces
-        :return: Tuple of (NumPy array of skill pair counts, total skills executed)
+        :return: NumPy array of skill pair counts
         """
         skill_pair_counts = np.zeros((len(self.domain.skills), len(self.domain.skills)))
 
-        total_skills_executed = 0
         for execution_trace in dataset:
             prev_skill_name = None
             for transition in execution_trace:
@@ -666,9 +683,8 @@ class SkillSequenceProposer:
                     skill_pair_counts[idx1, idx2] += 1
 
                 prev_skill_name = curr_skill_name
-                total_skills_executed += 1
 
-        return skill_pair_counts, total_skills_executed
+        return skill_pair_counts
 
     def create_llm_prompt(self) -> Prompts:
         """Create prompts for the LLM to propose skill sequences."""
@@ -685,8 +701,165 @@ class SkillSequenceProposer:
             f"{obj_name}: {list(types)}" for obj_name, types in self.env.objects.objects.items()
         ]
 
-        # objects_with_types = [
-        #     f"{obj}: {list(types)}" for obj, types in self.env.objects.objects.items()
-        # ]
+        least_explored_skills = self.get_least_explored_skills()
+        task_prompt = copy.copy(self.task_prompt)
+        task_prompt = (
+            task_prompt.replace("[SKILL_PROMPT]", "\n\n".join(skill_prompts))
+            .replace("[OBJECTS_IN_SCENE]", "\n".join(objects_with_types))
+            .replace("[ENV_DESCRIPTION]", self.env_description)
+            .replace("[LEAST_EXPLORED_SKILLS]", ", ".join(least_explored_skills))
+        )
 
-        return Prompts()  # TODO
+        return Prompts(system_prompt=self.system_prompt, task_prompt=task_prompt)
+
+    ### COVERAGE: Functions for entropy computation and determining least explored tasks ###
+
+    def compute_entropy_for_sequence(self, skill_sequence: list[Skill]) -> tuple[float, np.ndarray]:
+        """Compute the Shannon entropy for the given skill sequence.
+
+        :return: Tuple of (entropy value after executing the sequence, updated skill pairs matrix)
+        """
+        new_skill_pairs_matrix = copy.deepcopy(self.skill_pairs_matrix)
+        p1 = 0
+        p2 = min(1, len(skill_sequence))
+        while p2 < len(skill_sequence):
+            idx1 = self.skill_to_idx[skill_sequence[p1].name]
+            idx2 = self.skill_to_idx[skill_sequence[p2].name]
+            new_skill_pairs_matrix[idx1, idx2] += 1
+            p1 = p2
+            p2 += 1
+
+        normalized_skill_pair_prob = (
+            new_skill_pairs_matrix / np.sum(new_skill_pairs_matrix)
+            if np.sum(new_skill_pairs_matrix) > 0
+            else new_skill_pairs_matrix
+        )
+        log_skill_pair_prob = np.where(
+            normalized_skill_pair_prob > 0.0,
+            np.log(normalized_skill_pair_prob),
+            0.0,
+        )
+        new_shannon_entropy = np.sum(-normalized_skill_pair_prob * log_skill_pair_prob)
+        return new_shannon_entropy, new_skill_pairs_matrix
+
+    def compute_shannon_entropy(
+        self,
+        skill_sequences: list[list[Skill]],
+    ) -> tuple[np.ndarray, list[np.ndarray]]:
+        """Compute the Shannon entropy for a collection of proposed skill sequences."""
+        normalized_skill_pair_prob = (
+            self.skill_pairs_matrix / np.sum(self.skill_pairs_matrix)
+            if np.sum(self.skill_pairs_matrix) > 0
+            else self.skill_pairs_matrix
+        )
+        log_skill_pair_prob = np.where(
+            normalized_skill_pair_prob > 0,
+            np.log(normalized_skill_pair_prob),
+            0,
+        )
+        curr_shannon_entropy = np.sum(-normalized_skill_pair_prob * log_skill_pair_prob)
+
+        skill_sequence_entropy_gains = []
+        skill_sequence_skill_counts = []
+        # measure entropy gain for each task
+        for skill_sequence in skill_sequences:
+            entropy, counts = self.compute_entropy_for_sequence(skill_sequence)
+
+            # entropy gain is maximum of difference
+            skill_sequence_entropy_gains.append(entropy - curr_shannon_entropy)
+            skill_sequence_skill_counts.append(counts)
+
+        return np.array(skill_sequence_entropy_gains), skill_sequence_skill_counts
+
+    def get_least_explored_skills(self, max_pairs: int = 5) -> list[str]:
+        """Find the least-explored consecutive pair(s) of skills.
+
+        :param max_pairs: Maximum number of skill pairs to return (defaults to 5)
+        :return: List of strings specifying the least-explored skill pairs
+        """
+        min_value = np.min(self.skill_pairs_matrix)  # Find minimum value in the matrix
+        min_indices = np.argwhere(self.skill_pairs_matrix == min_value)  # All min-value indices
+        if len(min_indices) > max_pairs:
+            selected_indices = min_indices[
+                np.random.choice(len(min_indices), size=max_pairs, replace=False)  # TODO: RNG
+            ]
+        else:
+            selected_indices = min_indices
+
+        least_explored_pairs = []
+        skills_list = list(self.skill_to_idx.keys())
+        for idx1, idx2 in selected_indices:
+            skill1 = skills_list[idx1]
+            skill2 = skills_list[idx2]
+            least_explored_pairs.append(f"({skill1}, {skill2})")
+
+        return least_explored_pairs
+
+    ### CHAINABILITY ###
+    def get_skill_sequence_executability(
+        self,
+        skill_sequence: list[SkillInstance],
+        initial_state: AbstractState | None,
+    ) -> list[bool]:
+        """Compute whether each skill in the proposed sequence is executable.
+
+        :param skill_sequence: Sequence of proposed skill instances
+        :param initial_state: Initial abstract state, or None if no predicates are yet proposed
+        :return: List of Booleans indicating whether each skill was executable
+        """
+        return []  # TODO
+
+    # def get_skill_sequence_executability(
+    #     self,
+    #     skill_sequence: list[Skill],
+    #     init_state: PredicateState | None,
+    # ) -> list[bool]:
+    #     """self.operator_dictionary :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}"""
+
+    #     def apply_skill(
+    #         grounded_skill,
+    #         pddl_state: PDDLState,
+    #         pid2type,
+    #         type_dict,
+    #     ) -> bool | PDDLState:
+    #         """Check if there exist an operator that makes the skill executable.
+
+    #         Returns:
+    #             bool :: if the skill is executable
+    #             pddl_state :: next state if executable, the original state otehrwise
+
+    #         """
+    #         for lifted_operator, pid2type in self.operator_dictionary[grounded_skill.lifted()]:
+    #             possible_groundings = generate_possible_groundings(
+    #                 pid2type,
+    #                 type_dict,
+    #                 fixed_grounding=grounded_skill.params,
+    #             )
+    #             for grounding in possible_groundings:
+    #                 param_name2param_object = {
+    #                     str(param): param.get_grounded_parameter(
+    #                         grounding[int(str(param).split("_p")[-1])],
+    #                     )
+    #                     for param in lifted_operator.parameters
+    #                     if not str(param).startswith("_")
+    #                 } | {"_p1": Parameter(None, "", None)}
+    #                 grounded_operator: LiftedPDDLAction = lifted_operator.get_grounded_action(
+    #                     param_name2param_object,
+    #                     0,
+    #                 )
+    #                 if grounded_operator.check_applicability(pddl_state):
+    #                     return True, grounded_operator.apply(pddl_state)
+    #         return False, pddl_state
+
+    #     if (
+    #         init_state is None
+    #     ):  # No predicate has been proposed yet. Chainability are always the same, i.e, always chainable
+    #         return [True] * len(skill_sequence)
+
+    #     executable_list = []
+    #     bridge = RCR_bridge()
+    #     pddl_state = bridge.predicatestate_to_pddlstate(init_state)
+    #     for grounded_skill in skill_sequence:
+    #         executable, pddl_state = apply_skill(grounded_skill, pddl_state)
+    #         executable_list.append(executable)
+    #     return executable_list
