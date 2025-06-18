@@ -50,15 +50,5 @@ class SkillTransition(Generic[StateT]):
         return SkillTransition(state_before, skill_instance, success, state_after)
 
 
-SkillExecutionTrace = list[SkillTransition]  # A sequence of attempted skill executions
-Dataset = list[SkillExecutionTrace]  # A collection of skill execution traces
-
-
-class SuccessfulSkillTransitions(Generic[StateT]):
-    """A collection of successful observed skill transitions in the environment."""
-
-    def __init__(self, dataset: Dataset) -> None:
-        """Collect the successful skill transitions from a dataset of skill execution traces."""
-        self.successful_transitions = [
-            transition for trace in dataset for transition in trace if transition.success
-        ]
+SkillExecutionTrace = list[SkillTransition[StateT]]  # A sequence of attempted skill executions
+Dataset = list[SkillExecutionTrace[StateT]]  # A collection of skill execution traces
