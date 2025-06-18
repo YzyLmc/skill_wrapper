@@ -592,13 +592,6 @@ class GroundedRelation(Relation):
             self.discretizer,
         )
 
-    def get_next_region(self):
-        if self.cr != 0:
-            for region in self.region:
-                yield region
-        else:
-            yield self.region[0]
-
 
 @functools.total_ordering
 class LiftedPDDLAction:
@@ -610,15 +603,11 @@ class LiftedPDDLAction:
         parameters,
         preconditions,
         effects,
-        required_planks=set([]),
-        states_to_neglect=set([]),
     ):
         self.action_id = id
         self.parameters = parameters
         self.preconditions = preconditions
         self.effects = effects
-        self.required_planks = required_planks
-        self.states_to_neglect = states_to_neglect
 
     @staticmethod
     def get_param_objects(param_objects_set, additional_param_objects_dict):
@@ -1314,26 +1303,6 @@ class LiftedPDDLAction:
                     precondition_string += f"\t(not (= ?{param.pid} ?{param2.pid}))\n"
 
         precondition_string += str(self.preconditions)
-
-        required_parameter_str = ""
-
-        required_planks_str = ""
-        for p1, p2 in self.required_planks:
-            required_planks_str += f"\t(or (goalLoc_1 goalLoc_Const {p1}) (not (= ?{required_parameter_str}  {p2} )))\n"
-
-        precondition_string += required_planks_str
-
-        states_to_neglect_str = ""
-        for state in self.states_to_neglect:
-            state_string = ""
-            for i, prop in enumerate(state.true_set):
-                state_string += str(prop)
-                state_string += " "
-                if i > 0 and i % 4 == 0:
-                    state_string += "\n"
-            states_to_neglect_str += f"(not (and {state_string}))\n"
-
-        precondition_string += states_to_neglect_str
 
         s += f":precondition (and \n{precondition_string}) \n"
 

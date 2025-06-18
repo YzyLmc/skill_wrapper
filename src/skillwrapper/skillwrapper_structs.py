@@ -111,7 +111,7 @@ def method_to_skill(method: Callable[[Any], Any]) -> Skill:
             error = f"Skill '{skill_name}' didn't define semantics for parameter '{param_name}'"
             raise ValueError(error)
 
-        parameters.append(SkillParameter(param_name, object_type, semantics))
+        parameters.append(DiscreteParameter(param_name, object_type, semantics))
 
     return Skill(skill_name, tuple(parameters))
 
@@ -120,12 +120,12 @@ def method_to_skill(method: Callable[[Any], Any]) -> Skill:
 
 
 @dataclass(frozen=True)
-class SkillParameter:
-    """An object-typed discrete parameter of a skill."""
+class DiscreteParameter:
+    """An object-typed discrete parameter (e.g., of a skill, predicate, or operator)."""
 
-    name: str
-    object_type: str
-    semantics: str  # English description of the parameter's meaning
+    name: str  # Name of the lifted parameter
+    object_type: str  # Object type expected by the parameter
+    semantics: str | None  # Optional natural language description of the parameter's meaning
 
 
 Bindings = dict[str, str]  # Map from parameter names to their bound concrete objects
@@ -138,7 +138,7 @@ class Skill:
     """A skill parameterized by object-typed arguments."""
 
     name: str
-    parameters: tuple[SkillParameter, ...]
+    parameters: tuple[DiscreteParameter, ...]
 
     @classmethod
     def from_yaml(cls, skill_name: str, yaml_data: dict[str, Any]) -> Skill:
@@ -146,7 +146,7 @@ class Skill:
         assert "parameters" in yaml_data, f"Key 'parameters' missing from YAML data: {yaml_data}."
 
         skill_params = [
-            SkillParameter(param_name, param_data["type"], param_data["semantics"])
+            DiscreteParameter(param_name, param_data["type"], param_data["semantics"])
             for param_name, param_data in yaml_data["parameters"].items()
         ]
 
@@ -432,16 +432,6 @@ class SkillInstance:
 
 ### Skill Abstractions Layer ###
 
-
-@dataclass(frozen=True)
-class PredicateParameter:
-    """A typed parameter of a predicate."""
-
-    name: str
-    object_type: str
-    semantics: str  # TODO: Does the LLM provide this?
-
-
 StateT = TypeVar("StateT")
 
 
@@ -450,7 +440,7 @@ class Predicate(Generic[StateT]):
     """A symbolic predicate with object-typed parameters."""
 
     name: str
-    parameters: tuple[PredicateParameter, ...]
+    parameters: tuple[DiscreteParameter, ...]
     semantics: str  # TODO: Does the LLM provide this?
 
     def ground_with(self, bindings: Bindings) -> PredicateInstance:
@@ -479,19 +469,11 @@ AbstractState = set[PredicateInstance]  # Abstract state = Set of grounded predi
 
 
 @dataclass(frozen=True)
-class OperatorParameter:
-    """A typed parameter of an operator."""
-
-    name: str
-    object_type: str
-
-
-@dataclass(frozen=True)
 class Operator(Generic[StateT]):
     """A lifted abstract action defining an abstract transition model for a skill."""
 
     name: str
-    parameters: tuple[OperatorParameter, ...]
+    parameters: tuple[DiscreteParameter, ...]
     preconditions: set[Predicate]  # Abstract conditions required to execute the operator
     add_effects: list[Predicate]  # Abstract conditions made true by executing the operator
     delete_effects: list[Predicate]  # Abstract conditions made false by executing the operator
