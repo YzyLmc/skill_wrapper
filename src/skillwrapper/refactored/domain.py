@@ -27,8 +27,58 @@ def extract_type_names(types: ObjectTypeSet) -> set[str]:
 class Domain:
     """A domain represents aspects of planning problems that are shared across environments."""
 
+    name: str
     skills: dict[str, Skill]  # Map from skill names to Skill instances
     object_types: set[str]  # Set of object types in the domain
+
+    def __post_init__(self) -> None:
+        """Verify that the Domain is valid with respect to the following properties.
+
+        Valid domains must:
+            - Define at least one skill and one object type
+            - Use all defined object types in at least one skill
+            - Define all object types used by any skill parameter
+        """
+        # Verify that the domain contains at least one skill and one object type
+        if not self.skills:
+            raise ValueError(f"Domain '{self.name}' doesn't define any skills.")
+
+        if not self.object_types:
+            raise ValueError(f"Domain '{self.name}' doesn't specify any object types.")
+
+        # Compute which object types are used by some skill in the domain
+        used_types: set[str] = set()
+        for skill in self.skills.values():
+            for param in skill.parameters:
+                used_types.add(param.object_type)
+
+        # Verify that all defined object types are used by at least one skill
+        unused_types = sorted(self.object_types - used_types)
+        if unused_types:
+            raise ValueError(
+                f"Domain '{self.name}' defines unused object types: {unused_types}.\n"
+                "These types are declared in the domain but not used by any skill.",
+            )
+
+        # Verify that all skills only use types defined in the domain
+        undefined_types = sorted(used_types - self.object_types)
+        if undefined_types:
+            raise ValueError(
+                f"Skills in domain '{self.name}' use undefined object types: {undefined_types}.\n"
+                "Add these types to the `object_types` set or fix typos in skill signatures.",
+            )
+
+    @classmethod
+    def from_skills(cls, name: str, skills: set[Skill]) -> Domain:
+        """Construct a Domain instance from the given set of skills.
+
+        :param name: Name of the domain
+        :param skills: Skills for the domain defining the available object types
+        :return: Constructed Domain instance
+        """
+        skill_dict = {skill.name: skill for skill in skills}
+        object_types = {p.object_type for skill in skills for p in skill.parameters}
+        return Domain(name, skill_dict, object_types)
 
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> Domain:
@@ -42,7 +92,9 @@ class Domain:
         skills = [Skill.from_yaml(name, data) for name, data in yaml_data["skills"].items()]
         skills_dict = {skill.name: skill for skill in skills}
 
-        return Domain(skills_dict, yaml_data["types"])
+        domain_name = yaml_path.stem
+
+        return Domain(domain_name, skills_dict, yaml_data["types"])
 
     @classmethod
     def from_protocol(cls, object_types: ObjectTypeSet, protocol: SkillsProtocol) -> Domain:
@@ -60,39 +112,14 @@ class Domain:
             if hasattr(method, "_is_skill"):
                 skill = method_to_skill(method)
                 skills[skill.name] = skill
+            else:
+                raise ValueError(f"Skill protocol method {method_name} not tagged with @skill_fn")
 
         type_names = extract_type_names(object_types)
 
-        # Extract all object types used by skills
-        used_types: set[str] = set()
-        for skill in skills.values():
-            for param in skill.parameters:
-                used_types.add(param.object_type)
+        domain_name = protocol.__name__
 
-        # Verify that all extracted types are used by at least one skill
-        unused_types = type_names - used_types
-        if unused_types:
-            raise ValueError(
-                f"Unused object types: {sorted(unused_types)}. "
-                "These types are declared in the domain but not used by any skill.",
-            )
-
-        # Verify that all skills only use types defined in the domain
-        undefined_types = used_types - type_names
-        if undefined_types:
-            raise ValueError(
-                f"Skills use undefined object types: {sorted(undefined_types)}. "
-                "Add these types to the `object_types` set or fix typos in skill signatures.",
-            )
-
-        # Verify that the domain contains at least one skill and one object type
-        if not skills:
-            raise ValueError(f"No skills found in the protocol {protocol.__name__}.")
-
-        if not type_names:
-            raise ValueError(f"No object types specified for the domain {protocol.__name__}.")
-
-        return Domain(skills, type_names)
+        return Domain(domain_name, skills, type_names)
 
     def export_to_yaml(self, output_path: Path) -> None:
         """Export the domain as YAML data to the specified filepath."""

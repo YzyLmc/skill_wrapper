@@ -1,0 +1,7 @@
+- Implement `operator_learning.py`
+- Replace with my own `evaluate_pddl.py` and `evaluate_predicates.py`
+- Continue deleting `skillwrapper_structs.py`
+- Clear out `RCR_bridge_Benned.py`
+- Replace `predicatestate_to_pddlstate` with `AbstractState.from_partially_evaluated`
+- Implement environment importing in `franka_domain.py`
+- Finish `test_operator_learning.py`

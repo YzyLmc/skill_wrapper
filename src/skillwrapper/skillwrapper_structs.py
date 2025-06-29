@@ -3,290 +3,19 @@
 from __future__ import annotations
 
 import copy
-import inspect
 import os
-import re
-from collections.abc import Callable, KeysView
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Generic, TypeVar, get_type_hints
+from typing import Any, Generic
 
 import numpy as np
-import yaml
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 
 from skillwrapper.utils import determine_pytorch_device
 
 
-### Meta-Domain Layer - Define domains based on Python method signatures ###
-def camel_to_snake(name: str) -> str:
-    """Convert CamelCase to snake_case."""
-    # Insert underscore before uppercase letters that follow lowercase letters
-    s1 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    return s1.lower()
-
-
-def snake_to_camel(name: str) -> str:
-    """Convert snake_case to CamelCase."""
-    chunks = name.split("_")
-    return "".join(word.capitalize() for word in chunks)
-
-
-def import_yaml_into_dict(yaml_path: Path, required_keys: set[str]) -> dict[str, Any]:
-    """Import data from a YAML file into a Python dictionary.
-
-    :param yaml_path: Filepath to a YAML file containing data to be imported
-    :param required_keys: Keys verified to exist in the imported dictionary
-    :return: Dictionary mapping YAML keys to corresponding imported data
-    """
-    if not yaml_path.exists():
-        raise FileNotFoundError(f"Cannot import data from nonexistent YAML file: {yaml_path}")
-
-    try:
-        with yaml_path.open() as yaml_file:
-            yaml_data = yaml.safe_load(yaml_file)
-    except yaml.YAMLError as err:
-        raise RuntimeError(f"Could not load data from YAML file: {yaml_file}") from err
-
-    for key in required_keys:
-        if key not in yaml_data:
-            raise KeyError(f"Required key '{key}' is missing from the YAML file: {yaml_file}")
-
-    return yaml_data
-
-
-def skill_fn(func: Callable) -> Callable:
-    """Mark a function as implementing a skill."""
-    func._is_skill = True
-    return func
-
-
-def parse_docstring_params(docstring: str) -> dict[str, str]:
-    """Extract parameter semantics from a docstring.
-
-    :param docstring: String containing the docstring of a skill function
-    :return: Map from parameter names to their semantic descriptions
-    """
-    param_docs = {}
-    param_pattern = r":param\s+(\w+):\s*([^\n]+)"
-
-    for match in re.finditer(param_pattern, docstring):
-        param_name = match.group(1)
-        description = match.group(2)
-        param_docs[param_name] = description
-
-    return param_docs
-
-
-def method_to_skill(method: Callable[[Any], Any]) -> Skill:
-    """Convert a protocol method into a Skill definition.
-
-    :param method: Method defining the parameter signature of a skill
-    :return: Constructed Skill instance
-    """
-    skill_name = snake_to_camel(method.__name__)
-    method_params = inspect.signature(method).parameters
-    type_hints = get_type_hints(method)
-
-    # Parse docstring for parameter descriptions
-    docstring = inspect.getdoc(method) or ""
-    param_docs = parse_docstring_params(docstring)
-
-    parameters = []
-    for param_name in method_params:
-        if param_name == "self":
-            continue  # Skip 'self' parameter
-
-        # Get the parameter object type from the type hints
-        param_type = type_hints.get(param_name, Any)
-        object_type = param_type.__name__.capitalize() if hasattr(param_type, "__name__") else None
-        if object_type is None:
-            error = f"Skill '{skill_name}' didn't define a type for parameter '{param_name}'"
-            raise ValueError(error)
-
-        # Get parameter semantics from the method docstring
-        semantics = param_docs.get(param_name)
-        if semantics is None:
-            error = f"Skill '{skill_name}' didn't define semantics for parameter '{param_name}'"
-            raise ValueError(error)
-
-        parameters.append(DiscreteParameter(param_name, object_type, semantics))
-
-    return Skill(skill_name, tuple(parameters))
-
-
-### Domain Model Layer - Defines the available skills and their parameters ###
-
-
-@dataclass(frozen=True)
-class DiscreteParameter:
-    """An object-typed discrete parameter (e.g., of a skill, predicate, or operator)."""
-
-    name: str  # Name of the lifted parameter
-    object_type: str  # Object type expected by the parameter
-    semantics: str | None  # Optional natural language description of the parameter's meaning
-
-
-Bindings = dict[str, str]  # Map from parameter names to their bound concrete objects
-
-SkillsProtocol = Any  # Stands in for skill protocols for different domains
-
-
-@dataclass(frozen=True)
-class Skill:
-    """A skill parameterized by object-typed arguments."""
-
-    name: str
-    parameters: tuple[DiscreteParameter, ...]
-
-    @classmethod
-    def from_yaml(cls, skill_name: str, yaml_data: dict[str, Any]) -> Skill:
-        """Load a Skill instance from data imported from YAML."""
-        assert "parameters" in yaml_data, f"Key 'parameters' missing from YAML data: {yaml_data}."
-
-        skill_params = [
-            DiscreteParameter(param_name, param_data["type"], param_data["semantics"])
-            for param_name, param_data in yaml_data["parameters"].items()
-        ]
-
-        return Skill(skill_name, tuple(skill_params))  # Execution function registered separately
-
-    def __str__(self) -> str:
-        """Return a readable string representation of the skill."""
-        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
-        return f"{self.name}({params})"
-
-    def to_yaml(self) -> dict[str, Any]:
-        """Convert the Skill object into a dictionary of YAML data."""
-        return {self.name: self.params_to_yaml()}
-
-    def params_to_yaml(self) -> dict[str, Any]:
-        """Convert the Skill parameters into a dictionary of YAML data under a `parameters` key."""
-        return {
-            "parameters": {
-                param.name: {
-                    "type": param.object_type,
-                    "semantics": param.semantics,
-                }
-                for param in self.parameters
-            },
-        }
-
-    def execute(self, executor: SkillsProtocol, bindings: dict[str, str]) -> None:
-        """Execute this skill under the given object bindings.
-
-        :param executor: Protocol defining an interface to skill execution
-        :param bindings: Map from parameter names to bound object names
-        """
-        method_name = camel_to_snake(self.name)  # CamelCase skill name -> snake_case method name
-
-        # Access the executor method dynamically
-        if not hasattr(executor, method_name):
-            raise NotImplementedError(f"Executor has no method: {method_name}")
-
-        method = getattr(executor, method_name)
-        args = [bindings[param.name] for param in self.parameters]
-        method(*args)
-
-
-ObjectTypeSet = set[Any]  # Allow object types to be expressed as strings or NewTypes
-
-
-@dataclass(frozen=True)
-class Domain:
-    """A domain represents aspects of planning problems that are shared across environments."""
-
-    skills: dict[str, Skill]  # Map from skill names to Skill instances
-    object_types: set[str]  # Set of object types in the domain
-
-    @staticmethod
-    def extract_type_names(types: ObjectTypeSet) -> set[str]:
-        """Convert a set of NewType objects or strings into a set of type names."""
-        result = set()
-        for t in types:
-            type_name = t.__name__ if hasattr(t, "__name__") else str(t)
-            result.add(type_name.capitalize())
-        return result
-
-    @classmethod
-    def from_yaml(cls, yaml_path: Path) -> Domain:
-        """Import a Domain instance from a YAML file.
-
-        :param yaml_path: Filepath to a YAML file containing skills and type data
-        :return: Constructed Domain instance
-        """
-        yaml_data = import_yaml_into_dict(yaml_path, required_keys={"skills", "types"})
-
-        skills = [Skill.from_yaml(name, data) for name, data in yaml_data["skills"].items()]
-        skills_dict = {skill.name: skill for skill in skills}
-
-        return Domain(skills_dict, yaml_data["types"])
-
-    @classmethod
-    def from_protocol(cls, object_types: ObjectTypeSet, protocol: type[Any]) -> Domain:
-        """Extract a SkillWrapper domain from the methods of a Python protocol.
-
-        :param object_types: Set of all object types in the domain
-        :param protocol: Python protocol specifying the signatures of the domain's skills
-        """
-        skills: dict[str, Skill] = {}
-
-        for method_name in dir(protocol):
-            if method_name.startswith("_"):
-                continue
-            method = getattr(protocol, method_name)
-            if hasattr(method, "_is_skill"):
-                skill = method_to_skill(method)
-                skills[skill.name] = skill
-
-        type_names = Domain.extract_type_names(object_types)
-
-        # Extract all object types used by skills
-        used_types = set()
-        for skill in skills.values():
-            for param in skill.parameters:
-                used_types.add(param.object_type)
-
-        # Verify that all extracted types are used by at least one skill
-        unused_types = type_names - used_types
-        if unused_types:
-            raise ValueError(
-                f"Unused object types: {sorted(unused_types)}. "
-                "These types are declared in the domain but not used by any skill.",
-            )
-
-        # Verify that all skills only use types defined for the domain
-        undefined_types = used_types - type_names
-        if undefined_types:
-            raise ValueError(
-                f"Skills use undefined object types: {sorted(undefined_types)}. "
-                "Add these types to the `object_types` set or fix typos in skill signatures.",
-            )
-
-        # Verify that the skill set and object types sets are not empty
-        if not skills:
-            raise ValueError(f"No skills found in the protocol {protocol.__name__}.")
-
-        if not type_names:
-            raise ValueError(f"No object types specified for the domain {protocol.__name__}.")
-
-        return Domain(skills, type_names)
-
-    def export_to_yaml(self, output_path: Path) -> None:
-        """Export the domain as YAML data to the specified filepath."""
-        skills_data = {name: skill.params_to_yaml() for name, skill in self.skills.items()}
-        types_data = list(self.object_types)
-
-        yaml_data = {"skills": skills_data, "types": types_data}
-
-        with output_path.open("w") as file:
-            yaml.dump(yaml_data, file, default_flow_style=False, sort_keys=False)
-
-
 ### Environment Layer - Defines the initial state and objects in a scenario ###
-
-
 @dataclass(frozen=True)
 class AnnotatedImage:
     """An image of the environment with an (optional) associated natural language description."""
@@ -321,192 +50,7 @@ class EgocentricImageState:
         return EgocentricImageState(locations)
 
 
-class ConcreteObjects:
-    """A collection of concrete objects and their types."""
-
-    def __init__(self, objects: dict[str, set[str]]) -> None:
-        """Initialize the collection of concrete objects."""
-        self.objects = objects
-
-    @property
-    def object_names(self) -> KeysView[str]:
-        """Retrieve all object names in this collection."""
-        return self.objects.keys()
-
-    @property
-    def all_object_types(self) -> set[str]:
-        """Compute the set of all object types used in this collection."""
-        all_types = set()
-        for types_set in self.objects.values():
-            all_types.update(types_set)
-        return all_types
-
-    def get_object_types(self, object_name: str) -> set[str]:
-        """Retrieve the type(s) of the named object."""
-        return self.objects[object_name]
-
-    def __contains__(self, object_name: str) -> bool:
-        """Evaluate whether the named object is in this collection."""
-        return object_name in self.objects
-
-
-@dataclass(frozen=True)
-class Environment:
-    """An environment represents problem aspects that vary across different scenes."""
-
-    initial_state: EgocentricImageState
-    objects: ConcreteObjects
-
-    @classmethod
-    def from_yaml(cls, yaml_path: Path) -> Environment:
-        """Import an Environment instance from a YAML file."""
-        yaml_data = import_yaml_into_dict(
-            yaml_path,
-            required_keys={"initial-state", "object-types"},
-        )
-
-        initial_state = EgocentricImageState.from_yaml(yaml_data["initial-state"])
-        objects_dict = {obj: set(types) for obj, types in yaml_data["object-types"].items()}
-
-        return Environment(initial_state, ConcreteObjects(objects_dict))
-
-
-### Skill Instantiation and Execution Layer ###
-
-
-@dataclass
-class SkillInstance:
-    """A skill instantiated using particular concrete objects."""
-
-    skill: Skill  # Specifies the skill instance's parameter signature
-    bindings: Bindings  # Maps each skill parameter name to the name of its bound object
-
-    @classmethod
-    def from_string(cls, string: str, domain: Domain, env: Environment) -> SkillInstance:
-        """Construct a SkillInstance from the given string.
-
-        :param string: String description of the skill instance
-        :param domain: Domain defining the available skills
-        :param env: Environment defining valid objects and their types
-        :return: Constructed SkillInstance instance
-        """
-        match = re.match(r"^(\w+)\(([^)]*)\)$", string.strip())
-        if not match:
-            raise ValueError(f"Could not parse SkillInstance string: '{string}'")
-
-        skill_name = match.group(1)
-        args_string = match.group(2).strip()
-
-        args = [arg.strip() for arg in args_string.split(",")] if args_string else []
-
-        if skill_name not in domain.skills:
-            raise ValueError(f"Invalid skill name parsed from string: '{skill_name}'")
-
-        skill = domain.skills[skill_name]
-        if len(skill.parameters) != len(args):
-            error = f"Skill '{skill_name}' expects {len(skill.parameters)} args, not {len(args)}"
-            raise ValueError(error)
-
-        bindings: Bindings = {}
-        for idx, param in enumerate(skill.parameters):
-            bound_object = args[idx]
-
-            if bound_object not in env.objects:
-                raise ValueError(f"Object '{bound_object}' not found in the environment")
-
-            obj_types = env.objects.get_object_types(bound_object)
-
-            if param.object_type not in obj_types:
-                raise ValueError(
-                    f"Parameter {param.name} expects type {param.object_type} "
-                    f"but argument object {bound_object} has type(s) {obj_types}.",
-                )
-            bindings[param.name] = bound_object
-
-        return SkillInstance(skill, bindings)
-
-    def execute(self, executor: SkillsProtocol) -> None:
-        """Execute this skill instance."""
-        self.skill.execute(executor, self.bindings)
-
-
 ### Skill Abstractions Layer ###
-
-StateT = TypeVar("StateT")
-
-
-@dataclass(frozen=True)
-class Predicate(Generic[StateT]):
-    """A symbolic predicate with object-typed parameters."""
-
-    name: str
-    parameters: tuple[DiscreteParameter, ...]
-    semantics: str  # TODO: Does the LLM provide this?
-
-    def ground_with(self, bindings: Bindings) -> PredicateInstance:
-        """Ground the predicate using the given parameter bindings."""
-        return PredicateInstance(self, bindings)
-
-    def __str__(self) -> str:
-        """Return a readable string representation of the predicate."""
-        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
-        return f"{self.name}({params})"
-
-
-@dataclass(frozen=True)
-class PredicateInstance(Generic[StateT]):
-    """A predicate grounded using particular concrete objects."""
-
-    predicate: Predicate
-    bindings: Bindings
-
-    def holds_in(self, state: StateT) -> bool:
-        """Evaluate whether the grounded predicate holds in the given state."""
-        raise NotImplementedError("Need to implement: PredicateInstance.holds_in(state)")
-
-
-AbstractState = set[PredicateInstance]  # Abstract state = Set of grounded predicates that are true
-
-
-@dataclass(frozen=True)
-class Operator(Generic[StateT]):
-    """A lifted abstract action defining an abstract transition model for a skill."""
-
-    name: str
-    parameters: tuple[DiscreteParameter, ...]
-    preconditions: set[Predicate]  # Abstract conditions required to execute the operator
-    add_effects: list[Predicate]  # Abstract conditions made true by executing the operator
-    delete_effects: list[Predicate]  # Abstract conditions made false by executing the operator
-
-    def is_applicable(self, bindings: Bindings, state: StateT) -> bool:
-        """Evaluate whether the operator is applicable under the given bindings in a state."""
-        return all(pre.ground_with(bindings).holds_in(state) for pre in self.preconditions)
-
-    def apply(self, bindings: Bindings, abstract_state: AbstractState) -> AbstractState:
-        """Apply the operator's effects, under the given bindings, to update the abstract state."""
-        if not self.preconditions.issubset(abstract_state):
-            raise ValueError(
-                f"Operator {self.name} is not applicable in the given abstract state.",
-            )
-
-        add_effects = {eff.ground_with(bindings) for eff in self.add_effects}
-        delete_effects = {eff.ground_with(bindings) for eff in self.delete_effects}
-
-        return abstract_state.difference(delete_effects).union(add_effects)
-
-
-@dataclass(frozen=True)
-class OperatorInstance:
-    """An operator grounded with concrete objects."""
-
-    operator: Operator
-    bindings: Bindings
-
-    def apply(self, abstract_state: AbstractState) -> AbstractState:
-        """Apply the grounded operator to update the given abstract state."""
-        return self.operator.apply(self.bindings, abstract_state)
-
-
 def predicate_list_to_semantics_dict(predicates: list[Predicate]) -> dict[str, str]:
     """Convert a list of predicates to a dictionary mapping predicate names to their semantics."""
     return {p.name: p.semantics for p in predicates}
@@ -777,71 +321,217 @@ class SkillSequenceProposer:
 
         return least_explored_pairs
 
-    ### CHAINABILITY ###
-    def get_skill_sequence_executability(
-        self,
-        skill_sequence: list[SkillInstance],
-        initial_state: AbstractState | None,
-    ) -> list[bool]:
-        """Compute whether each skill in the proposed sequence is executable.
 
-        :param skill_sequence: Sequence of proposed skill instances
-        :param initial_state: Initial abstract state, or None if no predicates are yet proposed
-        :return: List of Booleans indicating whether each skill was executable
+"""Define a class to learn symbolic operators from observed skill transitions."""
+
+from dataclasses import dataclass
+
+from skillwrapper.refactored.environment import ConcreteObjects
+from skillwrapper.refactored.operators import Operator
+from skillwrapper.refactored.parameters import DiscreteParameter
+from skillwrapper.refactored.predicates import PredicateInstance
+from skillwrapper.refactored.skills import Skill
+from skillwrapper.refactored.transition_data import AbstractDataset, AbstractTransition
+from skillwrapper.refactored.utils import StateT
+
+
+@dataclass
+class TransitionMapping:
+    """A mapping between objects and operator parameters for a single abstract transition."""
+
+    transition: AbstractTransition
+    object_name_to_param_idx: dict[str, int]  # Map object names to parameter indices
+    param_idx_to_type: dict[int, str]  # Map parameter indices to their object types
+    next_unused_param_idx: int = 0  # Index of the next unused operator parameter (TODO: Context?)
+
+
+@dataclass(frozen=True)
+class ExtractedEffects:
+    """Grounded effects extracted from an abstract transition."""
+
+    add_effects: set[PredicateInstance]  # Grounded predicates made true after the skill
+    delete_effects: set[PredicateInstance]  # Grounded predicates made false after the skill
+
+
+@dataclass(frozen=True)
+class ParameterPosition:
+    """A parameter's position in a predicate structure."""
+
+    param_idx: int  # Index of the predicate parameter
+    object_type: str  # Type of object associated with the parameter
+
+
+class PredicateStructure:
+    """Represents the parameter structure of a predicate instance."""
+
+    def __init__(self, p_instance: PredicateInstance, mapping: TransitionMapping) -> None:
+        """Initialize the predicate structure for the given predicate instance.
+
+        :param p_instance: Predicate instance whose structure is analyzed
+        :param mapping: Example mapping of skill parameters for an abstract transition
         """
-        return []  # TODO
+        # TODO: Could we just use a tuple of types?
 
-    # def get_skill_sequence_executability(
-    #     self,
-    #     skill_sequence: list[Skill],
-    #     init_state: PredicateState | None,
-    # ) -> list[bool]:
-    #     """self.operator_dictionary :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}"""
+        param_structure: list[ParameterPosition] = []
 
-    #     def apply_skill(
-    #         grounded_skill,
-    #         pddl_state: PDDLState,
-    #         pid2type,
-    #         type_dict,
-    #     ) -> bool | PDDLState:
-    #         """Check if there exist an operator that makes the skill executable.
+        for param in p_instance.predicate.parameters:
+            bound_object = p_instance.bindings[param.name]
 
-    #         Returns:
-    #             bool :: if the skill is executable
-    #             pddl_state :: next state if executable, the original state otehrwise
+            # Get or assign a parameter index for this trans
+            if bound_object not in mapping.object_name_to_param_idx:  # Assign new index!
+                param_idx = mapping.next_unused_param_idx
+                mapping.object_name_to_param_idx[object] = param_idx
+                mapping.param_idx_to_type[param_idx] = param.object_type
+                mapping.next_unused_param_idx += 1
+            else:
+                param_idx = mapping.object_name_to_param_idx[bound_object]
 
-    #         """
-    #         for lifted_operator, pid2type in self.operator_dictionary[grounded_skill.lifted()]:
-    #             possible_groundings = generate_possible_groundings(
-    #                 pid2type,
-    #                 type_dict,
-    #                 fixed_grounding=grounded_skill.params,
-    #             )
-    #             for grounding in possible_groundings:
-    #                 param_name2param_object = {
-    #                     str(param): param.get_grounded_parameter(
-    #                         grounding[int(str(param).split("_p")[-1])],
-    #                     )
-    #                     for param in lifted_operator.parameters
-    #                     if not str(param).startswith("_")
-    #                 } | {"_p1": Parameter(None, "", None)}
-    #                 grounded_operator: LiftedPDDLAction = lifted_operator.get_grounded_action(
-    #                     param_name2param_object,
-    #                     0,
-    #                 )
-    #                 if grounded_operator.check_applicability(pddl_state):
-    #                     return True, grounded_operator.apply(pddl_state)
-    #         return False, pddl_state
+            param_structure.append(ParameterPosition(param_idx, param.object_type))
 
-    #     if (
-    #         init_state is None
-    #     ):  # No predicate has been proposed yet. Chainability are always the same, i.e, always chainable
-    #         return [True] * len(skill_sequence)
+        self.structure = tuple(param_structure)
 
-    #     executable_list = []
-    #     bridge = RCR_bridge()
-    #     pddl_state = bridge.predicatestate_to_pddlstate(init_state)
-    #     for grounded_skill in skill_sequence:
-    #         executable, pddl_state = apply_skill(grounded_skill, pddl_state)
-    #         executable_list.append(executable)
-    #     return executable_list
+
+@dataclass(frozen=True)
+class StructuralPredicateKey:
+    """A key for identifying predicates with analogous structure."""
+
+    predicate_name: str
+    param_structure: PredicateStructure
+
+
+class OperatorLearner:
+    """A system for learning operators given observed skill transitions."""
+
+    def __init__(self, object_types: ConcreteObjects) -> None:
+        """Initialize the operator learning system with a mapping of object types.
+
+        :param object_types: Maps concrete object names to their object types
+        """
+        self.object_types = object_types
+
+    def learn_operator(self, dataset: AbstractDataset, skill: Skill) -> Operator:
+        """Learn an operator from a skill's successful abstract transitions in a dataset.
+
+        :param dataset: Collection of abstracted skill execution traces
+        :param skill: Relevant skill to learn an operator for
+        :return: Operator learned from the abstract dataset
+        """
+        successful_transitions = [
+            t for trace in dataset for t in trace if t.skill_name == skill.name and t.success
+        ]  # Filter to only successful abstract transitions for the relevant skill
+        if not successful_transitions:
+            error = f"No successful transitions found to learn an operator for skill {skill.name}"
+            raise ValueError(error)
+
+        # Build a mapping between objects and operator parameters for all transitions
+        transition_mappings: list[TransitionMapping] = []
+
+        # Establish the minimal operator parameters based on the skill's parameters
+        skill_param_positions = {
+            idx: DiscreteParameter(f"?p{idx}", param.object_type, None)
+            for idx, param in enumerate(skill.parameters)
+        }
+
+        # Build object mappings for each transition
+        for transition in successful_transitions:
+            mapping = TransitionMapping(transition, {}, {}, len(skill.parameters))
+
+            # Map skill parameters first (ensures consistent parameter positions)
+            for idx, param in enumerate(skill.parameters):
+                bound_object = transition.skill_instance.bindings[param.name]
+                mapping.object_name_to_param_idx[bound_object] = idx
+                mapping.param_idx_to_type[idx] = param.object_type
+
+            transition_mappings.append(mapping)
+
+        # Extract all changed predicate instances from the abstract transitions
+        all_changed_predicates = OperatorLearner.extract_changed_predicates(successful_transitions)
+
+        # Find effects common to all transitions (as example grounded predicates)
+
+        return None  # TODO
+
+    @staticmethod
+    def extract_changed_predicates(data: list[AbstractTransition]) -> set[PredicateInstance]:
+        """Extract all predicate instances that changed in any of the given abstract transitions.
+
+        :param data: Collection of abstract transitions corresponding to skill executions
+        :return: Set of grounded predicates that changed in any given transition
+        """
+        changed = set()
+
+        for t in data:
+            assert t.abstract_after is not None, "Expected abstract 'after' state."
+
+            # Include predicates that were added or deleted from the abstract state
+            changed.update(t.abstract_before.symmetric_difference(t.abstract_after))
+
+        return changed
+
+    def extract_common_effects(self, transition_data: list[TransitionMapping]) -> ExtractedEffects:
+        """Extract effects that are common across all given transitions.
+
+        Look for effects with the same structure, even if their specific objects differ.
+
+        :param transition_data: Collection of parameter mappings for abstract transitions
+        :return: Example ground effects common across the given transition data
+        """
+        if not transition_data:
+            return ExtractedEffects(set(), set())
+
+        # Process first transition to get an example effect structure
+        first = transition_data[0]
+        assert first.transition.abstract_after is not None, "Expected an 'after' abstract state."
+        first_add_effects = first.transition.abstract_after - first.transition.abstract_before
+        first_delete_effects = first.transition.abstract_before - first.transition.abstract_after
+
+        # Build a structural representation of the effects
+        structural_add: dict[StructuralPredicateKey, PredicateInstance] = {}
+        structural_delete: dict[StructuralPredicateKey, PredicateInstance] = {}
+
+        for predicate_instance in first_add_effects:
+            param_structure = PredicateStructure(predicate_instance, first)
+            key = StructuralPredicateKey(predicate_instance.predicate.name, param_structure)
+            structural_add[key] = predicate_instance
+
+        for predicate_instance in first_delete_effects:
+            param_structure = PredicateStructure(predicate_instance, first)
+            key = StructuralPredicateKey(predicate_instance.predicate.name, param_structure)
+            structural_delete[key] = predicate_instance
+
+            # TODO: Continue! I should just read `get_action_from_cluster`
+
+        return None  # TODO
+
+
+def invent_predicates(predicates: set[Predicate], skills: set[Skill]) -> set[Predicate]:
+    """Invent predicates for the given collection of skill executability traces.
+
+    Implements Algorithm 3 of the SkillWrapper paper (Yang et al., 2024).
+
+    :param predicates: Set of previously invented predicates
+    :param skills: Set of available robot skills
+    """
+    # While exists (s_i, s_i') and (s_j, s_j') in the data s.t. current abstraction
+    #   of s_i = abs(s_j) but the observed data of I_w(s_i) and I_w(s_j) differ...
+    #   We need to invent a predicate to disambiguate these two cases!
+    # if validate_precondition(P, w, D), then add this predicate
+    # Check: How often is this actually a precondition of the skill? Can filter if inconsistent
+    #
+    # PRE: Whenever the skill succeeded, this predicate must have been always true
+    # Always true, or always false, works (i.e., PRE and EFF can contain negative predicates)
+
+    # While exists (s_i, s_i') and (s_j, s_j') in the data s.t. abstraction function shows
+    #   same effects, meaning F(s_i') - F(s_i) = F(s_j') - F(s_j) but I_w(s_i) =/= I_w(s_j)...
+    #   We invent a predicate to capture the unexpressed effect of the skill
+    # Make sure the invented predicate differentiates these cases! And is always an effect
+    #
+    # EFF: Must have ended up true (or always false) after all successful executions
+    #
+    # We now do scoring over partitions: Add invented P to PRE or EFF only after we've clustered
+    #   based on effects. i.e., we do scoring over partitions, not the entire skills.
+    # Use the candidate predicate set when computing clustered effect sets, then determine
+    #   whether the predicate should be added to any PRE or EFF.
+    # A trace is samples of (s, w, s'). Effect is set of changed predicates
+
+    return predicates

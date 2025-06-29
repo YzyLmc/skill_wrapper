@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Adapt and symbolize skills in novel environments"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-    "torch",
+    "torch<2.3.0",           # Note: Only restricted the version for running locally on macOS (remove this)
     "torchvision",
     "torchaudio",
     "openai",
@@ -48,3 +48,8 @@ flake8-annotations = { mypy-init-return = true }
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "6.0"    # Needed to use pyproject.toml
+testpaths = ["tests"] # Directories searched for tests
+pythonpath = ["."]    # Added to Python search path

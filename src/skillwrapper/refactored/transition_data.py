@@ -5,10 +5,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Generic
 
+from skillwrapper.refactored.abstract_states import AbstractState, AbstractStateSpace
 from skillwrapper.refactored.domain import Domain
 from skillwrapper.refactored.environment import Environment
-from skillwrapper.refactored.predicates import AbstractState, PredicateInstance
-from skillwrapper.refactored.skills import SkillInstance
+from skillwrapper.refactored.skills import Skill, SkillInstance
 from skillwrapper.refactored.utils import StateT
 
 
@@ -55,18 +55,16 @@ class SkillTransition(Generic[StateT]):
         """Retrieve the name of the skill used in the transition."""
         return self.skill_instance.skill.name
 
-    def make_abstract(self, predicate_instances: set[PredicateInstance]) -> AbstractTransition:
+    def make_abstract(self, abstract_space: AbstractStateSpace[StateT]) -> AbstractTransition:
         """Convert the transition between low-level states into an abstract transition.
 
-        :param predicate_instances: The set of possible grounded predicates in the abstract state
+        :param abstract_space: Abstract state space defining the space of possible facts
         :return: Constructed abstract transition
         """
-        abstract_before = {p for p in predicate_instances if p.holds_in(self.state_before)}
-
-        if self.state_after is not None:
-            abstract_after = {p for p in predicate_instances if p.holds_in(self.state_after)}
-        else:
-            abstract_after = None
+        abstract_before = abstract_space.abstract(self.state_before)
+        abstract_after = (
+            None if self.state_after is None else abstract_space.abstract(self.state_after)
+        )
 
         return AbstractTransition(
             abstract_before,
@@ -101,4 +99,23 @@ class AbstractTransition:
 
 
 AbstractExecutionTrace = list[AbstractTransition]  # A sequence of abstracted skill transitions
-AbstractDataset = list[AbstractExecutionTrace]  # A collection of abstracted skill execution traces
+
+
+@dataclass(frozen=True)
+class AbstractDataset:
+    """An abstract dataset is a collection of abstracted skill execution traces."""
+
+    abstract_traces: list[AbstractExecutionTrace]
+
+    def get_transitions_for_skill(self, skill: Skill) -> set[AbstractTransition]:
+        """Extract only the abstract transitions involving the given skill.
+
+        :param skill: The skill involved in the extracted abstract transitions
+        :return: Set of extracted abstract transitions involving the skill
+        """
+        return {
+            transition
+            for trace in self.abstract_traces
+            for transition in trace
+            if transition.skill_instance.skill == skill
+        }

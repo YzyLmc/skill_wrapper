@@ -40,11 +40,7 @@ def possible_grounded_preds(
         grounded_predicates :: list of possible grounded predicates
 
     """
-    # build inverse type_dict
-    type_dict_inv = defaultdict(list)
-    for param, type_ls in type_dict.items():
-        for type in type_ls:
-            type_dict_inv[type].append(param)
+    # type_dict_inv maps object types to all objects of that type = ConcreteObjects.types_to_object_names
 
     # generate all possible grounded predicates
     grounded_predicates = []
@@ -327,7 +323,7 @@ def grounded_pred_log_to_skill2task2state(
     for task_name, steps in grounded_predicate_truth_value_log.items():
         for step, state in steps.items():  # state :: PredicateState class
             if (
-                not step == 0
+                step != 0
             ):  # init state has no skill, and thus won't be included in (task_name, step)
                 grounded_skill = tasks[task_name][step]["skill"]
                 task_step_tuple: tuple[str, int] = (task_name, step)

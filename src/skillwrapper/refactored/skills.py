@@ -16,6 +16,12 @@ from skillwrapper.refactored.utils import camel_to_snake, parse_docstring_params
 SkillsProtocol = Any  # Stands in for skill protocols for different domains
 
 
+def skill_fn(func: Callable) -> Callable:
+    """Mark a function as implementing a skill."""
+    func._is_skill = True
+    return func
+
+
 @dataclass(frozen=True)
 class Skill:
     """A skill parameterized by object-typed arguments."""
@@ -28,12 +34,7 @@ class Skill:
         """Load a Skill instance from data imported from YAML."""
         assert "parameters" in yaml_data, f"Key 'parameters' missing from YAML data: {yaml_data}."
 
-        skill_params = [
-            DiscreteParameter(param_name, param_data["type"], param_data["semantics"])
-            for param_name, param_data in yaml_data["parameters"].items()
-        ]
-
-        return Skill(skill_name, tuple(skill_params))
+        return Skill(skill_name, DiscreteParameter.tuple_from_yaml(yaml_data["parameters"]))
 
     def __str__(self) -> str:
         """Return a readable string representation of the skill."""
@@ -46,15 +47,7 @@ class Skill:
 
     def params_to_yaml(self) -> dict[str, Any]:
         """Convert the Skill parameters into a dictionary of YAML data under a `parameters` key."""
-        return {
-            "parameters": {
-                param.name: {
-                    "type": param.object_type,
-                    "semantics": param.semantics,
-                }
-                for param in self.parameters
-            },
-        }
+        return {"parameters": {param.to_yaml_dict() for param in self.parameters}}
 
     def execute(self, executor: SkillsProtocol, bindings: Bindings) -> None:
         """Execute this skill under the given object bindings.
@@ -141,17 +134,15 @@ class SkillInstance:
 
         skill = domain.skills[skill_name]
         if len(skill.parameters) != len(args):
-            error = f"Skill '{skill_name}' expects {len(skill.parameters)} args, not {len(args)}"
+            error = f"Skill '{skill_name}' expects {len(skill.parameters)} args, not {len(args)}."
             raise ValueError(error)
 
         bindings: Bindings = {}
-        for idx, param in enumerate(skill.parameters):
-            bound_object = args[idx]
-
+        for bound_object, param in zip(args, skill.parameters, strict=True):
             if bound_object not in env.objects:
-                raise ValueError(f"Object '{bound_object}' not found in the environment")
+                raise ValueError(f"Object '{bound_object}' not found in the environment.")
 
-            obj_types = env.objects.get_object_types(bound_object)
+            obj_types = env.objects.get_types_of_object(bound_object)
 
             if param.object_type not in obj_types:
                 raise ValueError(

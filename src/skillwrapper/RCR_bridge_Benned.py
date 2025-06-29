@@ -1,596 +1,19 @@
+from __future__ import annotations
+
 import copy
 import functools
+from dataclasses import dataclass
 from itertools import product
 
 from data_structure import Predicate, PredicateState, Skill
 
-
-@functools.total_ordering
-class Link:
-    def __init__(self, link_name, link_type):
-        self.name = link_name
-        self.type = link_type
-
-    def __eq__(self, o):
-        if type(o) == str:
-            if self.name == o:
-                return True
-            return False
-        if self.name == o.name and self.type == o.type:
-            return True
-        return False
-
-    def __lt__(self, o):
-        if self.name < o.name:
-            return True
-        return False
-
-    def __str__(self):
-        return self.name
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-
-@functools.total_ordering
-class Parameter:
-    def __init__(self, pid, type, name=None):
-        self.name = name
-        self.pid = pid
-        self.type = type
-
-    def __str__(self):
-        return str(self.pid)
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-    def __eq__(self, o):
-        if self.type == o.type and self.pid == o.pid:
-            return True
-        return False
-
-    def __lt__(self, o):
-        if self.type < o.type or (self.type == o.type and self.pid < o.pid):
-            return True
-        return False
-
-    def get_grounded_parameter(self, value):
-        return GroundedParameter(self.pid, self.type, value)
-
-
-class GroundedParameter(Parameter):
-    def __init__(self, pid, type, value):
-        super(GroundedParameter, self).__init__(pid, type)
-        self.value = value
-
-    def __str__(self):
-        return super(GroundedParameter, self).__str__() + " : " + str(self.value)
-
-    def hash(self):
-        return hash(self.__str__())
-
-    def __eq__(self, o):
-        if super(GroundedParameter, self).__eq__(o) and self.value == o.value:
-            return True
-        return False
-
-
-@functools.total_ordering
-class ParameterizedLiftedRelation:
-    def __init__(self, pid1, pid2, parent_relation):
-        self.pid1 = pid1
-        self.pid2 = pid2
-        self.parent_relation = parent_relation
-
-    def ground_relation(self, grounding):
-        if "Const" in self.pid1:
-            grounded_param1 = Link(link_name=self.pid1, link_type=self.pid1.split("_")[0])
-        else:
-            grounded_param1 = grounding[self.pid1]
-
-        if "Const" in self.pid2:
-            grounded_param2 = Link(link_name=self.pid2, link_type=self.pid2.split("_")[0])
-        else:
-            grounded_param2 = grounding[self.pid2]
-
-        return self.parent_relation.get_grounded_relation(grounded_param1, grounded_param2)
-
-    def __str__(self):
-        t1 = f"{self.parent_relation.parameter1_type}_" if not self.pid1.startswith("_") else ""
-        t2 = f"{self.parent_relation.parameter2_type}_" if not self.pid2.startswith("_") else ""
-        p1 = f"?{self.pid1}" if not self.pid1[0] == "_" else ""
-        p2 = f"?{self.pid2}" if not self.pid2[0] == "_" else ""
-        return f"({t1}{t2}{self.parent_relation.cr} {p1} {p2})"
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-    def __eq__(self, o):
-        if self.pid1 != o.pid1:
-            return False
-        if self.pid2 != o.pid2:
-            return False
-        if self.parent_relation != o.parent_relation:
-            return False
-
-        return True
-
-    def __lt__(self, o):
-        return self.__str__() < o.__str__()
-
-
-class GroundedPDDLPrecondition:
-    def __init__(self, true_set, false_set):
-        self.true_set = true_set
-        self.false_set = false_set
-
-    def check_in_state(self, pddl_state):
-        for prop in self.true_set:
-            if prop not in pddl_state.true_set:
-                return False
-        for prop in self.false_set:
-            if prop in pddl_state.true_set:
-                return False
-        return True
-
-
-@functools.total_ordering
-class LiftedPDDLPrecondition:
-    def __init__(self, true_set, false_set, true_aux_set=set(), false_aux_set=set()):
-        self.true_set = true_set
-        self.false_set = false_set
-        self.true_aux_set = true_aux_set
-        self.false_aux_set = false_aux_set
-
-    def get_grounded_precondition(self, grounding):
-        true_set = set()
-        false_set = set()
-        for prop in self.true_set:
-            true_set.add(prop.ground_relation(grounding))
-        for prop in self.false_set:
-            false_set.add(prop.ground_relation(grounding))
-        return GroundedPDDLPrecondition(true_set, false_set)
-
-    def get_lifted_true_set(self):
-        lifted_set = set([])
-        for param_re in self.true_set:
-            lifted_set.add(param_re.parent_relation)
-
-        return lifted_set
-
-    def get_lifted_false_set(self):
-        lifted_set = set([])
-        for param_re in self.false_set:
-            lifted_set.add(param_re.parent_relation)
-
-        return lifted_set
-
-    def sort_set(self, to_sort):
-        sort_list = list(to_sort)
-        sort_list.sort()
-
-        return sort_list
-
-    def __eq__(self, o):
-        if (
-            (self.true_set != o.true_set)
-            or (self.false_set != o.false_set)
-            or (self.true_aux_set != o.true_aux_set)
-            or (self.false_aux_set != o.false_aux_set)
-        ):
-            return False
-        return True
-
-    def __lt__(self, o):
-        return self.__str__() < o.__str__()
-
-    def __str__(self):
-        precondition_string = ""
-        for prop in self.sort_set(self.true_set):
-            precondition_string += f"\t{prop!s}\n"
-
-        for prop in self.sort_set(self.false_set):
-            precondition_string += f"\t(not {prop!s})\n"
-
-        auxillary_string = ""
-        for a_prop in self.sort_set(self.true_aux_set):
-            if a_prop.id <= 2:
-                auxillary_string += f"\t({a_prop!s}) \n"
-            else:
-                s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
-
-                auxillary_string += f"\t({s_ap}) \n"
-
-        for a_prop in self.sort_set(self.false_aux_set):
-            if a_prop.id <= 2:
-                auxillary_string += f"\t({a_prop!s}) \n"
-            else:
-                s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
-
-                auxillary_string += f"\t(not ({s_ap})) \n"
-
-        precondition_string += auxillary_string
-
-        return precondition_string
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-
-class GroundedPDDLEffect:
-    def __init__(self, add_set, delete_set):
-        self.add_set = add_set
-        self.delete_set = delete_set
-
-    def apply(self, pddl_state):
-        new_state = copy.deepcopy(pddl_state)
-        for prop in self.delete_set:
-            new_state.true_set.remove(prop)
-        for prop in self.add_set:
-            new_state.true_set.add(prop)
-        return new_state
-
-
-@functools.total_ordering
-class LiftedPDDLEffect:
-    def __init__(self, add_set, delete_set, aux_add, aux_delete):
-        self.add_set = add_set
-        self.delete_set = delete_set
-        self.aux_add = aux_add
-        self.aux_delete = aux_delete
-
-    def get_grounded_effect(self, grounding):
-        add_set = set()
-        delete_set = set()
-        for prop in self.add_set:
-            add_set.add(prop.ground_relation(grounding))
-        for prop in self.delete_set:
-            delete_set.add(prop.ground_relation(grounding))
-        return GroundedPDDLEffect(add_set, delete_set)
-
-    def get_lifted_add_set(self):
-        lifted_set = set([])
-        for param_re in self.add_set:
-            lifted_set.add(param_re.parent_relation)
-
-        return lifted_set
-
-    def get_lifted_delete_set(self):
-        lifted_set = set([])
-        for param_re in self.delete_set:
-            lifted_set.add(param_re.parent_relation)
-
-        return lifted_set
-
-    def sort_set(self, to_sort):
-        sort_list = list(to_sort)
-        sort_list.sort()
-
-        return sort_list
-
-    def __eq__(self, o):
-        if (
-            (self.add_set != o.add_set)
-            or (self.delete_set != o.delete_set)
-            or (self.aux_add != o.aux_add)
-            or (self.aux_delete != o.aux_delete)
-        ):
-            return False
-        return True
-
-    def __lt__(self, o):
-        return self.__str__() < o.__str__()
-
-    def __str__(self):
-        effect_string = ""
-        for prop in self.sort_set(self.add_set):
-            effect_string += f"\t{prop!s} \n"
-        for prop in self.sort_set(self.delete_set):
-            effect_string += f"\t(not {prop!s})\n"
-
-        auxillary_string = ""
-        for a_prop in self.sort_set(self.aux_add):
-            if a_prop.id <= 2:
-                auxillary_string += f"\t({a_prop!s}) \n"
-            else:
-                s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
-
-                auxillary_string += f"\t({s_ap}) \n"
-
-        for a_prop in self.sort_set(self.aux_delete):
-            if a_prop.id <= 2:
-                auxillary_string += f"\t(not ({a_prop!s})) \n"
-            else:
-                s_ap = str(a_prop).split()[0] + " ?" + str(a_prop).split()[1]
-
-                auxillary_string += f"\t(not ({s_ap})) \n"
-
-        effect_string += auxillary_string
-
-        return effect_string
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-
-@functools.total_ordering
-class PDDLState:
-    def __init__(self, true_set, false_set, aux_true_set=set(), aux_false_set=set()):
-        self.true_set = true_set
-        self.false_set = false_set
-        self.aux_true_set = aux_true_set
-        self.aux_false_set = aux_false_set
-
-    def is_relation_true(self, grounded_relation):
-        if grounded_relation in self.true_set:
-            return True
-        return False
-
-    @staticmethod
-    def get_from_ll(lifted_relations_dict, object_dict, ll_state, aux_list):
-        true_set = set()
-        false_set = set()
-        aux_true_set = set()
-
-        for object_pair in lifted_relations_dict:
-            for cr in lifted_relations_dict[object_pair]:
-                relation = lifted_relations_dict[object_pair][cr]
-                l1 = object_dict[relation.parameter1_type]
-                l2 = object_dict[relation.parameter2_type]
-                combinations = product(l1, l2)
-                for combination in combinations:
-                    grounded_relation = relation.get_grounded_relation(
-                        combination[0],
-                        combination[1],
-                    )
-                    if grounded_relation.evaluate_in_ll_state(ll_state):
-                        true_set.add(grounded_relation)
-                    else:
-                        false_set.add(grounded_relation)
-
-        for relation in aux_list:
-            if relation.id == 1:
-                flag = True
-                for r in true_set:
-                    if (
-                        r.parameter1_type == relation.parameter1_type
-                        and r.parameter2_type == relation.parameter2_type
-                        and relation.cr == r.cr
-                    ):
-                        flag = False
-                        break
-                if flag:
-                    aux_true_set.add(relation)
-
-            elif relation.id == 2:
-                n1 = len(object_dict[relation.parameter1_type])
-                n2 = len(object_dict[relation.parameter2_type])
-                c = 0
-                for r in true_set:
-                    if (
-                        r.parameter1_type == relation.parameter1_type
-                        and r.parameter2_type == relation.parameter2_type
-                        and relation.cr == r.cr
-                    ):
-                        c += 1
-                if c == n1 * n2:
-                    aux_true_set.add(relation)
-
-            elif relation.id == 3:
-                flag = True
-                for r in true_set:
-                    if (
-                        (r.parameter1_type == relation.parameter1_type)
-                        and (r.parameter2_type == relation.parameter2_type)
-                        and (r.cr == relation.cr)
-                        and (r.parameter1 == relation.parameter)
-                    ):
-                        flag = False
-                        break
-                if flag:
-                    aux_true_set.add(relation)
-
-            elif relation.id == 4:
-                flag = True
-                for r in true_set:
-                    if (
-                        (r.parameter1_type == relation.parameter1_type)
-                        and (r.parameter2_type == relation.parameter2_type)
-                        and (r.cr == relation.cr)
-                        and (r.parameter2 == relation.parameter)
-                    ):
-                        flag = False
-                        break
-                if flag:
-                    aux_true_set.add(relation)
-
-        return PDDLState(true_set, false_set, aux_true_set, set())
-
-    def __str__(self):
-        s = ""
-        true_set_list = list(self.true_set)
-        true_set_list.sort()
-        for i, prop in enumerate(true_set_list):
-            s += str(prop)
-            s += " "
-            if i > 0 and i % 4 == 0:
-                s += "\n"
-
-        aux_list = list(self.aux_true_set)
-        aux_list.sort()
-        for i, ap in enumerate(aux_list):
-            s += "(" + str(ap) + ")"
-            s += " "
-            if i > 0 and i % 4 == 0:
-                s += "\n"
-        return s
-
-    def __eq__(self, o):
-        if len(self.true_set) != len(o.true_set):
-            return False
-        if len(self.aux_true_set) != len(o.aux_true_set):
-            return False
-
-        for prop in self.true_set:
-            if prop not in o.true_set:
-                return False
-        for aux_prop in self.aux_true_set:
-            if aux_prop not in o.aux_true_set:
-                return False
-
-        return True
-
-    def __lt__(self, o):
-        return True
-
-    def __hash__(self):
-        return hash(self.__str__())
-
-    def __deepcopy__(self, memodict={}):
-        new_pddl_state = PDDLState(
-            self.true_set,
-            self.false_set,
-            self.aux_true_set,
-            self.aux_false_set,
-        )
-        return new_pddl_state
-
-
-@functools.total_ordering
-class Relation:
-    def __init__(self, parameter1_type, parameter2_type, cr, region=None, discretizer=None):
-        self.parameter1_type = parameter1_type
-        self.parameter2_type = parameter2_type
-        self.cr = cr
-        self.region = region
-        self.discretizer = discretizer
-
-    def get_grounded_relation(self, parameter1, parameter2):
-        return GroundedRelation(parameter1, parameter2, self.cr, self.region, self.discretizer)
-
-    def __str__(self):
-        t1 = f"{self.parameter1_type}_" if self.parameter1_type else ""
-        t2 = f"{self.parameter2_type}_" if self.parameter2_type else ""
-        p1 = self.parameter1_type if self.parameter1_type else ""
-        p2 = self.parameter2_type if self.parameter2_type else ""
-
-        return f"({t1}{t2}{self.cr!s} {p1} {p2})"
-
-    def __eq__(self, o):
-        if (
-            self.parameter1_type == o.parameter1_type
-            and self.parameter2_type == o.parameter2_type
-            and self.cr == o.cr
-        ) or (
-            self.parameter1_type == o.parameter2_type
-            and self.parameter2_type == o.parameter1_type
-            and self.cr == o.cr
-        ):
-            if self.cr == 0 or o.cr == 0:
-                return self.cr == o.cr
-            return True
-        return False
-
-    def __lt__(self, o):
-        return self.__str__() < o.__str__()
-
-    def __hash__(self):
-        if self.cr != None:
-            return hash(
-                f"({self.parameter1_type}_{self.parameter2_type}_{self.cr!s} ?x - {self.parameter1_type} ?y - {self.parameter2_type})",
-            )
-        return hash(
-            f"({self.parameter1_type}_{self.parameter2_type}_{len(self.cr)!s} ?x - {self.parameter1_type} ?y - {self.parameter2_type})",
-        )
-
-    def __deepcopy__(self, memodict={}):
-        region_to_copy = copy.deepcopy(self.region)
-        new_relation = Relation(
-            self.parameter1_type,
-            self.parameter2_type,
-            self.cr,
-            region_to_copy,
-            self.discretizer,
-        )
-        return new_relation
-
-
-@functools.total_ordering
-class GroundedRelation(Relation):
-    def __init__(self, parameter1, parameter2, cr, region=None, discretizer=None):
-        super(GroundedRelation, self).__init__(
-            parameter1.type,
-            parameter2.type,
-            cr,
-            region,
-            discretizer,
-        )
-        self.p1 = parameter1
-        self.p2 = parameter2
-        self.parameter1 = parameter1.name
-        self.parameter2 = parameter2.name
-        self.relational = True if parameter1.type and parameter2.type else False  # TODO: check this
-        self.region_generator = None
-        self.sample_fn = None
-        self.env_state = None
-        self.sim_object = None
-        self.region_to_use = None
-
-    def __deepcopy__(self, memodict={}):
-        region_to_copy = copy.deepcopy(self.region)
-        new_relation = GroundedRelation(self.p1, self.p2, self.cr, region_to_copy, self.discretizer)
-        return new_relation
-
-    def __str__(self):
-        t1 = f"{self.parameter1_type}_" if self.parameter1 else ""
-        t2 = f"{self.parameter2_type}_" if self.parameter2 else ""
-        p1 = self.parameter1 if self.parameter1 else ""
-        p2 = self.parameter2 if self.parameter2 else ""
-
-        return f"({t1}{t2}{self.cr!s} {p1} {p2})"
-
-    def evaluate(self, state):
-        s = self.__str__()
-        if s in state:
-            return True
-        return False
-
-    def __eq__(self, o):
-        if not super(GroundedRelation, self).__eq__(o):
-            return False
-        if (
-            self.parameter1 == o.parameter1 and self.parameter2 == o.parameter2 and self.cr == o.cr
-        ) or (
-            self.parameter1 == o.parameter2 and self.parameter2 == o.parameter1 and self.cr == o.cr
-        ):
-            return True
-        return False
-
-    def __lt__(self, o):
-        return super(GroundedRelation, self).__lt__(o)
-
-    def __hash__(self):
-        parameter1_str = self.parameter1
-
-        parameter2_str = self.parameter2
-
-        if self.cr != 0:
-            return hash(
-                f"({self.parameter1_type}_{self.parameter2_type}_{self.cr!s} {parameter1_str} {parameter2_str})",
-            )
-        return hash(
-            f"({self.parameter1_type}_{self.parameter2_type}_{len(self.cr)!s} {parameter1_str} {parameter2_str})",
-        )
-
-    def get_lifted_relation(self):
-        return Relation(
-            self.parameter1_type,
-            self.parameter2_type,
-            self.cr,
-            self.region,
-            self.discretizer,
-        )
+from skillwrapper.refactored.operators import Effects, Preconditions
+from skillwrapper.refactored.parameters import DiscreteParameter
+
+# TODO: Replace PDDLState with AbstractState
+# TODO: Replace Relation with Predicate, I think
+# TODO: Replace GroundedRelation with PredicateInstance, I think
+# TODO: Remove mentions of Parameter
 
 
 @functools.total_ordering
@@ -619,7 +42,7 @@ class LiftedPDDLAction:
 
     @staticmethod
     def get_action_from_cluster(cluster, param_ids={}):
-        # cluster: list[list[PDDLState, PDDLState]]
+        # cluster: list[list[AbstractState, AbstractState]]
 
         cluster_e_add = set()
         cluster_e_delete = set()
@@ -628,7 +51,7 @@ class LiftedPDDLAction:
         temp_added = set()
         temp_deleted = set()
 
-        for r1 in cluster[0][0].true_set:
+        for r1 in cluster[0][0].true_set:  # Index: trans, (pre/post)
             if r1 not in cluster[0][1].true_set:
                 changed_relations.add(r1)
                 temp_deleted.add(r1)
@@ -637,7 +60,6 @@ class LiftedPDDLAction:
                 changed_relations.add(r1)
                 temp_added.add(r1)
 
-        param_ids = param_ids
         param_mapping = {}
         relation_param_mapping = {}
 
@@ -672,16 +94,16 @@ class LiftedPDDLAction:
 
         # NOTE: I don't know what do these temp_* means. I commented them out and the operator looks good now
         for relation in temp_added:
-            lr = relation.get_lifted_relation()
+            lifted_relation = relation.get_lifted_relation()
             pid1 = param_mapping[relation.parameter1]
             pid2 = param_mapping[relation.parameter2]
-            cluster_e_add.add(ParameterizedLiftedRelation(pid1, pid2, lr))  # <-
+            cluster_e_add.add(LiftedRelation((pid1, pid2), lifted_relation))  # <-
 
         for relation in temp_deleted:
-            lr = relation.get_lifted_relation()
+            lifted_relation = relation.get_lifted_relation()
             pid1 = param_mapping[relation.parameter1]
             pid2 = param_mapping[relation.parameter2]
-            cluster_e_delete.add(ParameterizedLiftedRelation(pid1, pid2, lr))  # <-
+            cluster_e_delete.add(LiftedRelation((pid1, pid2), lifted_relation))  # <-
 
         relations_union = cluster[0][0].true_set.union(cluster[0][0].false_set)
         for relation in temp_added:
@@ -692,12 +114,11 @@ class LiftedPDDLAction:
                     pa = param_mapping[p.parameter1]
                     pb = param_mapping[p.parameter2]
                     lifted_relation = p.get_lifted_relation()
-                    parameterized_relation = ParameterizedLiftedRelation(pa, pb, lifted_relation)
-                    # cluster_e_delete.add(parameterized_relation) # <-
+                    parameterized_relation = LiftedRelation((pa, pb), lifted_relation)
 
         common_relations = set()
         additional_param_mappings = {}
-        param_objects = set([])
+        param_objects = set()
 
         additional_param_objects = {}
         sorted_true_set = list(cluster[0][0].true_set)
@@ -725,13 +146,13 @@ class LiftedPDDLAction:
                         exit(-1)
                 pid1 = copy.deepcopy(relation_param_mapping[lr][lr_index][0])
                 pid2 = copy.deepcopy(relation_param_mapping[lr][lr_index][1])
-                parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                parameterized_relation = LiftedRelation((pid1, pid2), lr)
+
                 common_relations.add(parameterized_relation)
 
         for relation in sorted_true_set:
             lr = relation.get_lifted_relation()
             if relation not in changed_relations:
-                # if (((relation.parameter1 in param_mapping and relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter2_type not in Config.OBJECT_NAME)) or ((relation.parameter2 in param_mapping and relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]) and (relation.parameter1_type not in Config.OBJECT_NAME))) and (relation.parameter1 != relation.parameter2)) or (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set)) and relation.cr != 0):
                 if relation.parameter1 not in param_mapping:
                     if relation.parameter1_type not in additional_param_objects:
                         additional_param_objects[relation.parameter1_type] = []
@@ -798,7 +219,7 @@ class LiftedPDDLAction:
                             )
                         pid2 = additional_param_mappings[relation.parameter2]
 
-                    parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                    parameterized_relation = LiftedRelation((pid1, pid2), lr)
                     common_relations.add(parameterized_relation)
 
         for transition in cluster[1:]:
@@ -829,7 +250,7 @@ class LiftedPDDLAction:
 
             lifted_local_changed_set = set()
             for relation in local_changed:
-                lr = relation.get_lifted_relation()
+                lr: Relation = relation.get_lifted_relation()
                 if len(relation_param_mapping[lr]) == 1:
                     lr_index = 0
                 else:
@@ -872,7 +293,7 @@ class LiftedPDDLAction:
 
                 pid1 = copy.deepcopy(relation_param_mapping[lr][lr_index][0])
                 pid2 = copy.deepcopy(relation_param_mapping[lr][lr_index][1])
-                parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                parameterized_relation = LiftedRelation((pid1, pid2), lr)
 
                 if relation in local_sorted_true_set:
                     relation_set.add(parameterized_relation)
@@ -957,7 +378,7 @@ class LiftedPDDLAction:
                                 )
                             pid2 = local_additional_param_mappings[relation.parameter2]
 
-                        parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                        parameterized_relation = LiftedRelation((pid1, pid2), lr)
                         relation_set.add(parameterized_relation)
 
             new_set = set()
@@ -1000,13 +421,12 @@ class LiftedPDDLAction:
                         exit(-1)
                 pid1 = copy.deepcopy(relation_param_mapping[lr][lr_index][0])
                 pid2 = copy.deepcopy(relation_param_mapping[lr][lr_index][1])
-                parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                parameterized_relation = LiftedRelation((pid1, pid2), lr)
                 neg_common_relations.add(parameterized_relation)
 
         for relation in sorted_false_set:
             lr = relation.get_lifted_relation()
             if relation not in changed_relations:
-                # if (((relation.parameter1 in param_mapping and relation.parameter1_type not in Config.CONST_TYPES[Config.DOMAIN_NAME] and (relation.parameter2_type not in Config.OBJECT_NAME)) or ((relation.parameter2 in param_mapping and relation.parameter2_type not in Config.CONST_TYPES[Config.DOMAIN_NAME]) and (relation.parameter1_type not in Config.OBJECT_NAME))) and (relation.parameter1 != relation.parameter2)) or (((relation.parameter1_type in Config.ROBOT_TYPES and int(relation.parameter1.split("_")[1]) in robot_id_set) or (relation.parameter2_type in Config.ROBOT_TYPES and int(relation.parameter2.split("_")[1]) in robot_id_set)) and relation.cr != 0):
                 if relation.parameter1 not in param_mapping:
                     if relation.parameter1_type not in additional_param_objects:
                         additional_param_objects[relation.parameter1_type] = []
@@ -1073,7 +493,7 @@ class LiftedPDDLAction:
                             )
                         pid2 = additional_param_mappings[relation.parameter2]
 
-                    parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                    parameterized_relation = LiftedRelation((pid1, pid2), lr)
                     neg_common_relations.add(parameterized_relation)
 
         for transition in cluster[1:]:
@@ -1147,7 +567,7 @@ class LiftedPDDLAction:
 
                 pid1 = copy.deepcopy(relation_param_mapping[lr][lr_index][0])
                 pid2 = copy.deepcopy(relation_param_mapping[lr][lr_index][1])
-                parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                parameterized_relation = LiftedRelation((pid1, pid2), lr)
 
                 if relation in local_sorted_false_set:
                     relation_set.add(parameterized_relation)
@@ -1232,7 +652,7 @@ class LiftedPDDLAction:
                                 )
                             pid2 = local_additional_param_mappings[relation.parameter2]
 
-                        parameterized_relation = ParameterizedLiftedRelation(pid1, pid2, lr)
+                        parameterized_relation = LiftedRelation((pid1, pid2), lr)
                         relation_set.add(parameterized_relation)
 
             new_set = set()
@@ -1247,45 +667,34 @@ class LiftedPDDLAction:
 
         param_set = set()
         for relation in common_relations:
-            param1 = Parameter(relation.pid1, relation.parent_relation.parameter1_type)
-            param_set.add(param1)
-
-            param2 = Parameter(relation.pid2, relation.parent_relation.parameter2_type)
-            param_set.add(param2)
+            for param in relation.parameters:
+                param_set.add(param)
 
         # ADD negative relations here
         for relation in neg_common_relations:
-            param1 = Parameter(relation.pid1, relation.parent_relation.parameter1_type)
-            param_set.add(param1)
-
-            param2 = Parameter(relation.pid2, relation.parent_relation.parameter2_type)
-            param_set.add(param2)
+            for param in relation.parameters:
+                param_set.add(param)
 
         for relation in cluster_e_add:
-            param1 = Parameter(relation.pid1, relation.parent_relation.parameter1_type)
-            param_set.add(param1)
-
-            param2 = Parameter(relation.pid2, relation.parent_relation.parameter2_type)
-            param_set.add(param2)
+            for param in relation.parameters:
+                param_set.add(param)
 
         for relation in cluster_e_delete:
-            param1 = Parameter(relation.pid1, relation.parent_relation.parameter1_type)
-            param_set.add(param1)
+            for param in relation.parameters:
+                param_set.add(param)
 
-            param2 = Parameter(relation.pid2, relation.parent_relation.parameter2_type)
-            param_set.add(param2)
-
-        preconditions = LiftedPDDLPrecondition(
+        preconditions = Preconditions(
             true_set=common_relations,
             false_set=neg_common_relations,
-            true_aux_set=set(),
         )
-        effects = LiftedPDDLEffect(cluster_e_add, cluster_e_delete, set(), set())
+
+        effects = Effects(cluster_e_add, cluster_e_delete)
+
         LiftedPDDLAction.action_id += 1
 
         return LiftedPDDLAction(
             LiftedPDDLAction.action_id,
-            sorted(list(param_set)),
+            sorted(param_set),
             preconditions,
             effects,
         )
@@ -1313,73 +722,8 @@ class LiftedPDDLAction:
 
         return s
 
-    def get_grounded_action(self, grounding, lifted_action_id):
-        grounded_precondition = self.preconditions.get_grounded_precondition(grounding)
-        grounded_effect = self.effects.get_grounded_effect(grounding)
-        return GroundedPDDLAction(grounded_precondition, grounded_effect, lifted_action_id)
-
     def get_parameters(self):
         return [str(p) for p in self.parameters]
-
-    def __eq__(self, o):
-        if (self.preconditions != o.preconditions) or (
-            self.effects != o.effects
-        ):  # or (self.parameters != o.parameters):
-            return False
-        return True
-
-    def __lt__(self, o):
-        return self.__str__() < o.__str__()
-
-    def __hash__(self):
-        return hash(self.__str__().split(":parameters")[-1])
-
-
-class GroundedPDDLAction:
-    def __init__(self, precondition, effect, lifted_action_id):
-        self.precondition = precondition
-        self.effect = effect
-        self.changed_relations = self.get_changed_relations()
-        self.lifted_action_id = lifted_action_id
-        self.sampling_region = None
-
-    def check_applicability(self, pddl_state):
-        return self.precondition.check_in_state(pddl_state)
-
-    def apply(self, pddl_state):
-        return self.effect.apply(pddl_state)
-
-    def get_changed_relations(self):
-        changed_relations = []
-        for rel in list(self.precondition.true_set):
-            if rel in self.effect.delete_set:
-                changed_relations.append(rel)
-
-        for rel in list(self.precondition.false_set):
-            if rel in self.effect.add_set:
-                changed_relations.append(rel)
-
-        return changed_relations
-
-    def __str__(self):
-        add_string = "adding -> "
-        if len(self.effect.add_set) > 0:
-            for rel in self.effect.add_set:
-                add_string += rel.__str__()
-                add_string += ", "
-        else:
-            add_string += "NOTHING"
-
-        delete_string = "|| deleting -> "
-        if len(self.effect.delete_set) > 0:
-            for rel in self.effect.delete_set:
-                delete_string += rel.__str__()
-                delete_string += ", "
-        else:
-            delete_string += "NOTHING"
-
-        id_string = f"lifted_action_id:{self.lifted_action_id};"
-        return id_string + add_string + delete_string
 
 
 class RCR_bridge:
@@ -1387,48 +731,6 @@ class RCR_bridge:
         self.obj2pid = obj2pid
         self.pid2type = {}
         self.obj2type = {}
-
-    def predicatestate_to_pddlstate(
-        self,
-        pred_state: PredicateState,
-        grounding: dict[int, str] = None,
-    ) -> PDDLState:
-        """Convert a PredicateState object into PDDLState
-        obj2pid :: mapping object name to parameter.
-                It should contain all parameters appear in the grounded predicates of predicate state object
-        """
-
-        def fill_tuple_with(t, arg):
-            assert isinstance(t, tuple)
-            return t + (arg,) * (2 - len(t)) if len(t) < 2 else t
-
-        obj2pid = {v: k for k, v in grounding.items()} if grounding is not None else self.obj2pid
-        obj2pid |= {None: -1}
-        true_set = set()
-        false_set = set()
-        for pred in pred_state.iter_predicates():
-            assert len(pred.types) < 3 and len(pred.params) < 3, (
-                "Cannot work with predicates with more than 2 params"
-            )
-            p1type, p2type = fill_tuple_with(pred.types, "")
-            p1name, p2name = fill_tuple_with(pred.params, None)
-
-            lifted_relation = Relation(p1type, p2type, pred.name)
-
-            # create new parameter for the object
-            assert p1name in obj2pid and p2name in obj2pid, (
-                f"{obj2pid} doesn't have {p1name} or {p2name}"
-            )
-            p1_param = Parameter(obj2pid[p1name], p1type, p1name)
-            p2_param = Parameter(obj2pid[p2name], p2type, p2name)
-
-            grounded_relation = lifted_relation.get_grounded_relation(p1_param, p2_param)
-
-            if pred_state.get_pred_value(pred) == True:
-                true_set.add(grounded_relation)
-            elif pred_state.get_pred_value(pred) == False:
-                false_set.add(grounded_relation)
-        return PDDLState(true_set, false_set)
 
     def operator_from_transitions(
         self,
@@ -1498,35 +800,6 @@ class RCR_bridge:
             copy.deepcopy(self.obj2pid),
         )
         return operator
-
-    @staticmethod
-    def map_param_name_to_param_object(
-        operator: LiftedPDDLAction,
-        obj2pid: dict[str, int],
-        obj2param: dict[str, Parameter] = {},
-    ) -> dict[str, Parameter]:
-        """Generate a grounding corresponding to an object to parameter mapping for grounding lifted operators.
-        At least one of type_dict and obj2param must be provided.
-        """
-        op_params: list[str] = operator.get_parameters()
-        pid2obj: dict[int, str] = {v: k for k, v in obj2pid.items()} | {-1: "_p1"}  # inv dictionary
-
-        param_name2param_obj = {}
-        for param_name in op_params:
-            if not param_name.startswith("_"):
-                pid = param_name.split("_p")[-1]  # take the last digit of the parameter
-                obj = pid2obj[int(pid)]
-                if obj in obj2param:
-                    param_name2param_obj[param_name] = obj2param[obj]
-                else:
-                    type = (
-                        param_name.replace("?", " ").replace("_", " ").split()[0]
-                    )  # ugly string parsing
-                    param_name2param_obj[param_name] = Parameter(pid, type, obj)
-            else:
-                param_name2param_obj[param_name] = Parameter(None, "", None)
-
-        return param_name2param_obj
 
     def get_pid_to_type(self) -> dict[int, str]:
         """Pid to type mapping is useful for generating possible groundings for precondition check."""
@@ -1704,40 +977,6 @@ def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> l
 
 
 if __name__ == "__main__":
-    # test data structures
-    # # start with the base one
-    # bridge = RCR_bridge()
-    # type_dict = {
-    #     'PeanutButter': ['openable', 'pickupable'],
-    #     'Knife': ['pickupable', 'utensil'],
-    #     'Bread': ['food'],
-    #     'Cup': ['receptacle'],
-    #     'Table': ['location'],
-    #     'Shelf': ['location'],
-    #     'Robot': ['robot']}
-    # test_pred_1 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'PeanutButter'])
-    # test_pred_2 = Predicate('EnclosedByGripper', ['robot', 'pickupable'], ['Robot', 'Knife'])
-    # test_pred_3 = Predicate('IsOpen', ['openable'], ['PeanutButter'])
-    # test_pred_4 = Predicate('HasContent', ['utensil'], ['Knife'])
-    # test_pred_5 = Predicate('IsScooped', ['openable'], ['PeanutButter'])
-    # test_ps = PredicateState([
-    # test_pred_1,
-    # test_pred_2,
-    # test_pred_3,
-    # test_pred_4,
-    # test_pred_5,
-    # ])
-    # test_ps.set_pred_value(test_pred_1, True)
-    # test_ps.set_pred_value(test_pred_2, False)
-    # test_ps.set_pred_value(test_pred_3, True)
-    # test_ps.set_pred_value(test_pred_5, False)
-    # test_ps_1 = copy.deepcopy(test_ps)
-    # test_ps_1.set_pred_value(test_pred_5, True)
-    # skill = Skill('Scoop', ["utensil", "openable"], ["Knife", "PeanutButter"])
-    # operator = bridge.operator_from_transitions([[test_ps, test_ps_1]], skill)
-    # pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
-    # breakpoint()
-
     test_pred_1 = Predicate("ClearAbove", ["pickupable"], ["PeanutButter"])
     test_pred_2 = Predicate("ClearAbove", ["pickupable"], ["Knife"])
     test_pred_3 = Predicate("Holding", ["robot", "pickupable"], ["Robot", "PeanutButter"])

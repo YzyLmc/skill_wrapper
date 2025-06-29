@@ -15,7 +15,12 @@ class ConcreteObjects:
 
     def __init__(self, objects: dict[str, set[str]]) -> None:
         """Initialize the collection of concrete objects."""
-        self.objects = objects
+        self.objects = objects  # Maps object names to their set of types
+        self.types_to_object_names = ConcreteObjects.compute_types_to_object_names(self.objects)
+
+    def __contains__(self, object_name: str) -> bool:
+        """Evaluate whether the named object is in this collection."""
+        return object_name in self.objects
 
     @property
     def object_names(self) -> KeysView[str]:
@@ -23,20 +28,40 @@ class ConcreteObjects:
         return self.objects.keys()
 
     @property
-    def all_object_types(self) -> set[str]:
-        """Compute the set of all object types used in this collection."""
-        all_types = set()
-        for types_set in self.objects.values():
-            all_types.update(types_set)
-        return all_types
+    def all_object_types(self) -> KeysView[str]:
+        """Retrieve all object types used in this collection."""
+        return self.types_to_object_names.keys()
 
-    def get_object_types(self, object_name: str) -> set[str]:
+    def get_types_of_object(self, object_name: str) -> set[str]:
         """Retrieve the type(s) of the named object."""
         return self.objects[object_name]
 
-    def __contains__(self, object_name: str) -> bool:
-        """Evaluate whether the named object is in this collection."""
-        return object_name in self.objects
+    def get_all_objects_of_type(self, obj_type: str) -> set[str]:
+        """Retrieve the names of all objects of the given object type.
+
+        :raises KeyError: If the given object type is unknown
+        """
+        if obj_type not in self.types_to_object_names:
+            raise KeyError(f"Unknown object type: '{obj_type}'")
+
+        return self.types_to_object_names[obj_type]
+
+    @staticmethod
+    def compute_types_to_object_names(objects: dict[str, set[str]]) -> dict[str, set[str]]:
+        """Construct a map from each object type to the names of all objects of that type.
+
+        :param objects: Map from object names to their set of types
+        :return: Map from each object type to the names of all concrete objects of that type
+        """
+        types_to_object_names: dict[str, set[str]] = {}
+
+        for object_name, object_types in objects.items():
+            for obj_type in object_types:
+                if obj_type not in types_to_object_names:
+                    types_to_object_names[obj_type] = set()
+                types_to_object_names[obj_type].add(object_name)
+
+        return types_to_object_names
 
 
 @dataclass(frozen=True)

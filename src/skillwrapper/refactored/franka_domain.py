@@ -3,17 +3,19 @@
 from pathlib import Path
 from typing import NewType, Protocol
 
-from skillwrapper.skillwrapper_structs import Domain, Environment, skill_fn
+from skillwrapper.refactored.domain import Domain
+from skillwrapper.refactored.environment import Environment
+from skillwrapper.refactored.skills import skill_fn
 
 ### Define all object types in the domain ###
 
-Robot = NewType("Robot", str)
 Pickable = NewType("Pickable", str)
 Pourable = NewType("Pourable", str)
-Container = NewType("Container", str)
+Fillable = NewType("Fillable", str)
 Sponge = NewType("Sponge", str)
-Plate = NewType("Plate", str)
-Bowl = NewType("Bowl", str)
+Stackable = NewType("Stackable", str)
+Surface = NewType("Surface", str)
+Location = NewType("Location", str)
 
 
 ### Define a protocol specifying the structure of all skills in the domain ###
@@ -21,52 +23,48 @@ class FrankaSkillsProtocol(Protocol):
     """Protocol defining the interface for the Franka robot's skills."""
 
     @skill_fn
-    def pick(self, robot: Robot, picked: Pickable) -> None:
+    def pick(self, picked: Pickable) -> None:
         """Pick up an object.
 
-        :param robot: Robot executing the skill
         :param picked: Object to be picked up
         """
 
     @skill_fn
-    def place_back(self, robot: Robot, placed: Pickable) -> None:
-        """Place back an object where it was picked up from.
+    def place(self, placed: Pickable, location: Location) -> None:
+        """Place an object at a specified location.
 
-        :param robot: Robot executing the skill
-        :param placed: Object placed back into its original position
+        :param placed: Object placed at a location
+        :param location: Location to place the object
         """
 
     @skill_fn
-    def pour(self, robot: Robot, pour_from: Pourable, pour_into: Container) -> None:
+    def pour(self, pour_from: Pourable, pour_into: Fillable) -> None:
         """Pour from one container into another.
 
-        :param robot: Robot executing the skill
         :param pour_from: Container to pour liquid from
-        :param pour_into: Container to pour liquid into
+        :param pour_into: Container to fill
         """
 
     @skill_fn
-    def stack(self, robot: Robot, bowl: Bowl, plate: Plate) -> None:
-        """Stack a bowl onto a plate.
+    def stack(self, on_top: Stackable, on_bottom: Stackable) -> None:
+        """Stack two objects of the same shape (e.g., two bowls or two plates).
 
-        :param robot: Robot executing the skill
-        :param bowl: Smaller bowl to be stacked onto the plate
-        :param plate: Plate that the bowl will be stacked on
+        :param on_top: Object stacked on top of the other
+        :param on_bottom: Object on the bottom of the stacked pair
         """
 
     @skill_fn
-    def wipe(self, robot: Robot, sponge: Sponge, plate: Plate) -> None:
-        """Wipe a dirty plate using a sponge.
+    def wipe(self, sponge: Sponge, surface: Surface) -> None:
+        """Wipe a dirty surface using a sponge.
 
-        :param robot: Robot executing the skill
-        :param sponge: Sponge used to wipe the plate
-        :param plate: Dirty plate to be wiped
+        :param sponge: Sponge used to wipe the surface
+        :param surface: Dirty surface to be wiped
         """
 
 
 def main() -> None:
     """Construct the skills in the Franka domain and export them to YAML."""
-    object_types = {Robot, Pickable, Pourable, Container, Sponge, Plate, Bowl}
+    object_types = {Pickable, Pourable, Fillable, Sponge, Stackable, Surface, Location}
 
     domain = Domain.from_protocol(object_types, FrankaSkillsProtocol)
     print(f"Generated {len(domain.skills)} skills from protocol:")
@@ -80,11 +78,11 @@ def main() -> None:
 
     # Import an example Franka environment from YAML
     example_env_yaml = Path("task_config/franka/envs/env1.yaml")
-    env = Environment.from_yaml(example_env_yaml)
+    env = Environment.from_yaml(example_env_yaml)  # TODO: Implement/specify state type!
     print(f"Imported environment from YAML path: {example_env_yaml}")
 
     for obj_name in env.objects.object_names:
-        obj_types = env.objects.get_object_types(obj_name)
+        obj_types = env.objects.get_types_of_object(obj_name)
         print(f"  Object '{obj_name}' has types:\t{obj_types}")
 
 

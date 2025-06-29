@@ -5,6 +5,10 @@ from data_structure import PredicateState
 from invent_predicate import eval_pred, possible_grounded_preds
 from utils import GPT4, load_from_file, save_to_file
 
+from skillwrapper.refactored.abstract_states import AbstractStateSpace
+
+# TODO: Replace eval_all_predicates() with AbstractStateSpace.abstract()
+
 
 def eval_all_predicates(model, lifted_pred_list, type_dict, args):
     # find all possible groundings of predicates

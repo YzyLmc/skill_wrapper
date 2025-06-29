@@ -8,6 +8,8 @@ from data_structure import yaml
 from evaluate_predicates import eval_all_predicates
 from utils import GPT4, load_from_file
 
+from skillwrapper.refactored.abstract_states import AbstractStateSpace
+
 planner_path = "C:/Users/david/downward/fast-downward.py"
 
 algorithms = ["astar", "eager", "lazy"]
@@ -41,7 +43,7 @@ def find_plan(
         print(f"error code: {e.returncode}\n\t-- Actual message: {e.output!s}")
     else:
         with open("sas_plan") as f:
-            for _line in f.readlines():
+            for _line in f:
                 if ";" not in _line:
                     plan.append(_line.strip())
 
@@ -153,35 +155,14 @@ def create_problem_file(
         task_config = load_from_file(args.task_config_fpath)
         args.env = task_config["env"]
         type_dict = {obj: obj_meta["types"] for obj, obj_meta in task_config["objects"].items()}
-        lifted_pred_list = load_from_file(args.predicate_fpath)
+        predicates = load_from_file(args.predicate_fpath)
         model = GPT4(engine=args.model)
 
-        predicate_state = eval_all_predicates(model, lifted_pred_list, type_dict, args=args)
+        predicate_state = eval_all_predicates(model, predicates, type_dict, args=args)
 
         for pred in predicate_state.iter_predicates():
             if predicate_state.get_pred_value(pred):
                 init_state.append(parse_predicate(pred, is_domain=False))
-
-    elif robot == "dorfl":
-        init_state = [
-            f"(is_graspable j {choice(['left_gripper', 'right_gripper'])})",
-            f"(is_graspable k {choice(['left_gripper', 'right_gripper'])})",
-            (
-                "(hand_empty left_gripper)"
-                if bool(randint(0, 1))
-                else f"(is_holding left_gripper {choice(['k', 'j'])})"
-            ),
-            (
-                "(hand_empty right_gripper)"
-                if bool(randint(0, 1))
-                else f"(is_holding right_gripper {choice(['k', 'j'])})"
-            ),
-            ("(contains j pb)" if bool(randint(0, 1)) else ""),
-            ("(is_opened j)" if bool(randint(0, 1)) else ""),
-            "(on_location b t)",
-            "(on_location k t)",
-            "(on_location j t)",
-        ]
 
     # -- generating the goal state for problem file:
     if args.goal_img:
