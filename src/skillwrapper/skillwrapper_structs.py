@@ -50,12 +50,6 @@ class EgocentricImageState:
         return EgocentricImageState(locations)
 
 
-### Skill Abstractions Layer ###
-def predicate_list_to_semantics_dict(predicates: list[Predicate]) -> dict[str, str]:
-    """Convert a list of predicates to a dictionary mapping predicate names to their semantics."""
-    return {p.name: p.semantics for p in predicates}
-
-
 ### "RCR Bridge" Layer - No clue what that's supposed to mean (SkillWrapper doesn't use RCRs) ###
 
 # TODO: Decipher the generate_possible_groundings() function
@@ -190,28 +184,6 @@ class SkillSequenceProposer:
         self.chainability_alpha = lambda _: 1
         self.entropy_gain_alpha = lambda x: np.cos((np.pi / self.k) * x) + 2
 
-    def _compute_skill_pair_matrix(self, dataset: Dataset) -> np.ndarray:
-        """Count the number of skill bigrams from previously executed skill sequences.
-
-        :param dataset: Collection of observed skill execution traces
-        :return: NumPy array of skill pair counts
-        """
-        skill_pair_counts = np.zeros((len(self.domain.skills), len(self.domain.skills)))
-
-        for execution_trace in dataset:
-            prev_skill_name = None
-            for transition in execution_trace:
-                curr_skill_name = transition.skill_instance.skill.name
-
-                if prev_skill_name is not None:
-                    idx1 = self.skill_to_idx[prev_skill_name]
-                    idx2 = self.skill_to_idx[curr_skill_name]
-                    skill_pair_counts[idx1, idx2] += 1
-
-                prev_skill_name = curr_skill_name
-
-        return skill_pair_counts
-
     def create_llm_prompt(self) -> Prompts:
         """Create prompts for the LLM to propose skill sequences."""
         skill_prompts = []
@@ -296,30 +268,6 @@ class SkillSequenceProposer:
             skill_sequence_skill_counts.append(counts)
 
         return np.array(skill_sequence_entropy_gains), skill_sequence_skill_counts
-
-    def get_least_explored_skills(self, max_pairs: int = 5) -> list[str]:
-        """Find the least-explored consecutive pair(s) of skills.
-
-        :param max_pairs: Maximum number of skill pairs to return (defaults to 5)
-        :return: List of strings specifying the least-explored skill pairs
-        """
-        min_value = np.min(self.skill_pairs_matrix)  # Find minimum value in the matrix
-        min_indices = np.argwhere(self.skill_pairs_matrix == min_value)  # All min-value indices
-        if len(min_indices) > max_pairs:
-            selected_indices = min_indices[
-                np.random.choice(len(min_indices), size=max_pairs, replace=False)  # TODO: RNG
-            ]
-        else:
-            selected_indices = min_indices
-
-        least_explored_pairs = []
-        skills_list = list(self.skill_to_idx.keys())
-        for idx1, idx2 in selected_indices:
-            skill1 = skills_list[idx1]
-            skill2 = skills_list[idx2]
-            least_explored_pairs.append(f"({skill1}, {skill2})")
-
-        return least_explored_pairs
 
 
 """Define a class to learn symbolic operators from observed skill transitions."""

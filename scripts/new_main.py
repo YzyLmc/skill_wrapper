@@ -3,14 +3,9 @@
 import argparse
 from pathlib import Path
 
-from skillwrapper.skillwrapper_structs import (
-    Domain,
-    Environment,
-    Prompts,
-    SkillSequenceProposer,
-    import_yaml_into_dict,
-)
-from skillwrapper.utils import GPT4, setup_logging
+from skillwrapper.refactored.domain import Domain
+from skillwrapper.refactored.environment import Environment
+from skillwrapper.utils import setup_logging
 
 
 def main(args: argparse.Namespace) -> None:
@@ -24,17 +19,17 @@ def main(args: argparse.Namespace) -> None:
     env = Environment.from_yaml(env_yaml)
     env_name = env_yaml.stem
 
-    sspp_keys = {"skill-sequence-proposal-prompts"}
-    sspp_yaml_data = import_yaml_into_dict(domain_yaml, required_keys=sspp_keys)
-    ssp_prompts = Prompts.from_yaml(sspp_yaml_data)
-
     logs_save_path = setup_logging(logs_dir, domain_name, env_name)
 
-    model = GPT4(engine=args.model)
+    # sspp_keys = {"skill-sequence-proposal-prompts"}
+    # sspp_yaml_data = import_yaml_into_dict(domain_yaml, required_keys=sspp_keys)
+    # ssp_prompts = Prompts.from_yaml(sspp_yaml_data)
 
-    skill_sequence_proposer = SkillSequenceProposer(domain, env, ssp_prompts)
+    # model = GPT4(engine=args.model)
 
-    # TODO: Up next is to load "results" from a previous iteration
+    # skill_sequence_proposer = SkillSequenceProposer(domain, env, ssp_prompts)
+
+    # # TODO: Up next is to load "results" from a previous iteration
 
 
 if __name__ == "__main__":

@@ -744,62 +744,26 @@ class RCR_bridge:
         obj2pid :: mapping of the original grounded parameters to ids of the lifted parameters
                     e.g., id of "object_p4" is 4
         """
-        # build obj2pid mapping with skill parameter to be at the beginning (idx 0, 1)
-        obj_set = set()
-        for transition in transition_tuples:
-            for state in transition:
-                for pred in state.iter_predicates():
-                    obj_set.update(pred.params)
+        # For each transition, and each before/after state in the transition, for each predicate:
+        #   Update the object set with the (presumably grounded) parameters of the predicate
 
-        # NOTE: it's possible that the skill is Place(Apple, Table) while the only predicate is graspable(Apple)
-        obj_id = 0
-        if flush:
-            self.obj2pid = {}
-        # params in the skill first
-        for i, obj in enumerate(skill.params):
-            if obj not in self.obj2pid:
-                self.obj2pid[obj] = obj_id
-                self.pid2type[obj_id] = skill.types[i]
-                obj_id += 1
+        # For idx, object in the enumeration of the skill's concrete args:
+        #   if object isn't in the mapping from object to parameter IDs:
+        #       set the object ID for the object name to an incrementing integer
+        #       set the parameter ID's type to the skill parameter's type, then increment obj_id
 
-        # other params
-        for obj in obj_set:
-            if obj not in self.obj2pid:
-                self.obj2pid[obj] = obj_id
-                obj_id += 1
+        # For objects in the object set:
+        #   If object doesn't have a parameter ID assigned, give it an obj_id and increment obj_id
 
-        transition_cluster = [
-            [self.predicatestate_to_pddlstate(t[0]), self.predicatestate_to_pddlstate(t[1])]
-            for t in transition_tuples
-        ]
+        # For all of the transition tuples, convert the PredicateState into PDDLState.
+        #   TODO: This called self.predicatestate_to_pddlstate(t[0]) and on t[1]
 
-        # obj2type, unified_transition_cluster = self.unify_obj_type(transition_cluster, skill, type_dict)
+        # For objects in the skill's params, map their PID to type to the object's type
 
-        # for t in transition_tuples:
-        #     for state in t:
-        #         for grounded_pred in state.pred_dict:
-        #             for idx, obj in enumerate(grounded_pred.params):
-        #                 if obj in obj2type:
-        #                     types_list = list(copy.deepcopy(grounded_pred.types))
-        #                     types_list[idx] = obj2type[obj]
-        #                     grounded_pred.types = tuple(types_list)
-
-        # unified_transition_cluster = [
-        #     [self.predicatestate_to_pddlstate(t[0]),
-        #     self.predicatestate_to_pddlstate(t[1])] \
-        #         for t in transition_tuples
-        #                         ]
-
-        # udpate pid2type and obj2type
-        for obj in skill.params:
-            self.pid2type[self.obj2pid[obj]] = obj2type[obj]
-        self.obj2type = obj2type
-
-        operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(
-            transition_cluster,
-            copy.deepcopy(self.obj2pid),
-        )
-        return operator
+        # Then compute the operator using LiftedPDDLAction.get_action_from_cluster(
+        #     transition_cluster,
+        #     copy.deepcopy(self.obj2pid),
+        # )
 
     def get_pid_to_type(self) -> dict[int, str]:
         """Pid to type mapping is useful for generating possible groundings for precondition check."""
