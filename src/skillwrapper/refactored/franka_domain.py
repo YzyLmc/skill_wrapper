@@ -19,6 +19,8 @@ Location = NewType("Location", str)
 
 
 ### Define a protocol specifying the structure of all skills in the domain ###
+
+
 class FrankaSkillsProtocol(Protocol):
     """Protocol defining the interface for the Franka robot's skills."""
 
@@ -120,13 +122,13 @@ def main() -> None:
         print(f"  {skill}")
 
     # Export the Franka domain to YAML
-    output_path = Path("task_config/franka/exported_domain.yaml")
+    output_path = Path("domains/franka/exported_domain.yaml")
     domain.export_to_yaml(output_path)
     print(f"\nExported domain to {output_path}")
 
     # Import an example Franka environment from YAML
-    example_env_yaml = Path("task_config/franka/envs/env1.yaml")
-    env = Environment.from_yaml(example_env_yaml)  # TODO: Implement/specify state type!
+    example_env_yaml = Path("domains/franka/envs/env1.yaml")
+    env = Environment.from_yaml(example_env_yaml)
     print(f"Imported environment from YAML path: {example_env_yaml}")
 
     for obj_name in env.objects.object_names:

@@ -5,8 +5,7 @@ from pathlib import Path
 
 import click
 
-from skillwrapper.refactored.franka_domain import FrankaSkillsDummyExecutor
-from skillwrapper.refactored.skillwrapper import SkillWrapper
+from skillwrapper.refactored.skill_wrapper import SkillWrapper
 
 main_logger = logging.getLogger(__name__)
 
@@ -24,12 +23,10 @@ main_logger = logging.getLogger(__name__)
 def cli(ctx: click.Context, domain_yaml: Path, env_yaml: Path, logs_dir: Path) -> None:
     """Define a command-line interface group for the SkillWrapper algorithm."""
     ctx.ensure_object(dict)  # Create ctx.obj if it doesn't exist
-
-    dummy_executor = FrankaSkillsDummyExecutor()  # TODO: Allow CLI selection of the executor type
-    ctx.obj["system"] = SkillWrapper(domain_yaml, dummy_executor)
+    ctx.obj["system"] = SkillWrapper(domain_yaml, env_yaml)
 
 
-@click.command()
+@cli.command()
 @click.pass_context
 def interactive(ctx: click.Context) -> None:
     """Run SkillWrapper in interactive mode with a menu-driven interface."""

@@ -96,7 +96,7 @@ class Domain:
 
         domain_name = yaml_path.stem
 
-        return Domain(domain_name, skills_dict, yaml_data["types"])
+        return Domain(domain_name, skills_dict, set(yaml_data["types"]))
 
     @classmethod
     def from_protocol(cls, object_types: ObjectTypeSet, protocol: SkillsProtocol) -> Domain:

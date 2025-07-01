@@ -16,6 +16,7 @@ dependencies = [
     "dill",
     "ai2thor",
     "click",
+    "numpy<2",
 ]
 
 [tool.uv]

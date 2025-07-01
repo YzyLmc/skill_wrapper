@@ -51,7 +51,11 @@ class Skill:
 
     def params_to_yaml(self) -> dict[str, Any]:
         """Convert the Skill parameters into a dictionary of YAML data under a `parameters` key."""
-        return {"parameters": {param.to_yaml_dict() for param in self.parameters}}
+        params_dict: dict[str, Any] = {"parameters": {}}
+        for param in self.parameters:
+            params_dict["parameters"].update(param.to_yaml_dict())
+
+        return params_dict
 
     def execute(self, executor: SkillsProtocol, bindings: Bindings) -> None:
         """Execute this skill under the given object bindings.
@@ -154,10 +158,12 @@ class SkillInstance:
             obj_types = env.objects.get_types_of_object(bound_object)
 
             if param.object_type not in obj_types:
-                raise ValueError(
-                    f"Parameter {param.name} expects type {param.object_type} "
-                    f"but argument object {bound_object} only has type(s) {obj_types}.",
+                error = (
+                    f"Cannot parse skill instance from '{string}' because skill parameter "
+                    f"{param.name} expects type {param.object_type} but the provided "
+                    f"argument object {bound_object} only has type(s) {obj_types}."
                 )
+                raise ValueError(error)
             bindings[param.name] = bound_object
 
         return SkillInstance(skill, bindings)

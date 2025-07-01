@@ -2,8 +2,6 @@ import base64
 import copy
 import os
 import re
-from collections import defaultdict
-from typing import Union
 
 import numpy as np
 import torch

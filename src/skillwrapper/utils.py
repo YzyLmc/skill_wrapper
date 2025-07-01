@@ -13,7 +13,6 @@ from time import sleep
 import dill
 import requests
 import torch
-from data_structure import yaml
 from openai import OpenAI
 
 # OpenAI API Key
@@ -270,18 +269,6 @@ def get_save_fpath(directory: Path, fname: str, ftype: str) -> Path:
     save_path.touch(exist_ok=False)  # We expect this to be unique!
 
     return save_path
-
-
-def determine_pytorch_device():
-    """Determine which PyTorch device to use."""
-    if torch.cuda.is_available():  # Use CUDA on Linux if available
-        return torch.device("cuda")
-    if platform.system() == "Darwin":  # Use Metal on macOS
-        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-            return torch.device("mps")
-        return torch.device("cpu")
-
-    return torch.device("cpu")  # Otherwise, fallback to CPU
 
 
 def setup_logging(logs_dir: Path, domain_name: str, env_name: str) -> Path:

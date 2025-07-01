@@ -1,0 +1,46 @@
+skills:
+  Pick:
+    parameters:
+      picked:
+        type: Pickable
+        semantics: Object to be picked up
+  Place:
+    parameters:
+      placed:
+        type: Pickable
+        semantics: Object placed at a location
+      location:
+        type: Location
+        semantics: Location to place the object
+  Pour:
+    parameters:
+      pour_from:
+        type: Pourable
+        semantics: Container to pour liquid from
+      pour_into:
+        type: Fillable
+        semantics: Container to fill
+  Stack:
+    parameters:
+      on_top:
+        type: Stackable
+        semantics: Object stacked on top of the other
+      on_bottom:
+        type: Stackable
+        semantics: Object on the bottom of the stacked pair
+  Wipe:
+    parameters:
+      sponge:
+        type: Sponge
+        semantics: Sponge used to wipe the surface
+      surface:
+        type: Surface
+        semantics: Dirty surface to be wiped
+types:
+- Sponge
+- Pourable
+- Location
+- Fillable
+- Pickable
+- Surface
+- Stackable

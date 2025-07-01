@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic
 
-from skillwrapper.refactored.utils import StateT, import_yaml_into_dict
+from skillwrapper.refactored.utils import StateT, import_yaml_into_dict, load_class_from_module
 
 
 class ConcreteObjects:
@@ -77,12 +77,20 @@ class Environment(Generic[StateT]):
     objects: ConcreteObjects
 
     @classmethod
-    def from_yaml(cls, yaml_path: Path, state_type: type[StateT]) -> Environment:
+    def from_yaml(cls, yaml_path: Path) -> Environment:
         """Import an Environment instance from a YAML file."""
         yaml_data = import_yaml_into_dict(
             yaml_path,
-            required_keys={"initial-state", "object-types"},
+            required_keys={"initial-state", "object-types", "state-type"},
         )
+
+        # Dynamically load the environment's state type based on the YAML data
+        assert "class" in yaml_data["state-type"], "Expected `state-type` to specify a class."
+        assert "module" in yaml_data["state-type"], "Expected `state-type` to specify a module."
+
+        class_name = yaml_data["state-type"]["class"]
+        module_name = yaml_data["state-type"]["module"]
+        state_type: type[StateT] = load_class_from_module(class_name, module_name)
 
         env_name = yaml_path.stem
         initial_state = state_type.from_yaml(yaml_data["initial-state"])

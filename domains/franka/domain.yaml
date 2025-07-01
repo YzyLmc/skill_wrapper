@@ -1,0 +1,83 @@
+# New YAML format specifying the structure of the Franka domain (exported from Python protocol on 7/1)
+skills:
+  Pick:
+    parameters:
+      picked:
+        type: Pickable
+        semantics: Object to be picked up
+  Place:
+    parameters:
+      placed:
+        type: Pickable
+        semantics: Object placed at a location
+      location:
+        type: Location
+        semantics: Location to place the object
+  Pour:
+    parameters:
+      pour_from:
+        type: Pourable
+        semantics: Container to pour liquid from
+      pour_into:
+        type: Fillable
+        semantics: Container to fill
+  Stack:
+    parameters:
+      on_top:
+        type: Stackable
+        semantics: Object stacked on top of the other
+      on_bottom:
+        type: Stackable
+        semantics: Object on the bottom of the stacked pair
+  Wipe:
+    parameters:
+      sponge:
+        type: Sponge
+        semantics: Sponge used to wipe the surface
+      surface:
+        type: Surface
+        semantics: Dirty surface to be wiped
+
+types:
+  - Stackable
+  - Sponge
+  - Pourable
+  - Surface
+  - Fillable
+  - Location
+  - Pickable
+
+skill-sequence-proposal-prompt: |
+  A robot with one arm is attempting to learn the preconditions and effects for a finite
+  set of skills by executing exploratory skill sequences to collect feasibility data.
+  Your task is to propose a set of skill sequences for the robot to execute.
+
+  The robot has access to the following skills with the associated arguments:
+  [SKILLS_PROMPT]
+
+  The robot is aware of the following objects in the environment:
+  [OBJECTS_IN_SCENE]
+
+  The pairs of consecutive skills (Skill 1, Skill 2) that have been least explored are:
+  [[LEAST_EXPLORED_SKILLS]].
+
+  Certain skills may have similar names and parameters, but different preconditions and effects.
+  Using the list of skills and objects in the environment, propose five skill sequences such that:
+  (1) the skill sequences purposefully violate skill preconditions
+  (2) the ordering of skills in each sequence is unique
+  (3) at least one least-explored consecutive skill pair is used in each sequence
+  (4) all sequences include at least 12 skill instances
+
+  Output only the sequences of skills to execute, strictly following the specified naming, syntax,
+  and arguments of the skills. Output one skill per line, following the format:
+
+  Skill Sequence 1:
+  GoTo(Table)
+  PickUp(Apple, Table)
+
+  Skill Sequence 2:
+
+# Specify the module and class used to execute the domain's skills
+skill-executor:
+  module: skillwrapper.refactored.franka_domain
+  class: FrankaSkillsDummyExecutor

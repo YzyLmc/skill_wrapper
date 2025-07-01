@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import platform
 import re
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Protocol, TypeVar, runtime_checkable
 
+import torch
 import yaml
 from typing_extensions import Self
 
@@ -74,3 +77,30 @@ class FromYAMLProtocol(Protocol):
 
 
 StateT = TypeVar("StateT", bound=FromYAMLProtocol)  # Support any YAML-importable state type
+
+
+def load_class_from_module(class_name: str, module_name: str) -> type:
+    """Dynamically load a class from the specified module.
+
+    :param class_name: Name of a class to load from a module (e.g., "MyClass")
+    :param module_name: String representation of the module (e.g., "my_package.module_name")
+    :return: Type of the loaded class
+    """
+    loaded_module = import_module(module_name)
+    if not hasattr(loaded_module, class_name):
+        error = f"Cannot load class '{class_name}' from module '{loaded_module.__name__}'."
+        raise ImportError(error)
+
+    return getattr(loaded_module, class_name)
+
+
+def determine_pytorch_device() -> torch.device:
+    """Determine which PyTorch device to use."""
+    if torch.cuda.is_available():  # Use CUDA on Linux if available
+        return torch.device("cuda")
+    if platform.system() == "Darwin":  # Use Metal on macOS
+        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+            return torch.device("mps")
+        return torch.device("cpu")
+
+    return torch.device("cpu")  # Otherwise, fallback to CPU
