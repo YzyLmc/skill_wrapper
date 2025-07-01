@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import yaml
 
 from skillwrapper.refactored.skills import Skill, SkillsProtocol, method_to_skill
 from skillwrapper.refactored.utils import import_yaml_into_dict
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 ObjectTypeSet = set[Any]  # Allow object types to be expressed as strings or NewTypes
 

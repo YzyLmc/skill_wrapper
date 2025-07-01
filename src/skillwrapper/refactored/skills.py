@@ -4,14 +4,18 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, get_type_hints
+from typing import TYPE_CHECKING, Any, get_type_hints
 
-from skillwrapper.refactored.domain import Domain
-from skillwrapper.refactored.environment import Environment
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
 from skillwrapper.refactored.utils import camel_to_snake, parse_docstring_params, snake_to_camel
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from skillwrapper.refactored.domain import Domain
+    from skillwrapper.refactored.environment import Environment
+
 
 SkillsProtocol = Any  # Stands in for skill protocols for different domains
 
