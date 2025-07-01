@@ -22,6 +22,10 @@ class ConcreteObjects:
         """Evaluate whether the named object is in this collection."""
         return object_name in self.objects
 
+    def __str__(self) -> str:
+        """Create a readable string representation of the ConcreteObjects instance."""
+        return "\n".join(f"{obj_name}: {list(types)}" for obj_name, types in self.objects.items())
+
     @property
     def object_names(self) -> KeysView[str]:
         """Retrieve all object names in this collection."""
@@ -68,6 +72,7 @@ class ConcreteObjects:
 class Environment(Generic[StateT]):
     """An environment represents problem aspects that vary across different scenes."""
 
+    name: str
     initial_state: StateT  # Any YAML-importable state type
     objects: ConcreteObjects
 
@@ -79,7 +84,8 @@ class Environment(Generic[StateT]):
             required_keys={"initial-state", "object-types"},
         )
 
+        env_name = yaml_path.stem
         initial_state = state_type.from_yaml(yaml_data["initial-state"])
         objects_dict = {obj: set(types) for obj, types in yaml_data["object-types"].items()}
 
-        return Environment(initial_state, ConcreteObjects(objects_dict))
+        return Environment(env_name, initial_state, ConcreteObjects(objects_dict))

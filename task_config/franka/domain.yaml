@@ -63,3 +63,33 @@ types:
   - Pourable
   - Plate
   - Robot
+
+skill-sequence-proposal-prompt: |
+  A robot with one arm is attempting to learn the preconditions and effects for a finite
+  set of skills by executing exploratory skill sequences to collect feasibility data.
+  Your task is to propose a set of skill sequences for the robot to execute.
+
+  The robot has access to the following skills with the associated arguments:
+  [SKILLS_PROMPT]
+
+  The robot is aware of the following objects in the environment:
+  [OBJECTS_IN_SCENE]
+
+  The pairs of consecutive skills (Skill 1, Skill 2) that have been least explored are:
+  [[LEAST_EXPLORED_SKILLS]].
+
+  Certain skills may have similar names and parameters, but different preconditions and effects.
+  Using the list of skills and objects in the environment, propose five skill sequences such that:
+  (1) the skill sequences purposefully violate skill preconditions
+  (2) the ordering of skills in each sequence is unique
+  (3) at least one least-explored consecutive skill pair is used in each sequence
+  (4) all sequences include at least 12 skill instances
+
+  Output only the sequences of skills to execute, strictly following the specified naming, syntax,
+  and arguments of the skills. Output one skill per line, following the format:
+
+  Skill Sequence 1:
+  GoTo(Table)
+  PickUp(Apple, Table)
+
+  Skill Sequence 2:

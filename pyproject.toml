@@ -8,13 +8,14 @@ version = "0.1.0"
 description = "Adapt and symbolize skills in novel environments"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-    "torch<2.3.0",           # Note: Only restricted the version for running locally on macOS (remove this)
+    "torch",
     "torchvision",
     "torchaudio",
     "openai",
     "sentence-transformers",
     "dill",
     "ai2thor",
+    "click",
 ]
 
 [tool.uv]

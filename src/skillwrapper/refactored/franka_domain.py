@@ -62,6 +62,54 @@ class FrankaSkillsProtocol(Protocol):
         """
 
 
+class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
+    """Dummy implementation of the protocol interface for the Franka robot's skills."""
+
+    @skill_fn
+    def pick(self, picked: Pickable) -> None:
+        """Pick up an object.
+
+        :param picked: Object to be picked up
+        """
+        print(f"Picking object '{picked}'...")
+
+    @skill_fn
+    def place(self, placed: Pickable, location: Location) -> None:
+        """Place an object at a specified location.
+
+        :param placed: Object placed at a location
+        :param location: Location to place the object
+        """
+        print(f"Placing object '{placed}' at location '{location}'...")
+
+    @skill_fn
+    def pour(self, pour_from: Pourable, pour_into: Fillable) -> None:
+        """Pour from one container into another.
+
+        :param pour_from: Container to pour liquid from
+        :param pour_into: Container to fill
+        """
+        print(f"Pouring from '{pour_from}' into '{pour_into}'...")
+
+    @skill_fn
+    def stack(self, on_top: Stackable, on_bottom: Stackable) -> None:
+        """Stack two objects of the same shape (e.g., two bowls or two plates).
+
+        :param on_top: Object stacked on top of the other
+        :param on_bottom: Object on the bottom of the stacked pair
+        """
+        print(f"Stacking object '{on_top}' onto '{on_bottom}'...")
+
+    @skill_fn
+    def wipe(self, sponge: Sponge, surface: Surface) -> None:
+        """Wipe a dirty surface using a sponge.
+
+        :param sponge: Sponge used to wipe the surface
+        :param surface: Dirty surface to be wiped
+        """
+        print(f"Wiping surface '{surface}' using sponge '{sponge}'...")
+
+
 def main() -> None:
     """Construct the skills in the Franka domain and export them to YAML."""
     object_types = {Pickable, Pourable, Fillable, Sponge, Stackable, Surface, Location}

@@ -14,6 +14,11 @@ class DiscreteParameter:
     object_type: str  # Object type expected by the parameter
     semantics: str | None = None  # Optional NL description of the parameter's meaning
 
+    def __str__(self) -> str:
+        """Create a readable string representation of the discrete parameter."""
+        semantics_str = f": {self.semantics}" if self.semantics is not None else ""
+        return f"{self.name} (Type {self.object_type}){semantics_str}"
+
     @classmethod
     def from_yaml(cls, param_name: str, param_data: dict[str, Any]) -> DiscreteParameter:
         """Import a DiscreteParameter instance from YAML data."""

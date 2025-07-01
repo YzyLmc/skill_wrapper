@@ -846,6 +846,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "ai2thor" },
+    { name = "click" },
     { name = "dill" },
     { name = "openai" },
     { name = "sentence-transformers" },
@@ -857,10 +858,11 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "ai2thor" },
+    { name = "click" },
     { name = "dill" },
     { name = "openai" },
     { name = "sentence-transformers" },
-    { name = "torch", specifier = "<2.3.0" },
+    { name = "torch" },
     { name = "torchaudio" },
     { name = "torchvision" },
 ]

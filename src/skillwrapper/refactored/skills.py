@@ -111,6 +111,11 @@ class SkillInstance:
     skill: Skill  # Specifies the skill instance's parameter signature
     bindings: Bindings  # Maps each skill parameter name to the name of its bound object
 
+    def __str__(self) -> str:
+        """Return a readable string representation of the skill instance."""
+        args_string = ", ".join(self.bindings[p.name] for p in self.skill.parameters)
+        return f"{self.skill.name}({args_string})"
+
     @classmethod
     def from_string(cls, string: str, domain: Domain, env: Environment) -> SkillInstance:
         """Construct a SkillInstance from the given string.
