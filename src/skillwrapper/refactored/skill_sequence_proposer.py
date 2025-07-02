@@ -228,6 +228,6 @@ class SkillSequenceProposer:
         proposed_sequences = self.construct_skill_sequences(llm_response, env)
         for i, sequence in enumerate(proposed_sequences):
             sequence_str = "\n\t".join(str(skill_instance) for skill_instance in sequence)
-            print(f"Proposed Skill Sequence {i}:\n{sequence_str}\n")
+            print(f"Proposed Skill Sequence {i}:\n\t{sequence_str}\n")
 
         return proposed_sequences[0]  # TODO: Replace skill sequence selection heuristics

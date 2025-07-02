@@ -13,9 +13,10 @@ initial-state:
 
 # Specify the objects in this environment, and their type(s)
 object-types:
-  orange_plate: [Pickable, Stackable, Surface]
-  yellow_plate: [Pickable, Stackable, Surface]
-  pink_plate: [Pickable, Stackable, Surface]
+  orange_plate: [Pickable, Stackable, Surface, Location]
+  yellow_plate: [Pickable, Stackable, Surface, Location]
+  pink_plate: [Pickable, Stackable, Surface, Location]
+  table: [Location]
 
   white_mug: [Pickable, Fillable]
   sponge: [Sponge, Pickable]
