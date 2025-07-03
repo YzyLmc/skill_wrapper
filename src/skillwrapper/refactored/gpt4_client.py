@@ -80,17 +80,18 @@ class GPT4Client:
 
         self.client = OpenAI(api_key=api_key)
 
-    def _execute_with_retry(self, func: Callable[P, T], **params: P.kwargs) -> T:
+    def _execute_with_retry(self, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> T:
         """Execute the given function with an exponential backoff retry.
 
         :param func: Function to execute
-        :param params: Parameters to pass to the function
+        :param args: Arguments to pass to the function
+        :param kwargs: Keyword arguments to pass to the function
         :return: Result of successful function call
         :raises: Last exception if all retries fail
         """
         for attempt in range(self.max_retries):
             try:
-                return func(**params)
+                return func(*args, **kwargs)
             except Exception as exc:  # noqa: PERF203
                 if attempt == self.max_retries - 1:
                     error = f"Calling function {func} failed {self.max_retries} times."
@@ -127,6 +128,7 @@ class GPT4Client:
         """Generate a GPT-4 text response to the given prompt and image(s).
 
         Reference: https://platform.openai.com/docs/guides/images-vision?format=url#analyze-images
+
         :param prompt: Text prompt describing the task or questions about the image(s)
         :param images: List of image paths (local files) or URLs
         :param kwargs: Override any config parameters for this call only

@@ -16,8 +16,7 @@ from typing_extensions import Self
 def camel_to_snake(name: str) -> str:
     """Convert CamelCase to snake_case."""
     # Insert underscore before uppercase letters that follow lowercase letters
-    s1 = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name)
-    return s1.lower()
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", name).lower()
 
 
 def snake_to_camel(name: str) -> str:
@@ -60,7 +59,7 @@ def parse_docstring_params(docstring: str) -> dict[str, str]:
 
     for match in re.finditer(param_pattern, docstring):
         param_name = match.group(1)
-        description = match.group(2)
+        description = match.group(2).strip() if match.group(2) else ""
         param_docs[param_name] = description
 
     return param_docs
@@ -84,7 +83,7 @@ def load_class_from_module(class_name: str, module_name: str) -> type:
 
     :param class_name: Name of a class to load from a module (e.g., "MyClass")
     :param module_name: String representation of the module (e.g., "my_package.module_name")
-    :return: Type of the loaded class
+    :return: Type of the dynamically loaded class
     """
     loaded_module = import_module(module_name)
     if not hasattr(loaded_module, class_name):
@@ -98,9 +97,11 @@ def determine_pytorch_device() -> torch.device:
     """Determine which PyTorch device to use."""
     if torch.cuda.is_available():  # Use CUDA on Linux if available
         return torch.device("cuda")
-    if platform.system() == "Darwin":  # Use Metal on macOS
-        if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-            return torch.device("mps")
-        return torch.device("cpu")
+    if (
+        platform.system() == "Darwin"
+        and torch.backends.mps.is_available()
+        and torch.backends.mps.is_built()
+    ):
+        return torch.device("mps")  # Use Metal on macOS, if available
 
     return torch.device("cpu")  # Otherwise, fallback to CPU
