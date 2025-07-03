@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from itertools import product
 from typing import Generic
 
 from skillwrapper.refactored.environment import ConcreteObjects
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
+from skillwrapper.refactored.pddl import PDDLable
 from skillwrapper.refactored.utils import StateT
 
 
 @dataclass(frozen=True)
-class Predicate(Generic[StateT]):
+class Predicate(PDDLable, Generic[StateT]):
     """A symbolic predicate with object-typed parameters."""
 
     name: str
@@ -24,7 +26,45 @@ class Predicate(Generic[StateT]):
         params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
         return f"{self.name}({params})"
 
-    def as_pddl(self) -> str:
+    @classmethod
+    def from_pddl(cls, pddl: str) -> Predicate:
+        """Construct a Predicate instance from a string of PDDL.
+
+        :param pddl: PDDL string representation of a predicate
+        :return: Constructed Predicate instance
+        """
+        match = re.match(r"^\((\S+)(.*)\)$", pddl.strip())
+        if not match:
+            raise ValueError(f"Could not parse Predicate from PDDL string: '{pddl}'")
+
+        name = match.group(1).strip()
+        params_string = match.group(2)
+
+        # Process the parameters string to identify the parameters and their types
+        parameters: list[DiscreteParameter] = []  # Completely finalized parameters
+        awaiting_type: list[str] = []  # Parameter names waiting for their type to be specified
+        next_token_is_type = False  # Indicates that the next token will be a parameter type
+
+        for token in params_string.split():
+            if next_token_is_type:
+                type_name = token
+                parameters.extend(DiscreteParameter(param, type_name) for param in awaiting_type)
+
+                next_token_is_type = False
+                awaiting_type = []
+
+            elif token == "-":
+                next_token_is_type = True
+            else:
+                awaiting_type.append(token)
+
+        if awaiting_type:
+            error = f"Predicate '{name}' didn't define a type for parameters: {awaiting_type}."
+            raise ValueError(error)
+
+        return Predicate(name, tuple(parameters))
+
+    def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate."""
         types_to_params: dict[str, set[str]] = {}  # Map type names to all such predicate params
         for param in self.parameters:
@@ -85,7 +125,7 @@ class PredicateInstance(Generic[StateT]):
         args_string = ", ".join(self.bindings[p.name] for p in self.predicate.parameters)
         return f"{self.predicate.name}({args_string})"
 
-    def as_pddl(self) -> str:
+    def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate instance."""
         args_string = " ".join(self.bindings[p.name] for p in self.predicate.parameters)
         return f"({self.predicate.name} {args_string})"
@@ -93,3 +133,56 @@ class PredicateInstance(Generic[StateT]):
     def holds_in(self, state: StateT) -> bool:
         """Evaluate whether the predicate instance holds in the given state."""
         return self.predicate.holds_in(state, self.bindings)
+
+
+@dataclass(frozen=True)
+class PositiveNegativePredicates:
+    """A collection containing positive and negative predicates."""
+
+    positive: set[Predicate]
+    negative: set[Predicate]
+
+    @classmethod
+    def from_pddl(cls, pddl: str) -> PositiveNegativePredicates:
+        """Construct a PositiveNegativePredicates instance from a string of PDDL.
+
+        The PDDL string is assumed to contain a sequence of predicates, as in:
+            "(OnTop ?x ?y) (not (Under ?a ?b)) (Open ?c)..."
+
+        :param pddl: PDDL string representation of positive and negative predicates
+        :return: Constructed PositiveNegativePredicates instance
+        """
+        positive = set()
+        negative = set()
+
+        # Parse through the predicates by finding balanced parentheses
+        i = 0
+        while i < len(pddl):
+            if pddl[i] != "(":
+                i += 1
+                continue
+
+            # Otherwise, the current character (index i) is an open parenthesis: "("
+            close_parens_needed = 1
+            j = i + 1
+            while j < len(pddl) and close_parens_needed > 0:
+                if pddl[j] == "(":
+                    close_parens_needed += 1
+                elif pddl[j] == ")":
+                    close_parens_needed -= 1
+                j += 1
+
+            if not close_parens_needed:
+                predicate_string = pddl[i:j]
+
+                # Check if the predicate is negated
+                not_match = re.match(r"^\(\s*not\s+(.+)\)$", predicate_string, re.DOTALL)
+                if not_match:
+                    inner_content = not_match.group(1).strip()
+                    negative.add(Predicate.from_pddl(inner_content))
+                else:
+                    positive.add(Predicate.from_pddl(predicate_string))
+            else:
+                raise ValueError(f"Unmatched parentheses when parsing PDDL predicates: {pddl}")
+
+        return PositiveNegativePredicates(positive, negative)
