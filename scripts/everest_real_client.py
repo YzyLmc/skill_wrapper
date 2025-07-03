@@ -27,6 +27,10 @@ class Executor(Node):
         self.PICK_SPONGE_DEMO_PATH="raw_datasets/sponge_final_2025-05-22-17-38/episode_0000.npy"
         self.RAISE_DEMO_PATH="raw_datasets/raise_final_2025-05-22-17-48/episode_0000.npy"
         self.PLACE_SPONGE_DEMO_PATH="raw_datasets/place_sponge_final_2025-05-23-21-49/episode_0000.npy"
+        self.STACK_BOWL_DEMO_PATH_1="raw_datasets/stack_red_bowl_1_2025-06-22-22-51/episode_0000.npy"
+        self.STACK_BOWL_DEMO_PATH_2="raw_datasets/stack_red_bowl_2_2025-06-22-22-55/episode_0000.npy"
+        self.STACK_BOWL_DEMO_PATH_1_TEST="raw_datasets/stack_red_bowl_1_test_2025-06-25-08-59/episode_0000.npy"
+        self.STACK_BOWL_DEMO_PATH_2_TEST="raw_datasets/stack_red_bowl_2_test_2025-06-25-09-03/episode_0000.npy"
 
         self.bridge = CvBridge()
         self.client = self.create_client(EstimatePose, '/detect_object_pose')
@@ -49,9 +53,9 @@ class Executor(Node):
         #NOTE: only for the absolute offset from foundation pose
         self.obj2offset = {
             #change offset everytime
-            "cyan_cube": np.array([0.0, 0.01, -0.01]),
+            "cyan_cube": np.array([-0.01, 0.01, 0.00]),
             "expo_spray": np.array([0.0, 0.0, 0.13]),
-            "purple_teapot": np.array([-0.04, -0.06, 0.1]),
+            "purple_teapot": np.array([-0.02, -0.06, 0.1]),
             "lemon": np.array([0.19, 0.07, -0.25]),
             "white_mug": np.array([0.65, 0.87, 0.0]), # for handle np.array([0.95, 0.7, -0.1])
             "spoon" : np.array([0.01, 0.00, 0.065]),
@@ -402,7 +406,7 @@ class Executor(Node):
         self.robot.open_gripper()
         
 
-    def place(self, obj):
+    def place(self, obj, x_diff=0, y_diff=0, z_diff=0):
         if obj not in self.obj2pose:
             self.get_logger().error(f"No pose found for {obj}, skipping place.")
             return
@@ -411,11 +415,15 @@ class Executor(Node):
             self.get_logger().error("No object has been picked up yet. Skipping place.")
             return
 
+
         x,y,z = self.obj2pose[obj][:3, -1]
+        
         offset = self.obj2offset.get(obj, np.zeros(3))
-        x += offset[0]
-        y += offset[1]
-        z += offset[2]
+        
+        
+        x = x + x_diff + offset[0]
+        y = y + y_diff + offset[1]
+        z = z + z_diff + offset[2]
         r=0.0
         self._place(x, y, r, z)
 
@@ -567,6 +575,14 @@ class Executor(Node):
         elif npy_fpath == self.PLACE_SPONGE_DEMO_PATH:
             self.open_gripper()
             self.replay_demo(self.RAISE_DEMO_PATH, skip_threshold=0.1)
+        elif npy_fpath ==self.STACK_BOWL_DEMO_PATH_1:
+            self.close_gripper()
+            self.replay_demo(self.STACK_BOWL_DEMO_PATH_2, skip_threshold=0.03)
+            self.open_gripper()
+        elif npy_fpath ==self.STACK_BOWL_DEMO_PATH_1_TEST:
+            self.close_gripper()
+            self.replay_demo(self.STACK_BOWL_DEMO_PATH_2_TEST, skip_threshold=0.03)
+            self.open_gripper()
 
         self.get_logger().info("Trajectory replay complete.")
 
@@ -598,17 +614,46 @@ def main():
     #     pickle.dump(transform_stamped, f)
     # breakpoint()
 
-    node.get_pose(obj1)
-    print(node.obj2pose[obj1])
-    node.get_pose(obj1)
-    print(node.obj2pose[obj1])
-    # node.pick(obj1)
+    node.replay_demo(node.PICK_SPONGE_DEMO_PATH, skip_threshold=0.01)
+    node.go_home()
+    node.replay_demo(node.WIPE_DEMO_PATH, skip_threshold=0.03)
+    node.go_home()
+    node.replay_demo(node.PLACE_SPONGE_DEMO_PATH, skip_threshold=0.03)
+    node.go_home()
+    node.replay_demo(node.STACK_BOWL_DEMO_PATH_1_TEST, skip_threshold=0.03)
+    node.go_home()
+    node.get_pose(obj4)
+    node.pick(obj4)
+    node.go_home()
+    node.pour(obj3)
+    node.place(obj4)
+    node.go_home()
+
+
+    # node.replay_demo(node.STACK_BOWL_DEMO_PATH_1, skip_threshold=0.03)
+    # node.open_gripper()
+    # node.replay_demo(node.WIPE_DEMO_PATH, skip_threshold=0.03)
+
+ 
+
+
+
+    # node.get_pose(obj4)
+    # node.pick(obj4)
     # node.go_home()
-    # node.close_gripper()
+    # node.place(obj4, x_diff=0.32, y_diff=0.05, z_diff=0.0)
+
+    # node.replay_demo(node.STACK_BOWL_DEMO_PATH_1, skip_threshold=0.03)
+    # node.go_home()
+    # node.get_pose(obj5)
+    # node.pick(obj5)
+    # node.go_home()
+    # node.place(obj5, x_diff=-0.24, y_diff=0.25, z_diff=0.2)
 
     # node.replay_demo(node.WIPE_DEMO_PATH, skip_threshold=0.03)
     # node.replay_demo(node.PICK_SPONGE_DEMO_PATH, skip_threshold=0.02)
     # node.go_home()
+
 
     # node.get_pose(obj3)
     # node.pick(obj3)
