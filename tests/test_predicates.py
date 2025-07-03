@@ -3,7 +3,7 @@
 from skillwrapper.refactored.predicates import Predicate
 
 
-def test_from_pddl() -> None:
+def test_predicate_from_pddl() -> None:
     """Verify that Predicate instances can be constructed from PDDL strings."""
     # Arrange - Create PDDL strings representing predicates
     hand_empty_pddl = "(HandEmpty)"
