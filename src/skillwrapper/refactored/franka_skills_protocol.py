@@ -19,8 +19,6 @@ Location = NewType("Location", str)
 
 
 ### Define a protocol specifying the structure of all skills in the domain ###
-
-
 class FrankaSkillsProtocol(Protocol):
     """Protocol defining the interface for the Franka robot's skills."""
 
@@ -62,54 +60,6 @@ class FrankaSkillsProtocol(Protocol):
         :param sponge: Sponge used to wipe the surface
         :param surface: Dirty surface to be wiped
         """
-
-
-class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
-    """Dummy implementation of the protocol interface for the Franka robot's skills."""
-
-    @skill_fn
-    def pick(self, picked: Pickable) -> SkillExecutionResult:
-        """Pick up an object.
-
-        :param picked: Object to be picked up
-        """
-        print(f"Picking object '{picked}'...")
-
-    @skill_fn
-    def place(self, placed: Pickable, location: Location) -> SkillExecutionResult:
-        """Place an object at a specified location.
-
-        :param placed: Object placed at a location
-        :param location: Location to place the object
-        """
-        print(f"Placing object '{placed}' at location '{location}'...")
-
-    @skill_fn
-    def pour(self, pour_from: Pourable, pour_into: Fillable) -> SkillExecutionResult:
-        """Pour from one container into another.
-
-        :param pour_from: Container to pour liquid from
-        :param pour_into: Container to fill
-        """
-        print(f"Pouring from '{pour_from}' into '{pour_into}'...")
-
-    @skill_fn
-    def stack(self, on_top: Stackable, on_bottom: Stackable) -> SkillExecutionResult:
-        """Stack two objects of the same shape (e.g., two bowls or two plates).
-
-        :param on_top: Object stacked on top of the other
-        :param on_bottom: Object on the bottom of the stacked pair
-        """
-        print(f"Stacking object '{on_top}' onto '{on_bottom}'...")
-
-    @skill_fn
-    def wipe(self, sponge: Sponge, surface: Surface) -> SkillExecutionResult:
-        """Wipe a dirty surface using a sponge.
-
-        :param sponge: Sponge used to wipe the surface
-        :param surface: Dirty surface to be wiped
-        """
-        print(f"Wiping surface '{surface}' using sponge '{sponge}'...")
 
 
 def main() -> None:

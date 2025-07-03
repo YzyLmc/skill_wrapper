@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Generic, get_type_hints
 
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
+from skillwrapper.refactored.robot_interface import SkillExecutionResult
 from skillwrapper.refactored.utils import (
     StateT,
     camel_to_snake,
@@ -29,14 +30,6 @@ def skill_fn(func: Callable) -> Callable:
     """Mark a function as implementing a skill."""
     func._is_skill = True
     return func
-
-
-@dataclass(frozen=True)
-class SkillExecutionResult(Generic[StateT]):
-    """Represents the result of executing a skill in the environment."""
-
-    success: bool  # Did the skill succeed?
-    state: StateT  # Resulting state after the skill execution
 
 
 @dataclass(frozen=True)
