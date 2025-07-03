@@ -32,12 +32,10 @@ class Preconditions:
 
     def as_pddl(self) -> str:
         """Return a PDDL string representation of the preconditions."""
-        positive_pre = "\n\t".join(str(pre) for pre in sorted(self.positive, key=lambda p: str(p)))
-        negative_pre = "\n\t".join(
-            f"(not {pre})" for pre in sorted(self.negative, key=lambda p: str(p))
-        )
+        positive_pre = "\n\t".join(sorted(str(pre) for pre in self.positive))
+        negative_pre = "\n\t".join(sorted(f"(not {pre})" for pre in self.negative))
 
-        return f":precondition (and\n{positive_pre}\n{negative_pre}\n)"
+        return f":precondition (and\n\t{positive_pre}\n\t{negative_pre}\n)"
 
     def ground_with(self, bindings: Bindings) -> GroundedPreconditions:
         """Ground the preconditions using the given parameter bindings."""
@@ -68,9 +66,10 @@ class Effects:
 
     def as_pddl(self) -> str:
         """Return a PDDL string representation of the effects."""
-        add_eff = "\n\t".join(str(eff) for eff in sorted(self.add, key=lambda e: str(e)))
-        del_eff = "\n\t".join(f"(not {eff})" for eff in sorted(self.delete, key=lambda e: str(e)))
-        return f":effect (and\n{add_eff}\n{del_eff}\n)"
+        add_eff = "\n\t".join(sorted(str(eff) for eff in self.add))
+        del_eff = "\n\t".join(sorted(f"(not {eff})" for eff in self.delete))
+
+        return f":effect (and\n\t{add_eff}\n\t{del_eff}\n)"
 
     def ground_with(self, bindings: Bindings) -> GroundedEffects:
         """Ground the effects using the given parameter bindings."""
@@ -86,7 +85,7 @@ class Operator:
 
     name: str
     parameters: tuple[DiscreteParameter, ...]
-    preconditions: Preconditions  # Positive and negative preconditions to applying the operator
+    preconditions: Preconditions  # Positive and negative preconditions for applying the operator
     effects: Effects  # Effects added to and deleted from the abstract state by the operator
 
     def ground_with(self, bindings: Bindings) -> OperatorInstance:
