@@ -5,10 +5,15 @@ from __future__ import annotations
 import inspect
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, get_type_hints
+from typing import TYPE_CHECKING, Any, Generic, get_type_hints
 
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
-from skillwrapper.refactored.utils import camel_to_snake, parse_docstring_params, snake_to_camel
+from skillwrapper.refactored.utils import (
+    StateT,
+    camel_to_snake,
+    parse_docstring_params,
+    snake_to_camel,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -24,6 +29,14 @@ def skill_fn(func: Callable) -> Callable:
     """Mark a function as implementing a skill."""
     func._is_skill = True
     return func
+
+
+@dataclass(frozen=True)
+class SkillExecutionResult(Generic[StateT]):
+    """Represents the result of executing a skill in the environment."""
+
+    success: bool  # Did the skill succeed?
+    state: StateT  # Resulting state after the skill execution
 
 
 @dataclass(frozen=True)
@@ -57,7 +70,7 @@ class Skill:
 
         return params_dict
 
-    def execute(self, executor: SkillsProtocol, bindings: Bindings) -> None:
+    def execute(self, executor: SkillsProtocol, bindings: Bindings) -> SkillExecutionResult:
         """Execute this skill under the given object bindings.
 
         :param executor: Protocol defining an interface to skill execution
@@ -71,7 +84,7 @@ class Skill:
 
         method = getattr(executor, method_name)
         args = [bindings[param.name] for param in self.parameters]
-        method(*args)
+        return method(*args)
 
 
 def method_to_skill(method: Callable[[Any], Any]) -> Skill:
@@ -168,6 +181,6 @@ class SkillInstance:
 
         return SkillInstance(skill, bindings)
 
-    def execute(self, executor: SkillsProtocol) -> None:
+    def execute(self, executor: SkillsProtocol) -> SkillExecutionResult:
         """Execute this skill instance."""
-        self.skill.execute(executor, self.bindings)
+        return self.skill.execute(executor, self.bindings)

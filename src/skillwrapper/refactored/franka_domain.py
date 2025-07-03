@@ -5,7 +5,7 @@ from typing import NewType, Protocol
 
 from skillwrapper.refactored.domain import Domain
 from skillwrapper.refactored.environment import Environment
-from skillwrapper.refactored.skills import skill_fn
+from skillwrapper.refactored.skills import SkillExecutionResult, skill_fn
 
 ### Define all object types in the domain ###
 
@@ -25,14 +25,14 @@ class FrankaSkillsProtocol(Protocol):
     """Protocol defining the interface for the Franka robot's skills."""
 
     @skill_fn
-    def pick(self, picked: Pickable) -> None:
+    def pick(self, picked: Pickable) -> SkillExecutionResult:
         """Pick up an object.
 
         :param picked: Object to be picked up
         """
 
     @skill_fn
-    def place(self, placed: Pickable, location: Location) -> None:
+    def place(self, placed: Pickable, location: Location) -> SkillExecutionResult:
         """Place an object at a specified location.
 
         :param placed: Object placed at a location
@@ -40,7 +40,7 @@ class FrankaSkillsProtocol(Protocol):
         """
 
     @skill_fn
-    def pour(self, pour_from: Pourable, pour_into: Fillable) -> None:
+    def pour(self, pour_from: Pourable, pour_into: Fillable) -> SkillExecutionResult:
         """Pour from one container into another.
 
         :param pour_from: Container to pour liquid from
@@ -48,7 +48,7 @@ class FrankaSkillsProtocol(Protocol):
         """
 
     @skill_fn
-    def stack(self, on_top: Stackable, on_bottom: Stackable) -> None:
+    def stack(self, on_top: Stackable, on_bottom: Stackable) -> SkillExecutionResult:
         """Stack two objects of the same shape (e.g., two bowls or two plates).
 
         :param on_top: Object stacked on top of the other
@@ -56,7 +56,7 @@ class FrankaSkillsProtocol(Protocol):
         """
 
     @skill_fn
-    def wipe(self, sponge: Sponge, surface: Surface) -> None:
+    def wipe(self, sponge: Sponge, surface: Surface) -> SkillExecutionResult:
         """Wipe a dirty surface using a sponge.
 
         :param sponge: Sponge used to wipe the surface
@@ -68,7 +68,7 @@ class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
     """Dummy implementation of the protocol interface for the Franka robot's skills."""
 
     @skill_fn
-    def pick(self, picked: Pickable) -> None:
+    def pick(self, picked: Pickable) -> SkillExecutionResult:
         """Pick up an object.
 
         :param picked: Object to be picked up
@@ -76,7 +76,7 @@ class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
         print(f"Picking object '{picked}'...")
 
     @skill_fn
-    def place(self, placed: Pickable, location: Location) -> None:
+    def place(self, placed: Pickable, location: Location) -> SkillExecutionResult:
         """Place an object at a specified location.
 
         :param placed: Object placed at a location
@@ -85,7 +85,7 @@ class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
         print(f"Placing object '{placed}' at location '{location}'...")
 
     @skill_fn
-    def pour(self, pour_from: Pourable, pour_into: Fillable) -> None:
+    def pour(self, pour_from: Pourable, pour_into: Fillable) -> SkillExecutionResult:
         """Pour from one container into another.
 
         :param pour_from: Container to pour liquid from
@@ -94,7 +94,7 @@ class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
         print(f"Pouring from '{pour_from}' into '{pour_into}'...")
 
     @skill_fn
-    def stack(self, on_top: Stackable, on_bottom: Stackable) -> None:
+    def stack(self, on_top: Stackable, on_bottom: Stackable) -> SkillExecutionResult:
         """Stack two objects of the same shape (e.g., two bowls or two plates).
 
         :param on_top: Object stacked on top of the other
@@ -103,7 +103,7 @@ class FrankaSkillsDummyExecutor(FrankaSkillsProtocol):
         print(f"Stacking object '{on_top}' onto '{on_bottom}'...")
 
     @skill_fn
-    def wipe(self, sponge: Sponge, surface: Surface) -> None:
+    def wipe(self, sponge: Sponge, surface: Surface) -> SkillExecutionResult:
         """Wipe a dirty surface using a sponge.
 
         :param sponge: Sponge used to wipe the surface
