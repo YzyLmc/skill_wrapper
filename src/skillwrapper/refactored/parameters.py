@@ -16,7 +16,7 @@ class DiscreteParameter:
 
     def __str__(self) -> str:
         """Create a readable string representation of the discrete parameter."""
-        semantics_str = f": {self.semantics}" if self.semantics is not None else ""
+        semantics_str = f": {self.semantics}" if self.semantics else ""
         return f"{self.name} (Type {self.object_type}){semantics_str}"
 
     @classmethod
