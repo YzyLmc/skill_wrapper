@@ -8,7 +8,12 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, get_type_hints
 
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
-from skillwrapper.refactored.utils import camel_to_snake, parse_docstring_params, snake_to_camel
+from skillwrapper.refactored.utils import (
+    camel_to_snake,
+    is_camelcase,
+    parse_docstring_params,
+    snake_to_camel,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,6 +37,11 @@ class Skill:
 
     name: str
     parameters: tuple[DiscreteParameter, ...]
+
+    def __post_init__(self) -> None:
+        """Validate expected properties of any Skill instance."""
+        if not is_camelcase(self.name):
+            raise ValueError(f"Skill name '{self.name}' must be CamelCase.")
 
     @classmethod
     def from_yaml(cls, skill_name: str, yaml_data: dict[str, Any]) -> Skill:
@@ -112,7 +122,7 @@ def method_to_skill(method: Callable[[Any], Any]) -> Skill:
     return Skill(skill_name, tuple(parameters))
 
 
-@dataclass
+@dataclass(frozen=True)
 class SkillInstance:
     """A skill instantiated using particular concrete objects."""
 

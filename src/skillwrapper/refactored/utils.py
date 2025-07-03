@@ -25,6 +25,16 @@ def snake_to_camel(name: str) -> str:
     return "".join(word.capitalize() for word in chunks)
 
 
+def is_camelcase(string: str) -> bool:
+    """Check whether the given string is CamelCase."""
+    return string.lower() != string and ("_" not in string)
+
+
+def is_snakecase(string: str) -> bool:
+    """Check whether the given string is snake_case."""
+    return string.lower() == string
+
+
 def import_yaml_into_dict(yaml_path: Path, required_keys: set[str]) -> dict[str, Any]:
     """Import data from a YAML file into a Python dictionary.
 

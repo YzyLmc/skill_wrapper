@@ -18,7 +18,7 @@ P = ParamSpec("P")
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GPT4Config:
     """Configuration for GPT-4 API calls with sensible defaults."""
 

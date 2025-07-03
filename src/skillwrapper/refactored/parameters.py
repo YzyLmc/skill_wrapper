@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from skillwrapper.refactored.utils import is_camelcase
+
 
 @dataclass(frozen=True)
 class DiscreteParameter:
@@ -13,6 +15,11 @@ class DiscreteParameter:
     name: str  # Name of the lifted parameter
     object_type: str  # Object type expected by the parameter
     semantics: str | None = None  # Optional NL description of the parameter's meaning
+
+    def __post_init__(self) -> None:
+        """Validate expected properties of any DiscreteParameter instance."""
+        if not is_camelcase(self.object_type):
+            raise ValueError(f"Discrete parameter type '{self.object_type}' must be CamelCase.")
 
     def __str__(self) -> str:
         """Create a readable string representation of the discrete parameter."""

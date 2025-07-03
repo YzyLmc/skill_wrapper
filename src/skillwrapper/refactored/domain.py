@@ -126,7 +126,7 @@ class Domain:
     def export_to_yaml(self, output_path: Path) -> None:
         """Export the domain as YAML data to the specified filepath."""
         skills_data = {name: skill.params_to_yaml() for name, skill in self.skills.items()}
-        types_data = list(self.object_types)
+        types_data = sorted(self.object_types)
 
         yaml_data = {"skills": skills_data, "types": types_data}
 
