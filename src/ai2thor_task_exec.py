@@ -1,4 +1,5 @@
-'Convert generated tasks into python script'
+"Convert generated tasks into python script"
+
 import numpy as np
 import random
 from PIL import Image
@@ -11,8 +12,8 @@ from manipula_skills import *
 # TODO: change directory structure for saving imgs. Add numbering. Separate each iteration.
 # Add random
 def convert_task_to_code(task):
-    'task: str: sequence of commands separate by \n'
-    template = '''
+    "task: str: sequence of commands separate by \n"
+    template = """
 import numpy as np
 import random
 import os
@@ -124,33 +125,44 @@ event = controller.step('SetObjectPoses',objectPoses = poses)
 
 suc, event = GoTo('Sofa', 'DiningTable', controller, event)
 suc, event = GoTo('DiningTable', 'Sofa', controller, event)
-'''
+"""
     # commands = task.splitlines()
     commands = task
     formatted_commands = []
-    
+
     for command in commands:
         if command.startswith("GoTo"):
-            args = command[5:-1].replace(' ','').split(",")  # Extract arguments
-            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            args = command[5:-1].replace(" ", "").split(",")  # Extract arguments
+            formatted_commands.append(
+                f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")'
+            )
             formatted_command = f'suc, event = GoTo("{args[0]}", "{args[1]}", controller, event)'
         elif command.startswith("PickUp"):
-            args = command[7:-1].replace(' ','').split(",")  # Extract arguments
-            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            args = command[7:-1].replace(" ", "").split(",")  # Extract arguments
+            formatted_commands.append(
+                f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")'
+            )
             formatted_command = f'suc, event = PickUp("{args[0]}", "{args[1]}", controller, event)'
         elif command.startswith("DropAt"):
-            args = command[7:-1].replace(' ','').split(",")  # Extract arguments
-            formatted_commands.append(f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")')
+            args = command[7:-1].replace(" ", "").split(",")  # Extract arguments
+            formatted_commands.append(
+                f'screenshot_path = capture_obs(controller, f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}")'
+            )
             formatted_command = f'suc, event = DropAt("{args[0]}", "{args[1]}", controller, event)'
         else:
             continue  # Skip any unrecognized commands
         formatted_commands.append(formatted_command)
 
-        formatted_commands.append(f'capture_obs(controller, f"After_{command.split("(")[0]}_{args[0]}_{args[1]}_{"{suc}"}")')
-        formatted_commands.append(f'os.rename(screenshot_path, screenshot_path.replace(f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}", f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}_{"{suc}"}"))')
+        formatted_commands.append(
+            f'capture_obs(controller, f"After_{command.split("(")[0]}_{args[0]}_{args[1]}_{"{suc}"}")'
+        )
+        formatted_commands.append(
+            f'os.rename(screenshot_path, screenshot_path.replace(f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}", f"Before_{command.split("(")[0]}_{args[0]}_{args[1]}_{"{suc}"}"))'
+        )
 
     formatted_code = "\n".join(formatted_commands)
     return template + formatted_code
+
 
 if __name__ == "__main__":
     # task = "GoTo(Sofa, Book)\nPickUp(Book, DiningTable)\nGoTo(DiningTable, Sofa)\nDropAt(Book, Sofa)"
@@ -159,14 +171,24 @@ if __name__ == "__main__":
     # task 1
     # task = ['GoTo(Sofa,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)', 'PickUp(TissueBox,DiningTable)', 'DropAt(TissueBox,Sofa)']
     # task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'PickUp(Book,DiningTable)', 'DropAt(Book,Sofa)']
-    task = ['PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'GoTo(Sofa,DiningTable)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,Sofa)', 'PickUp(Book,DiningTable)', 'DropAt(Book,DiningTable)']
-    # task = ['GoTo(DiningTable,DiningTable)', 
-    #         'PickUp(Book,DiningTable)', 
-    #         'PickUp(Book,DiningTable)', 
-    #         'DropAt(Book,Sofa)', 
-    #         'PickUp(Vase,DiningTable)', 
-    #         'DropAt(Vase,Sofa)', 
-    #         'DropAt(Vase,Sofa)', 
+    task = [
+        "PickUp(Bowl,DiningTable)",
+        "GoTo(DiningTable,Sofa)",
+        "DropAt(Bowl,Sofa)",
+        "PickUp(TissueBox,Sofa)",
+        "GoTo(Sofa,DiningTable)",
+        "DropAt(TissueBox,DiningTable)",
+        "GoTo(DiningTable,Sofa)",
+        "PickUp(Book,DiningTable)",
+        "DropAt(Book,DiningTable)",
+    ]
+    # task = ['GoTo(DiningTable,DiningTable)',
+    #         'PickUp(Book,DiningTable)',
+    #         'PickUp(Book,DiningTable)',
+    #         'DropAt(Book,Sofa)',
+    #         'PickUp(Vase,DiningTable)',
+    #         'DropAt(Vase,Sofa)',
+    #         'DropAt(Vase,Sofa)',
     #         'PickUp(Bowl,DiningTable)']
     # task = ['GoTo(Sofa,DiningTable)', 'PickUp(Bowl,DiningTable)', 'GoTo(DiningTable,Sofa)', 'DropAt(Bowl,Sofa)', 'PickUp(TissueBox,Sofa)', 'DropAt(TissueBox,DiningTable)', 'GoTo(DiningTable,CoffeeTable)', 'PickUp(Vase,CoffeeTable)']
     generated_code = convert_task_to_code(task)
