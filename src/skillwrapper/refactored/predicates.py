@@ -66,18 +66,19 @@ class Predicate(PDDLable, Generic[StateT]):
 
     def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate."""
-        types_to_params: dict[str, set[str]] = {}  # Map type names to all such predicate params
+        types_to_params: dict[str, list[str]] = {}  # Map type names to all such predicate params
         for param in self.parameters:
             if param.object_type not in types_to_params:
-                types_to_params[param.object_type] = set()
-            types_to_params[param.object_type].add(param.name)
+                types_to_params[param.object_type] = []
+            types_to_params[param.object_type].append(param.name)
 
         type_groups = []
         for type_name, relevant_params in types_to_params.items():
-            pddl_params = " ".join(f"?{p}" for p in relevant_params)
+            pddl_params = " ".join(relevant_params)
             type_groups.append(f"{pddl_params} - {type_name}")
 
-        return f"({self.name} {' '.join(type_groups)})"
+        params_string = " " + " ".join(type_groups) if type_groups else ""
+        return f"({self.name}{params_string})"
 
     def ground_with(self, bindings: Bindings) -> PredicateInstance:
         """Ground the predicate using the given parameter bindings."""
@@ -95,13 +96,13 @@ class Predicate(PDDLable, Generic[StateT]):
 
         # Find all valid tuples of concrete args by taking a Cartesian product
         all_valid_groundings = product(*objs_per_param_type)
-        all_bindings = (
-            {param.name: obj_name}
-            for grounding in all_valid_groundings
-            for param, obj_name in zip(self.parameters, grounding, strict=True)
-        )
 
-        return {PredicateInstance(self, bindings) for bindings in all_bindings}
+        all_grounded_predicates: set[PredicateInstance] = set()
+        for grounding in all_valid_groundings:
+            bindings = {p.name: obj for p, obj in zip(self.parameters, grounding, strict=True)}
+            all_grounded_predicates.add(PredicateInstance(self, bindings))
+
+        return all_grounded_predicates
 
     def holds_in(self, state: StateT, bindings: Bindings) -> bool:
         """Evaluate whether the predicate holds in a state under the given bindings.
@@ -119,6 +120,10 @@ class PredicateInstance(Generic[StateT]):
 
     predicate: Predicate[StateT]
     bindings: Bindings
+
+    def __hash__(self) -> int:
+        """Compute the hash value of the predicate instance based on its string representation."""
+        return hash(str(self))
 
     def __str__(self) -> str:
         """Return a readable string representation of the predicate instance."""
