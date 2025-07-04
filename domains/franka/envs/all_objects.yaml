@@ -1,0 +1,29 @@
+# First example environment for the Franka domain
+
+initial-state:
+  tabletop-view:
+    image_path: domains/franka/envs/all_objects.jpg
+    description: |
+      The robot arm is set up on the table. There are three plates on the table:
+        An orange plate on the left is dirty because it has ranch sauce on it.
+        A yellow plate in the middle has a mug on it.
+        A pink plate on the right has a sponge on it.
+
+      In front of the plates, a white paper bowl and a purple teapot are also on the table.
+
+# Specify the objects in this environment, and their type(s)
+object-types:
+  orange_plate: [Pickable, Stackable, Surface, Location]
+  yellow_plate: [Pickable, Stackable, Surface, Location]
+  pink_plate: [Pickable, Stackable, Surface, Location]
+  table: [Location]
+
+  white_mug: [Pickable, Fillable]
+  sponge: [Sponge, Pickable]
+  white_paper_bowl: [Stackable, Fillable, Pickable]
+  purple_teapot: [Pickable, Pourable]
+
+# Specify the module and class used to represent the environment's state
+state-type:
+  module: skillwrapper.refactored.egocentric_image_state
+  class: EgocentricImageState

@@ -13,8 +13,13 @@
           skill: "Pick(Robot, Teapot)",
           success: true,
         },
-      "2": { image: test_tasks/franka_images/seq_1/seq_1_step2_img.jpg, skill: "Pour(Robot,
-            Teapot, Mug)", success: true },
+      "2":
+        {
+          image: test_tasks/franka_images/seq_1/seq_1_step2_img.jpg,
+          skill: "Pour(Robot,
+            Teapot, Mug)",
+          success: true,
+        },
       "3":
         {
           image: test_tasks/franka_images/seq_1/seq_1_step3_img.jpg,

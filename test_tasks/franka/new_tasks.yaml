@@ -1,0 +1,9 @@
+seq_1:
+  - state_before: Any
+    skill_instance: "Pick(Robot, Teapot)"
+    success: True
+    state_after: Any
+
+  - state_before: Any
+    skill_instance: "Wipe(Robot, Sponge, Plate)"
+    success: False

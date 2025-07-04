@@ -1,0 +1,58 @@
+skills:
+  Pick:
+    parameters:
+      robot:
+        type: Robot
+        semantics: Robot executing the skill
+      picked:
+        type: Pickable
+        semantics: Object to be picked up
+  PlaceBack:
+    parameters:
+      robot:
+        type: Robot
+        semantics: Robot executing the skill
+      placed:
+        type: Pickable
+        semantics: Object placed back into its original position
+  Pour:
+    parameters:
+      robot:
+        type: Robot
+        semantics: Robot executing the skill
+      pour_from:
+        type: Pourable
+        semantics: Container to pour liquid from
+      pour_into:
+        type: Container
+        semantics: Container to pour liquid into
+  Stack:
+    parameters:
+      robot:
+        type: Robot
+        semantics: Robot executing the skill
+      bowl:
+        type: Bowl
+        semantics: Smaller bowl to be stacked onto the plate
+      plate:
+        type: Plate
+        semantics: Plate that the bowl will be stacked on
+  Wipe:
+    parameters:
+      robot:
+        type: Robot
+        semantics: Robot executing the skill
+      sponge:
+        type: Sponge
+        semantics: Sponge used to wipe the plate
+      plate:
+        type: Plate
+        semantics: Dirty plate to be wiped
+types:
+- Pickable
+- Plate
+- Robot
+- Pourable
+- Sponge
+- Bowl
+- Container
