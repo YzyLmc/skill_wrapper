@@ -64,6 +64,40 @@ class Predicate(PDDLable, Generic[StateT]):
 
         return Predicate(name, tuple(parameters))
 
+    @classmethod
+    def from_operator_pddl(cls, pddl: str, predicates: dict[str, Predicate]) -> Predicate:
+        """Construct a Predicate instance from a string of PDDL from an operator.
+
+        Example: In an operator, we might see a predicate such as (Stacked ?on_top ?on_bottom).
+
+        :param pddl: String referencing the predicate from within a PDDL operator
+        :param predicates: Collection of predicates available in the PDDL domain
+        :return: Constructed Predicate instance
+        """
+        print("Entering from_operator_pddl...")
+        match = re.match(r"^\((\w+)(.*)\)$", pddl.strip())
+        if not match:
+            raise ValueError(f"Could not parse predicate string: '{pddl}'")
+
+        name = match.group(1).strip()
+        if name not in predicates:
+            raise ValueError(f"Predicate '{name}' is unknown in set: {predicates}")
+        existing_params = predicates[name].parameters
+
+        params_string = match.group(2)
+        new_param_names = params_string.split() if params_string else []
+        if len(new_param_names) != len(existing_params):
+            raise ValueError(
+                f"Parsed {len(new_param_names)} parameters for predicate {name} "
+                f"but the existing predicate expects {len(existing_params)}.",
+            )
+        new_params = [
+            DiscreteParameter(new_name, og_param.object_type, og_param.semantics)
+            for og_param, new_name in zip(existing_params, new_param_names, strict=True)
+        ]
+
+        return Predicate(name, tuple(new_params), predicates[name].semantics)
+
     def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate."""
         types_to_params: dict[str, list[str]] = {}  # Map type names to all such predicate params
@@ -148,17 +182,16 @@ class PositiveNegativePredicates:
     negative: set[Predicate]
 
     @classmethod
-    def from_pddl(cls, pddl: str) -> PositiveNegativePredicates:
+    def from_pddl(cls, pddl: str, predicates: dict[str, Predicate]) -> PositiveNegativePredicates:
         """Construct a PositiveNegativePredicates instance from a string of PDDL.
 
-        The PDDL string is assumed to contain a sequence of predicates, as in:
-            "(OnTop ?x ?y) (not (Under ?a ?b)) (Open ?c)..."
-
         :param pddl: PDDL string representation of positive and negative predicates
+        :param predicates: Collection of predicates available in the PDDL domain
         :return: Constructed PositiveNegativePredicates instance
         """
-        positive = set()
-        negative = set()
+        print("Entering PositiveNegativePredicates.from_pddl...")
+        positive_strings: set[str] = set()
+        negative_strings: set[str] = set()
 
         # Parse through the predicates by finding balanced parentheses
         i = 0
@@ -184,10 +217,14 @@ class PositiveNegativePredicates:
                 not_match = re.match(r"^\(\s*not\s+(.+)\)$", predicate_string, re.DOTALL)
                 if not_match:
                     inner_content = not_match.group(1).strip()
-                    negative.add(Predicate.from_pddl(inner_content))
+                    negative_strings.add(inner_content)
                 else:
-                    positive.add(Predicate.from_pddl(predicate_string))
+                    positive_strings.add(predicate_string)
+                i = j
             else:
                 raise ValueError(f"Unmatched parentheses when parsing PDDL predicates: {pddl}")
+
+        positive = {Predicate.from_operator_pddl(pddl, predicates) for pddl in positive_strings}
+        negative = {Predicate.from_operator_pddl(pddl, predicates) for pddl in negative_strings}
 
         return PositiveNegativePredicates(positive, negative)

@@ -30,25 +30,26 @@ class GroundedPreconditions:
 
 
 @dataclass(frozen=True)
-class Preconditions(PDDLable):
+class Preconditions:
     """A collection of predicates defining positive and negative preconditions."""
 
     positive: set[Predicate]  # Predicates that must hold true to apply the operator
     negative: set[Predicate]  # Predicates that must be false to apply the operator
 
     @classmethod
-    def from_pddl(cls, pddl: str) -> Preconditions:
+    def from_pddl(cls, pddl: str, predicates: dict[str, Predicate]) -> Preconditions:
         """Construct a Preconditions instance from a string of PDDL.
 
         :param pddl: PDDL string representation of preconditions
+        :param predicates: Collection of predicates available in the PDDL domain
         :return: Constructed Preconditions instance
         """
-        match = re.match(r":precondition\s*\(\s*and(.*)\)", pddl.strip())
+        match = re.match(r":precondition\s*\(\s*and(.*)\)", pddl.strip(), re.DOTALL)
         if not match:
             raise ValueError(f"Could not parse Preconditions from PDDL string: '{pddl}'")
 
         predicates_string = match.group(1).strip()
-        parsed_predicates = PositiveNegativePredicates.from_pddl(predicates_string)
+        parsed_predicates = PositiveNegativePredicates.from_pddl(predicates_string, predicates)
 
         return Preconditions(parsed_predicates.positive, parsed_predicates.negative)
 
@@ -80,25 +81,26 @@ class GroundedEffects:
 
 
 @dataclass(frozen=True)
-class Effects(PDDLable):
+class Effects:
     """A collection of predicates defining add and delete effects of an operator."""
 
     add: set[Predicate]  # Predicates added to the abstract state by the operator
     delete: set[Predicate]  # Predicates deleted from the abstract state by the operator
 
     @classmethod
-    def from_pddl(cls, pddl: str) -> Effects:
+    def from_pddl(cls, pddl: str, predicates: dict[str, Predicate]) -> Effects:
         """Construct an Effects instance from a string of PDDL.
 
         :param pddl: PDDL string representation of an effects set
+        :param predicates: Collection of predicates available in the PDDL domain
         :return: Constructed Effects instance
         """
-        match = re.match(r":effect\s*\(\s*and(.*)\)", pddl.strip())
+        match = re.match(r":effect\s*\(\s*and(.*)\)", pddl.strip(), re.DOTALL)
         if not match:
             raise ValueError(f"Could not parse Effects from PDDL string: '{pddl}'")
 
         predicates_string = match.group(1).strip()
-        parsed_predicates = PositiveNegativePredicates.from_pddl(predicates_string)
+        parsed_predicates = PositiveNegativePredicates.from_pddl(predicates_string, predicates)
 
         return Effects(add=parsed_predicates.positive, delete=parsed_predicates.negative)
 
