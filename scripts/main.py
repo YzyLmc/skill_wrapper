@@ -29,7 +29,6 @@ def interactive(ctx: click.Context) -> None:
     system: SkillWrapper = ctx.obj["system"]
     console: Console = ctx.obj["console"]
 
-    # Display header with Rich panel
     header = Text("🎮 SkillWrapper Interactive Mode", style="bold green")
     info = Text(f"Domain: {system.domain.name} | Environment: {system.env.name}", style="cyan")
     header_content = Text.assemble(header, "\n", info)
