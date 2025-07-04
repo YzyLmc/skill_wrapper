@@ -20,3 +20,6 @@ class PDDLable(Protocol):
     def to_pddl(self) -> str:
         """Return a PDDL string representation of the PDDLable instance."""
         ...
+
+
+# TODO: Implement PDDL problem and domain classes
