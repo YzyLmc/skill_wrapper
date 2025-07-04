@@ -74,7 +74,6 @@ class Predicate(PDDLable, Generic[StateT]):
         :param predicates: Collection of predicates available in the PDDL domain
         :return: Constructed Predicate instance
         """
-        print("Entering from_operator_pddl...")
         match = re.match(r"^\((\w+)(.*)\)$", pddl.strip())
         if not match:
             raise ValueError(f"Could not parse predicate string: '{pddl}'")
@@ -189,7 +188,6 @@ class PositiveNegativePredicates:
         :param predicates: Collection of predicates available in the PDDL domain
         :return: Constructed PositiveNegativePredicates instance
         """
-        print("Entering PositiveNegativePredicates.from_pddl...")
         positive_strings: set[str] = set()
         negative_strings: set[str] = set()
 
