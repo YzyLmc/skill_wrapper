@@ -28,6 +28,37 @@ class Predicate(PDDLable, Generic[StateT]):
         return f"{self.name}({params})"
 
     @classmethod
+    def from_string(cls, string: str, semantics: str | None = None) -> Predicate:
+        """Construct a Predicate instance from a Python-style string.
+
+        :param string: String representing a predicate, e.g., "OnTop(above: Object, below: Object)"
+        :param semantics: Optional string describing the semantic meaning of the predicate
+        :return: Constructed Predicate instance
+        """
+        match = re.match(r"^(\w+)\(([^)]*)\)$", string.strip())
+        if not match:
+            raise ValueError(f"Could not parse Predicate from string: '{string}'")
+
+        predicate_name = match.group(1)
+        params_string = match.group(2)
+
+        if not params_string:  # If no parameters were parsed, return a parameter-less predicate
+            return Predicate(name=predicate_name, parameters=(), semantics=semantics)
+
+        # Otherwise, we need to identify the types of the predicate parameters
+        param_sections = [s.strip() for s in params_string.split(",")]
+        parameters: list[DiscreteParameter] = []
+        for section in param_sections:
+            section_pieces = [s.strip() for s in section.split(":")]
+            if len(section_pieces) != 2:
+                error = f"Cannot parse Predicate from '{string}' due to '{section}' in parameters"
+                raise ValueError(error)
+            param_name, param_type = section_pieces
+            parameters.append(DiscreteParameter(param_name, param_type))
+
+        return Predicate(predicate_name, tuple(parameters), semantics)
+
+    @classmethod
     def from_pddl(cls, pddl: str) -> Predicate:
         """Construct a Predicate instance from a string of PDDL.
 

@@ -152,30 +152,3 @@ def unify_sequences(
     (x_only,) = x
     (y_only,) = y
     return unify(x_only, y_only, bindings)
-
-
-def find_consistent_bindings(
-    predicate_to_facts: dict[str, set[PredicateInstance]],
-    conditions: list[Predicate],
-    condition_idx: int,
-    bindings: UnifierBindings,
-) -> bool:
-    """Find consistent bindings to satisfy the given conditions with the given facts."""
-    if condition_idx >= len(conditions):  # Base case: all conditions have been satisfied
-        return True
-
-    condition = conditions[condition_idx]
-
-    # Try to unify this condition with each fact of the same predicate
-    for fact in predicate_to_facts[str(condition)]:
-        new_bindings = unify(condition, fact, bindings.copy())
-
-        if new_bindings is not None and find_consistent_bindings(
-            predicate_to_facts,
-            conditions,
-            condition_idx + 1,
-            new_bindings,
-        ):
-            return True
-
-    return False  # We couldn't find a valid binding for this condition
