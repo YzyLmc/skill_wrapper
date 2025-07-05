@@ -8,6 +8,11 @@ from typing import Any, Generic
 from skillwrapper.refactored.abstract_states import AbstractState
 from skillwrapper.refactored.domain import Domain
 from skillwrapper.refactored.environment import Environment
+from skillwrapper.refactored.predicates import (
+    PositiveNegativePredicates,
+    Predicate,
+    PredicateInstance,
+)
 from skillwrapper.refactored.skills import Skill, SkillInstance
 from skillwrapper.refactored.utils import StateT
 
@@ -82,6 +87,14 @@ Dataset = list[SkillExecutionTrace[StateT]]  # A collection of skill execution t
 
 
 @dataclass(frozen=True)
+class AbstractStateDelta:
+    """A collection of predicate instances changed during an abstract state transition."""
+
+    add: set[PredicateInstance]  # Set of predicate instances added to the abstract state
+    delete: set[PredicateInstance]  # Set of predicate instances deleted from the abstract state
+
+
+@dataclass(frozen=True)
 class AbstractTransition:
     """A transition representing the change in abstract state due to a skill execution."""
 
@@ -102,6 +115,21 @@ class AbstractTransition:
     def skill_name(self) -> str:
         """Retrieve the name of the skill used in the abstract transition."""
         return self.skill_instance.skill.name
+
+    @property
+    def abstract_delta(self) -> AbstractStateDelta:
+        """Compute which predicate instances were changed in the abstract transition.
+
+        :return: Sets of predicate instances added and deleted to the abstract state
+        :raises ValueError: If the abstract transition doesn't define an 'after' abstract state
+        """
+        if self.abstract_after is None:
+            raise ValueError("Cannot compute abstract state delta when 'after' state is None.")
+
+        added = {f for f in self.abstract_after.facts if f not in self.abstract_before.facts}
+        deleted = {f for f in self.abstract_before.facts if f not in self.abstract_after.facts}
+
+        return AbstractStateDelta(added, deleted)
 
 
 AbstractExecutionTrace = list[AbstractTransition]  # A sequence of abstracted skill transitions

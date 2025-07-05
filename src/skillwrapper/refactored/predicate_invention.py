@@ -11,7 +11,11 @@ from skillwrapper.refactored.operators import Operator
 from skillwrapper.refactored.predicate_matching import exemplifies
 from skillwrapper.refactored.predicates import Predicate
 from skillwrapper.refactored.skills import Skill
-from skillwrapper.refactored.transition_data import AbstractDataset, AbstractTransition
+from skillwrapper.refactored.transition_data import (
+    AbstractDataset,
+    AbstractStateDelta,
+    AbstractTransition,
+)
 
 
 class ContrastivePairType(Enum):
@@ -196,6 +200,32 @@ class PredicateInventor:
         # TODO: Continue from "new_pred_accepted = False" in `invent_predicate.py`
 
         return None  # TODO
+
+    def partition(self, transitions: list[AbstractTransition]) -> None:  # TODO
+        """Partition a dataset of abstract transitions by termination states and effects.
+
+        Only successful transitions will be used for partitioning.
+
+        :param transitions: Collection of abstract skill execution transitions
+        :return: TODO: Return types?
+        """
+        successful_transitions = [t for t in transitions if t.success]
+
+        # Map abstract termination states to the indices of all corresponding transitions
+        termination_partitions: dict[AbstractState, set[int]] = {}
+        effects_partitions: dict[AbstractStateDelta, set[int]] = {}
+
+        for idx, transition in enumerate(successful_transitions):
+            # Partition based on termination sets using the 'after' state of each transition
+            if transition.abstract_after not in termination_partitions:
+                termination_partitions[transition.abstract_after] = {}
+            termination_partitions[transition.abstract_after].add(idx)
+
+            # Partition based on effects using the sets of predicates changed by each transition
+            if transition.abstract_delta not in effects_partitions:
+                effects_partitions[transition.abstract_delta] = {}
+
+            termination_partitions
 
 
 # TODO: Create a EvaluatedPredicates dataclass to manage partially evaluated predicate sets, to
