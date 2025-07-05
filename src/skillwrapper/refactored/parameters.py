@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -45,3 +46,6 @@ class DiscreteParameter:
 
 
 Bindings = dict[str, str]  # Map from parameter names to their bound concrete objects
+
+# Represents any sequence of parameters or their bound arguments
+ParametersT = Sequence[DiscreteParameter] | Sequence[str]

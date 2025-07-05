@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from itertools import product
 from typing import Generic
 
 from skillwrapper.refactored.environment import ConcreteObjects
-from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
+from skillwrapper.refactored.parameters import Bindings, DiscreteParameter, ParametersT
 from skillwrapper.refactored.pddl import PDDLable
 from skillwrapper.refactored.utils import StateT
 
@@ -97,6 +98,11 @@ class Predicate(PDDLable, Generic[StateT]):
 
         return Predicate(name, tuple(new_params), predicates[name].semantics)
 
+    @property
+    def parameter_names(self) -> tuple[str]:
+        """Retrieve the names of the predicate's parameters."""
+        return tuple(p.name for p in self.parameters)
+
     def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate."""
         types_to_params: dict[str, list[str]] = {}  # Map type names to all such predicate params
@@ -163,6 +169,11 @@ class PredicateInstance(Generic[StateT]):
         args_string = ", ".join(self.bindings[p.name] for p in self.predicate.parameters)
         return f"{self.predicate.name}({args_string})"
 
+    @property
+    def name(self) -> str:
+        """Retrieve the name of the predicate instance."""
+        return self.predicate.name
+
     def to_pddl(self) -> str:
         """Return a PDDL string representation of the predicate instance."""
         args_string = " ".join(self.bindings[p.name] for p in self.predicate.parameters)
@@ -171,6 +182,20 @@ class PredicateInstance(Generic[StateT]):
     def holds_in(self, state: StateT) -> bool:
         """Evaluate whether the predicate instance holds in the given state."""
         return self.predicate.holds_in(state, self.bindings)
+
+
+PredicateT = Predicate | PredicateInstance  # Represents any "predicate-like" expression
+PredicateSequence = Sequence[PredicateT]  # A sequence of "predicate-like" expressions
+
+
+def get_parameters(predicate: PredicateT) -> ParametersT:
+    """Retrieve the parameters or arguments of the given predicate-like expression."""
+    if isinstance(predicate, Predicate):
+        return predicate.parameters
+    if isinstance(predicate, PredicateInstance):
+        return [predicate.bindings[p.name] for p in predicate.predicate.parameters]
+
+    raise RuntimeError(f"Unexpected predicate type: {type(predicate)}")
 
 
 @dataclass(frozen=True)

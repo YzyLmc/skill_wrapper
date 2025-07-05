@@ -7,7 +7,6 @@ from dataclasses import dataclass
 
 from skillwrapper.refactored.abstract_states import AbstractState
 from skillwrapper.refactored.parameters import Bindings, DiscreteParameter
-from skillwrapper.refactored.pddl import PDDLable
 from skillwrapper.refactored.predicates import (
     PositiveNegativePredicates,
     Predicate,

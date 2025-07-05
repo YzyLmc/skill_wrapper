@@ -1,28 +1,32 @@
-"refinement and proposal loop"
+"""refinement and proposal loop"""
 
 "remember to change the for loop in update_tasks() if you have changed the input skill"
 import argparse
 import logging
 from collections import defaultdict
 
-from data_structure import Skill, yaml
-from utils import GPT4, load_from_file, setup_logging, clean_logging, save_results, load_results
-from skill_sequence_proposing import SkillSequenceProposing
-from invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
 from ai2thor_task_exec import convert_task_to_code
+from data_structure import Skill
+from invent_predicate import invent_predicates
+from skill_sequence_proposing import SkillSequenceProposing
+from utils import GPT4, clean_logging, load_from_file, load_results, save_results, setup_logging
 
 
 def propose_and_execute(
-    skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, args
+    skill_sequence_proposing: SkillSequenceProposing,
+    tasks,
+    lifted_pred_list,
+    skill2operator,
+    args,
 ):
-    """
-    Propose a skill sequence and execute the skill sequence
-    """
+    """Propose a skill sequence and execute the skill sequence"""
     t = 0
     task_success = False
     while t < 10 and not task_success:
         chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(
-            lifted_pred_list, skill2operator, tasks
+            lifted_pred_list,
+            skill2operator,
+            tasks,
         )
         t += 1
         logging.info(f"Task: {[str(skill) for skill in chosen_skill_sequence]}")
@@ -36,7 +40,6 @@ def propose_and_execute(
             task_success = True
         except:
             logging.info("Skill sequence execution failed.")
-            pass
 
     if args.step_by_step:
         logging.info("Task done. You should check the images labels")
@@ -60,8 +63,7 @@ def invent_predicates_for_all_skill(
     type_dict,
     args,
 ):
-    """
-    run one iteration of refinement and proposal
+    """Run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement.
     replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
@@ -102,14 +104,15 @@ def main():
 
         # init skill sequence proposing system
         skill_sequence_proposing = SkillSequenceProposing(
-            task_config_fpath=args.task_config_fpath
+            task_config_fpath=args.task_config_fpath,
         )  # prompt not included but
 
         type_dict = {obj: obj_meta["types"] for obj, obj_meta in task_config["objects"].items()}
         # assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
 
         tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(
-            args.load_fpath, task_config
+            args.load_fpath,
+            task_config,
         )
 
         # main loop
@@ -117,7 +120,11 @@ def main():
             if not args.invent_pred_only:
                 # propose skill sequence and execute
                 tasks: list[Skill] = propose_and_execute(
-                    skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args
+                    skill_sequence_proposing,
+                    tasks,
+                    lifted_pred_list,
+                    skill2operator,
+                    args,
                 )
             else:
                 assert args.load_fpath is not None, (
@@ -145,7 +152,7 @@ def main():
             logging.info(f"iteration #{i + 1} is done")
             operator_string_lists = [
                 [
-                    f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n"
+                    f"Skill:{lifted_skill!s}\nOperator{operator_tuple[0]!s}\n"
                     for operator_tuple in operator_tuples
                     if operator_tuple
                 ]
@@ -155,7 +162,10 @@ def main():
             for operator_string_list in operator_string_lists:
                 logging.info("\n".join(operator_string_list))
             save_results(
-                skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir
+                skill2operator,
+                lifted_pred_list,
+                grounded_predicate_truth_value_log,
+                args.save_dir,
             )
 
             if args.step_by_step:
@@ -200,7 +210,10 @@ if __name__ == "__main__":
         help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true",
     )
     parser.add_argument(
-        "--save_dir", type=str, default="tasks/log", help="directory to save log files"
+        "--save_dir",
+        type=str,
+        default="tasks/log",
+        help="directory to save log files",
     )
     parser.add_argument(
         "--invent_pred_only",
