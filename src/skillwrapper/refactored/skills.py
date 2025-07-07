@@ -137,8 +137,11 @@ def method_to_skill(method: Callable[[Any], Any]) -> Skill:
 class SkillInstance:
     """A skill instantiated using particular concrete objects."""
 
-    skill: Skill  # Specifies the skill instance's parameter signature
-    bindings: Bindings  # Maps each skill parameter name to the name of its bound object
+    skill: Skill
+    """Specifies the skill instance's parameter signature."""
+
+    bindings: Bindings
+    """Maps each skill parameter name to the name of its bound object."""
 
     def __str__(self) -> str:
         """Return a readable string representation of the skill instance."""

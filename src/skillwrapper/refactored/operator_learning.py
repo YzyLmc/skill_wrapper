@@ -8,51 +8,21 @@ from skillwrapper.refactored.parameters import DiscreteParameter
 from skillwrapper.refactored.skills import Skill, SkillInstance
 from skillwrapper.refactored.transition_data import SuccessfulAbstractTransition
 
-ObjectRoles = dict[str, DiscreteParameter]
-"""Maps object names to their fixed parameter roles in the operator."""
 
-
-class OperatorParameters:
-    """Organizes potential operator parameters during operator learning for a partition."""
+class ObjectRoles:
+    """Maps object names to their potential parameter roles during operator learning."""
 
     def __init__(self, skill_instance: SkillInstance) -> None:
-        """Initialize the possible operator parameters using the partition's skill instance.
+        """Initialize the fixed object roles imposed by the given skill instance.
 
         :param skill_instance: Skill instance common across the transitions in the partition
         """
-        self.skill_instance = skill_instance
-
-        self.
-
-
-        self.fixed_parameters: dict[str, DiscreteParameter] = {
-            _ for param_name, bound_object in self.skill_instance.bindings.items()
+        self.fixed_roles: dict[str, DiscreteParameter] = {
+            skill_instance.bindings[p.name]: p for p in skill_instance.skill.parameters
         }
 
-    @staticmethod
-    def extract_fixed_roles(skill_instance: SkillInstance) -> ObjectRoles:
-        """Extract the object roles implied by the arguments of a skill instance.
-
-        :param skill_instance: Grounded skill whose arguments imply fixed object roles
-        :return: Mapping from objects to their parameter roles in the operator
-        """
-        for param_name, bound_object in skill_instance.bindings.items():
-            param = skill_instance.skill.get_parameter(param_name)
-
-        return {
-            bound_object, skill_instance.skill. for param_name, bound_object in skill_instance.bindings.items()
-        } # TODO: Continue!!!
-
-
-# @dataclass(frozen=True)
-# class ParameterMapping:
-#     """Maps between concrete objects and potential operator parameters during operator learning.
-
-#     Conceptually, there are two types of "potential parameters" during operator learning:
-#         -
-#     """
-
-#     fixed_parameters: dict[str, DiscreteParameter]  # Maps object names to lifted parameters
+        self.additional_objects: set[str] = set()
+        """Set of non-skill-parameter object names from predicate instances in the partition."""
 
 
 def compute_operators(skill: Skill, partitions: Any) -> set[Operator]:
