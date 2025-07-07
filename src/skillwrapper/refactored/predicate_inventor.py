@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from skillwrapper.refactored.abstract_model import AbstractModel
 from skillwrapper.refactored.abstract_states import AbstractState
@@ -197,17 +198,27 @@ class PredicateInventor:
             print(f"The VLM generated a predicate we've already rejected: {new_predicate}")
             return None
 
-        # TODO: Continue from "new_pred_accepted = False" in `invent_predicate.py`
+        hypothetical_predicate_set = self.current_model.predicates.copy()
+        hypothetical_predicate_set.add(new_predicate)
+
+        # TODO: Update the abstract state evaluation for the new predicate
+
+        # TODO: ...
 
         return None  # TODO
 
-    def partition(self, transitions: list[AbstractTransition]) -> None:  # TODO
+    def partition(
+        self,
+        transitions: list[AbstractTransition],
+    ) -> dict[tuple[int, int], set[AbstractTransition]]:
         """Partition a dataset of abstract transitions by termination states and effects.
 
         Only successful transitions will be used for partitioning.
 
+        Note: Replaces partition_by_termination_n_eff() which was in invent_predicate.py.
+
         :param transitions: Collection of abstract skill execution transitions
-        :return: TODO: Return types?
+        :return: Map from partition ID tuples to sets of abstract transitions in each partition
         """
         successful_transitions = [t for t in transitions if t.success]
 
@@ -216,17 +227,56 @@ class PredicateInventor:
         effects_partitions: dict[AbstractStateDelta, set[int]] = {}
 
         for idx, transition in enumerate(successful_transitions):
+            assert transition.abstract_after is not None, "Expected an 'after' abstract state"
+
             # Partition based on termination sets using the 'after' state of each transition
             if transition.abstract_after not in termination_partitions:
-                termination_partitions[transition.abstract_after] = {}
+                termination_partitions[transition.abstract_after] = set()
             termination_partitions[transition.abstract_after].add(idx)
 
             # Partition based on effects using the sets of predicates changed by each transition
-            if transition.abstract_delta not in effects_partitions:
-                effects_partitions[transition.abstract_delta] = {}
+            abstract_delta = transition.compute_abstract_delta()
 
-            termination_partitions
+            if abstract_delta not in effects_partitions:  # TODO: Was this meant to be the delta?
+                effects_partitions[abstract_delta] = set()
+            effects_partitions[abstract_delta].add(idx)
+
+        ### Compute a map from skill instances to combined termination-effects partitions ###
+
+        # Map from successful transition indices to tuples of (term, eff) partition indices
+        transition_idx_to_partitions: dict[int, list[int]] = {}
+        for idx in range(len(successful_transitions)):
+            transition_idx_to_partitions[idx] = [-1, -1]  # All -1s should be replaced
+
+        for term_idx, termination_state in enumerate(termination_partitions.keys()):
+            for transition_idx in termination_partitions[termination_state]:
+                transition_idx_to_partitions[transition_idx][0] = term_idx
+
+        for eff_idx, abstract_delta in enumerate(effects_partitions.keys()):
+            for transition_idx in effects_partitions[abstract_delta]:
+                transition_idx_to_partitions[transition_idx][1] = eff_idx
+
+        # Output a map from (termination partition index, effect partition index) to transitions
+        full_partitions: dict[tuple[int, int], set[AbstractTransition]] = {}
+        for transition_idx, partitions in transition_idx_to_partitions.items():
+            assert len(partitions) == 2, "Expected exactly two partitions"
+            assert all(x >= 0 for x in partitions), "All partitions should have valid indices"
+
+            term_idx, eff_idx = partitions
+            partitions_tuple = (term_idx, eff_idx)
+            transition = successful_transitions[transition_idx]
+
+            if partitions_tuple not in full_partitions:
+                full_partitions[partitions_tuple] = set()
+            full_partitions[partitions_tuple].add(transition)
+
+        return full_partitions  # TODO:
 
 
 # TODO: Create a EvaluatedPredicates dataclass to manage partially evaluated predicate sets, to
 #   allow converting to AbstractStates while keep the actual evaluation process separate?
+
+# (TODO) Score by partitions (to do so, we'll calculate the hypothetical operators per partition):
+#   1. Create a map from SkillInstances to all relevant *successful* (abstract?) transitions
+#   2. Create a map from (SkillInstances to?) partition ID tuples to relevant transitions(?)
+#   3. Create operators using the calculated partitions

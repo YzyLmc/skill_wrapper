@@ -368,7 +368,7 @@ def invent_predicates(
     # check precondition first
     t = 0
     pred_type = "precond"
-    
+
     mismatch_pairs = detect_mismatch(
         lifted_skill,
         skill2operator,
@@ -379,7 +379,7 @@ def invent_predicates(
     )
 
     # `mismatch_pairs` - Found contrastive pairs
-    while mismatch_pairs
+    # while mismatch_pairs
 
     logging.info(f"About to enter precondition check of skill {lifted_skill}")
     new_pred_accepted = False
@@ -641,153 +641,6 @@ def calculate_operators_for_all_skill(
 #                     filtered_lifted_pred_list.append(lifted_pred)
 
 #     return filtered_lifted_pred_list
-
-
-def partition_by_termination_n_eff(skill2task2state) -> dict:
-    """Partition the a set of transitions using termination set. Will be used again in scoring and final operators learning.
-    Only successful execution will be used for partitioning.
-
-    Args:
-        skill2task2state :: {Skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
-
-    Returns:
-        {grounded_skill: [{PredicateState: [task_step_tuple]} , ...]}
-
-    """
-
-    def apply_both_partition(partition_1, partition_2):
-        """Find the intersection of applying termination and eff partition"""
-        # Map each item to its group index in both groupings
-        partition_1_map = {}
-        for i, g in enumerate(partition_1):
-            for item in g:
-                partition_1_map[item] = i
-
-        partition_2_map = {}
-        for i, g in enumerate(partition_2):
-            for item in g:
-                partition_2_map[item] = i
-
-        # Use a dict to collect items that share the same (group_1_index, group_2_index)
-        combined_partitions = {}
-        for item in set(partition_1_map) & set(
-            partition_2_map,
-        ):  # In case not all items are covered
-            key = (partition_1_map[item], partition_2_map[item])
-            combined_partitions.setdefault(key, []).append(item)
-
-        return list(combined_partitions.values())
-
-    skill2state2partition: dict[Skill, dict[PredicateState, list[tuple]]] = {}
-    skill2eff2partition: dict[Skill, dict[dict, list[tuple]]] = {}
-
-    for grounded_skill, task2state in skill2task2state.items():
-        termination_partition = defaultdict(list)  # {task_step}
-        eff_partition = defaultdict(list)
-        for task_step_tuple, transition_meta in task2state.items():
-            state_0, state_1 = transition_meta["states"]
-            value_tuple = (
-                (pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred))
-                for pred in state_0.iter_predicates()
-                if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0
-            )
-
-            termination_partition[state_1].append(task_step_tuple)
-            # value_dict is not hashable so
-            eff_partition[value_tuple].append(task_step_tuple)
-
-        skill2state2partition[grounded_skill] = termination_partition
-        skill2eff2partition[grounded_skill] = eff_partition
-    # take intersection of both
-    skill2partition: dict[Skill, list[list[tuple]]] = {
-        grounded_skill: apply_both_partition(
-            list(skill2state2partition[grounded_skill].values()),
-            list(skill2eff2partition[grounded_skill].values()),
-        )
-        for grounded_skill in skill2eff2partition
-    }
-
-    return skill2state2partition, skill2eff2partition, skill2partition
-
-
-def create_one_operator_from_one_partition(
-    grounded_skill: Skill,
-    task2state,
-    task_step_tuple_list: list[tuple],
-    type_dict,
-) -> LiftedPDDLAction:
-    """Build operator from one partition using RCR code.
-
-    Args:
-        task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
-        task_tuple_list: list of tuple of task_name and step number.
-
-    """
-    # no failure cases in the task2state partition
-    assert all([task2state[task_step_tuple]["success"] for task_step_tuple in task_step_tuple_list])
-
-    bridge = RCR_bridge()
-    transitions = [
-        task2state[task_step_tuple]["states"] for task_step_tuple in task_step_tuple_list
-    ]
-    obj2type, _ = bridge.unify_obj_type(transitions, grounded_skill, type_dict)
-    unified_transitions = []
-    for t in transitions:
-        unified_transition = []
-        for state in t:
-            predicate_state = PredicateState([])
-            for grounded_pred, truth_value in state.pred_dict.items():
-                types_list = []
-                for idx, obj in enumerate(grounded_pred.params):
-                    if obj in obj2type:
-                        types_list.append(obj2type[obj])
-                    else:
-                        types_list.append(grounded_pred.types[idx])
-                new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
-                predicate_state.pred_dict[new_grounded_pred] = truth_value
-            unified_transition.append(predicate_state)
-        unified_transitions.append(unified_transition)
-    return (
-        bridge.operator_from_transitions(
-            unified_transitions,
-            grounded_skill,
-            type_dict,
-            obj2type,
-            flush=True,
-        ),
-        bridge.get_pid_to_type(),
-        obj2type,
-    )
-
-
-def create_operators_from_partitions(
-    lifted_skill: Skill,
-    skill2task2state,
-    skill2partition,
-    type_dict,
-):
-    """Calculate operators for one skill using the partitions by termination set.
-
-    Returns:
-        operators :: [(LiftedPDDLAction, {pid: int: type: str})]
-
-    """
-    seen_operators = set()
-    operators = []
-    # create operators for each grounded skill
-    for grounded_skill, task2state in skill2task2state.items():
-        if grounded_skill.lifted() == lifted_skill:
-            for partition in skill2partition[grounded_skill]:
-                operator, pid2type, obj2type = create_one_operator_from_one_partition(
-                    grounded_skill,
-                    task2state,
-                    partition,
-                    type_dict,
-                )
-                if operator not in seen_operators:
-                    seen_operators.add(operator)
-                    operators.append((operator, pid2type, obj2type))
-    return operators
 
 
 def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:

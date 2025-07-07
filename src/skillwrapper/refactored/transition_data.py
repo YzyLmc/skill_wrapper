@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Generic
 
-from skillwrapper.refactored.abstract_states import AbstractState
+from skillwrapper.refactored.abstract_states import AbstractState, AbstractStateSpace
 from skillwrapper.refactored.domain import Domain
 from skillwrapper.refactored.environment import Environment
 from skillwrapper.refactored.predicates import (
@@ -19,7 +19,7 @@ from skillwrapper.refactored.utils import StateT
 
 @dataclass(frozen=True)
 class SkillTransition(Generic[StateT]):
-    """An observed transition resulting from executing a skill instance in an environment."""
+    """An observed state transition resulting from attempting to execute a skill instance."""
 
     state_before: StateT  # State from which the skill execution was attempted
     skill_instance: SkillInstance  # Concrete skill that was (possibly) executed
@@ -64,34 +64,22 @@ class SkillTransition(Generic[StateT]):
         return self.skill_instance.skill.name
 
 
-#     def make_abstract(self, abstract_space: AbstractStateSpace[StateT]) -> AbstractTransition:
-#         """Convert the transition between low-level states into an abstract transition.
-
-#         :param abstract_space: Abstract state space defining the space of possible facts
-#         :return: Constructed abstract transition
-#         """
-#         abstract_before = abstract_space.abstract(self.state_before)
-#         abstract_after = (
-#             None if self.state_after is None else abstract_space.abstract(self.state_after)
-#         )
-
-#         return AbstractTransition(
-#             abstract_before,
-#             self.skill_instance,
-#             self.success,
-#             abstract_after,
-#         )
-
-SkillExecutionTrace = list[SkillTransition[StateT]]  # A sequence of attempted skill executions
-Dataset = list[SkillExecutionTrace[StateT]]  # A collection of skill execution traces
+SkillsTrace = list[SkillTransition[StateT]]  # A sequence of attempted skill executions
+Dataset = list[SkillsTrace[StateT]]  # A collection of skill execution traces
 
 
 @dataclass(frozen=True)
-class AbstractStateDelta:
-    """A collection of predicate instances changed during an abstract state transition."""
+class SuccessfulSkillTransition(Generic[StateT]):
+    """An observed state transition resulting from successfully executing a skill instance."""
 
-    add: set[PredicateInstance]  # Set of predicate instances added to the abstract state
-    delete: set[PredicateInstance]  # Set of predicate instances deleted from the abstract state
+    state_before: StateT  # State from which the skill was executed
+    skill_instance: SkillInstance  # Concrete skill that was successfully executed
+    state_after: StateT  # State resulting from the successful skill execution
+
+    @property
+    def skill_name(self) -> str:
+        """Retrieve the name of the skill used in the transition."""
+        return self.skill_instance.skill.name
 
 
 @dataclass(frozen=True)
@@ -116,30 +104,15 @@ class AbstractTransition:
         """Retrieve the name of the skill used in the abstract transition."""
         return self.skill_instance.skill.name
 
-    @property
-    def abstract_delta(self) -> AbstractStateDelta:
-        """Compute which predicate instances were changed in the abstract transition.
 
-        :return: Sets of predicate instances added and deleted to the abstract state
-        :raises ValueError: If the abstract transition doesn't define an 'after' abstract state
-        """
-        if self.abstract_after is None:
-            raise ValueError("Cannot compute abstract state delta when 'after' state is None.")
-
-        added = {f for f in self.abstract_after.facts if f not in self.abstract_before.facts}
-        deleted = {f for f in self.abstract_before.facts if f not in self.abstract_after.facts}
-
-        return AbstractStateDelta(added, deleted)
-
-
-AbstractExecutionTrace = list[AbstractTransition]  # A sequence of abstracted skill transitions
+AbstractTrace = list[AbstractTransition]  # A sequence of abstracted skill transitions
 
 
 @dataclass(frozen=True)
 class AbstractDataset:
     """An abstract dataset is a collection of abstracted skill execution traces."""
 
-    abstract_traces: list[AbstractExecutionTrace]
+    abstract_traces: list[AbstractTrace]
 
     def get_abstract_transitions_for_skill(self, skill: Skill) -> set[AbstractTransition]:
         """Extract only the abstract transitions involving the given skill.
@@ -153,3 +126,46 @@ class AbstractDataset:
             for transition in trace
             if transition.skill_instance.skill == skill
         }
+
+
+@dataclass(frozen=True)
+class AbstractStateDelta:
+    """A collection of predicate instances changed during an abstract state transition."""
+
+    add: set[PredicateInstance]  # Set of predicate instances added to the abstract state
+    delete: set[PredicateInstance]  # Set of predicate instances deleted from the abstract state
+
+
+@dataclass(frozen=True)
+class SuccessfulAbstractTransition:
+    """A transition representing a change in abstract state due to a successful skill execution."""
+
+    abstract_before: AbstractState
+    skill_instance: SkillInstance  # Concrete skill that was successfully executed
+    abstract_after: AbstractState
+
+    @property
+    def skill_name(self) -> str:
+        """Retrieve the name of the skill used in the abstract transition."""
+        return self.skill_instance.skill.name
+
+    # TODO: Check calling contexts of this method (and use SuccessfulAbstractTransition)
+    def compute_abstract_delta(self) -> AbstractStateDelta:
+        """Compute which predicate instances were changed in the abstract transition.
+
+        :return: Sets of predicate instances added and deleted to the abstract state
+        """
+        added = {f for f in self.abstract_after.facts if f not in self.abstract_before.facts}
+        deleted = {f for f in self.abstract_before.facts if f not in self.abstract_after.facts}
+
+        return AbstractStateDelta(added, deleted)
+
+
+SuccessfulAbstractTrace = list[SuccessfulAbstractTransition]  # Successful abstracted transitions
+
+
+@dataclass(frozen=True)
+class SuccessfulAbstractDataset:
+    """An abstract dataset in which all abstracted transitions were successful."""
+
+    traces: list[SuccessfulAbstractTrace]

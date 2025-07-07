@@ -43,17 +43,17 @@ class Skill:
         if not is_camelcase(self.name):
             raise ValueError(f"Skill name '{self.name}' must be CamelCase.")
 
+    def __str__(self) -> str:
+        """Return a readable string representation of the skill."""
+        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
+        return f"{self.name}({params})"
+
     @classmethod
     def from_yaml(cls, skill_name: str, yaml_data: dict[str, Any]) -> Skill:
         """Load a Skill instance from data imported from YAML."""
         assert "parameters" in yaml_data, f"Key 'parameters' missing from YAML data: {yaml_data}."
 
         return Skill(skill_name, DiscreteParameter.tuple_from_yaml(yaml_data["parameters"]))
-
-    def __str__(self) -> str:
-        """Return a readable string representation of the skill."""
-        params = ", ".join(f"{p.name}: {p.object_type}" for p in self.parameters)
-        return f"{self.name}({params})"
 
     def to_yaml(self) -> dict[str, Any]:
         """Convert the Skill object into a dictionary of YAML data."""
@@ -66,6 +66,17 @@ class Skill:
             params_dict["parameters"].update(param.to_yaml_dict())
 
         return params_dict
+
+    def get_parameter(self, name: str) -> DiscreteParameter:
+        """Retrieve a parameter of the skill by name.
+
+        :raises ValueError: If the skill doesn't have a parameter with the given name
+        """
+        for param in self.parameters:
+            if param.name == name:
+                return param
+
+        raise ValueError(f"Could not find skill parameter with name '{name}' in {self.parameters}")
 
     def execute(self, executor: SkillsProtocol, bindings: Bindings) -> None:
         """Execute this skill under the given object bindings.

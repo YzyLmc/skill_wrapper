@@ -45,7 +45,8 @@ class DiscreteParameter:
         return {self.name: yaml_data}
 
 
-Bindings = dict[str, str]  # Map from parameter names to their bound concrete objects
+Bindings = dict[str, str]
+"""A mapping from parameter names to their bound concrete objects."""
 
-# Represents any sequence of parameters or their bound arguments
 ParametersT = Sequence[DiscreteParameter] | Sequence[str]
+"""Represents any sequence of parameters or their bound arguments."""
