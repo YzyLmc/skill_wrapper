@@ -3,14 +3,14 @@
 from typing import Any
 
 
-def is_camelcase(string: str) -> bool:
+def is_camel_case(string: str) -> bool:
     """Check whether the given string is CamelCase."""
-    return string.lower() != string and ("_" not in string)
+    return string.lower() != string and ("_" not in string) and (" " not in string)
 
 
-def is_snakecase(string: str) -> bool:
+def is_snake_case(string: str) -> bool:
     """Check whether the given string is snake_case."""
-    return string.lower() == string
+    return string.lower() == string and (" " not in string)
 
 
 YAMLData = dict[str, Any]
