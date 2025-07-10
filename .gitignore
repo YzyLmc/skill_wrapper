@@ -2,3 +2,6 @@ src/practice
 .DS_Store
 Editor/
 tasks/
+
+
+**/__pycache__/*

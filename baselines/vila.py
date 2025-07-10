@@ -7,8 +7,8 @@ sys.path.append("C:/Users/david/skillwrapper/skill_wrapper/src")
 
 from utils import load_from_file, GPT4
 
-def exec_vila(args):
 
+def exec_vila(args):
     model = GPT4(engine=args.model)
 
     prompt = load_from_file("prompts/vila_prompt.txt")
@@ -37,7 +37,7 @@ def exec_vila(args):
 
     # -- let's formulate the prompt to include the skills and objects for the robot:
     skills = [str(metadata["skills"][P]) for P in metadata["skills"]]
-    skills = [f"{sk+1}. {skills[sk]}" for sk in range(len(skills))]
+    skills = [f"{sk + 1}. {skills[sk]}" for sk in range(len(skills))]
     prompt = prompt.replace("<actions>", "\n".join(skills))
 
     objects = [f"- {O}: {metadata['objects'][O]['types']}" for O in metadata["objects"]]
@@ -54,30 +54,56 @@ def exec_vila(args):
         if len(interaction):
             new_prompt += f" Your last set of actions were:\n"
             for y in range(len(interaction)):
-                new_prompt += f"{y+1}. {interaction[y]}\n"
+                new_prompt += f"{y + 1}. {interaction[y]}\n"
 
-        resp = model.generate_multimodal(new_prompt, imgs=[img_sequence[x], img_sequence[x+1]])
+        resp = model.generate_multimodal(new_prompt, imgs=[img_sequence[x], img_sequence[x + 1]])
 
         if "impossible" in resp[0].lower():
             print(resp)
             return []
 
-        interaction.extend(resp[0].split('\n'))
+        interaction.extend(resp[0].split("\n"))
 
     return interaction
 
-#end
+
+# end
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--robot", type=str, default="dorfl", help="This specifies the robot being used: ['dorfl', 'spot', 'panda'].", )
+    parser.add_argument(
+        "--robot",
+        type=str,
+        default="dorfl",
+        help="This specifies the robot being used: ['dorfl', 'spot', 'panda'].",
+    )
 
-    parser.add_argument("--init_img", type=str, default=None, help="This specifies the path to an image of the robot's INITIAL observation.", )
-    parser.add_argument("--goal_img", type=str, default=None, help="This specifies the path to an image of the robot's FINAL observation.", )
-    parser.add_argument("--imgs_dir", type=str, default=None, help="This specifies the path to a sequence of images for closed-loop planning.", )
+    parser.add_argument(
+        "--init_img",
+        type=str,
+        default=None,
+        help="This specifies the path to an image of the robot's INITIAL observation.",
+    )
+    parser.add_argument(
+        "--goal_img",
+        type=str,
+        default=None,
+        help="This specifies the path to an image of the robot's FINAL observation.",
+    )
+    parser.add_argument(
+        "--imgs_dir",
+        type=str,
+        default=None,
+        help="This specifies the path to a sequence of images for closed-loop planning.",
+    )
 
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["gpt-4o-2024-08-06", "gpt-4o-2024-11-20"],
+        default="gpt-4o-2024-11-20",
+    )
 
     args = parser.parse_args()
 
