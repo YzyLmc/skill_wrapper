@@ -5,12 +5,18 @@ from typing import Any
 
 def is_camel_case(string: str) -> bool:
     """Check whether the given string is CamelCase."""
-    return string.lower() != string and ("_" not in string) and (" " not in string)
+    if not string:
+        return False
+
+    return string[0].isupper() and all(c not in string for c in [" ", "_", "-"])
 
 
 def is_snake_case(string: str) -> bool:
     """Check whether the given string is snake_case."""
-    return string.lower() == string and (" " not in string)
+    if not string:
+        return False
+
+    return string.lower() == string and all(c not in string for c in [" ", "-"])
 
 
 YAMLData = dict[str, Any]
