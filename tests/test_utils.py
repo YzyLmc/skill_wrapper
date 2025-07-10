@@ -20,7 +20,7 @@ def camel_case_strings() -> list[str]:
 @pytest.fixture
 def neither_strings() -> list[str]:
     """Create a list of strings that are neither snake_case nor CamelCase."""
-    return ["Hello World", "lower case", "aBCD"]
+    return ["Hello World", "lower case", "aBCD", "", "super-duper", "=", "Tricky1case"]
 
 
 def test_is_camel_case(snake_case_strings: list[str], camel_case_strings: list[str]) -> None:
