@@ -105,7 +105,8 @@ class ParameterizedLiftedRelation(object):
         t2 = f"{self.parent_relation.parameter2_type}_" if not self.pid2.startswith("_") else ""
         p1 = f"?{self.pid1}" if not self.pid1[0] == "_" else ""
         p2 = f"?{self.pid2}" if not self.pid2[0] == "_" else ""
-        return "({}{}{} {} {})".format(t1, t2,self.parent_relation.cr, p1, p2)
+        # return "({}{}{} {} {})".format(t1, t2,self.parent_relation.cr, p1, p2)
+        return "({} {} {})".format(self.parent_relation.cr, p1, p2)
     
     def __hash__(self):
         return hash(self.__str__())
@@ -1149,7 +1150,7 @@ class LiftedPDDLAction(object):
 class GroundedPDDLAction(object):
     def __init__(self,precondition,effect,lifted_action_id):
         self.precondition = precondition
-        self.effect = effect 
+        self.effect = effect
         self.changed_relations = self.get_changed_relations()
         self.lifted_action_id = lifted_action_id
         self.sampling_region = None 

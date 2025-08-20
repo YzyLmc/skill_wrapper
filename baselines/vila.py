@@ -2,10 +2,11 @@
 import os
 import sys
 import argparse
+# get current directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(f"{current_dir}/src")
 
-sys.path.append("C:/Users/david/skillwrapper/skill_wrapper/src")
-
-from utils import load_from_file, GPT4
+from src.utils import load_from_file, GPT4
 
 def exec_vila(args):
 
@@ -32,7 +33,7 @@ def exec_vila(args):
         prompt = prompt.replace("<robot_description>", "a robot with two arms")
     elif args.robot == "spot":
         prompt = prompt.replace("<robot_description>", "a quadruped robot with a single arm")
-    elif args.robot == "panda":
+    elif args.robot == "franka":
         prompt = prompt.replace("<robot_description>", "a single-armed robot mounted on a table")
 
     # -- let's formulate the prompt to include the skills and objects for the robot:
@@ -71,7 +72,7 @@ def exec_vila(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--robot", type=str, default="dorfl", help="This specifies the robot being used: ['dorfl', 'spot', 'panda'].", )
+    parser.add_argument("--robot", type=str, default="dorfl", help="This specifies the robot being used: ['dorfl', 'spot', 'franka'].", )
 
     parser.add_argument("--init_img", type=str, default=None, help="This specifies the path to an image of the robot's INITIAL observation.", )
     parser.add_argument("--goal_img", type=str, default=None, help="This specifies the path to an image of the robot's FINAL observation.", )

@@ -9,7 +9,7 @@ from subprocess import check_output, CalledProcessError
 from evaluate_predicates import eval_all_predicates
 from utils import GPT4, load_from_file
 
-planner_path = 'C:/Users/david/downward/fast-downward.py'
+planner_path = '/home/ziyi/git/downward/fast-downward.py'
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]
@@ -76,10 +76,14 @@ def run_trials(
 
 
 def parse_predicate(pred: str, is_domain: bool = True):
-    # -- change all parentheses into commas for easy parsing and remove whitespaces; then remove any empty strings:
-    pred = list(filter(None, str(pred).replace('(', ',').replace(')', ',').replace(' ', '').split(',')))
-    # -- extract the predicate name and all proceeding arguments :
-    name, args_no_variables = pred[0], pred[1:]
+    # # -- change all parentheses into commas for easy parsing and remove whitespaces; then remove any empty strings:
+    # pred = list(filter(None, str(pred).replace('(', ',').replace(')', ',').replace(' ', '').split(',')))
+    # # -- extract the predicate name and all proceeding arguments :
+    # name, args_no_variables = pred[0], pred[1:]
+    if is_domain:
+        name, args_no_variables = pred.name, pred.types
+    else:
+        name, args_no_variables = pred.name, pred.params
 
     # -- we need to format predicates with question marks for variables:
     args_with_variables = []
@@ -99,7 +103,7 @@ def create_domain_file(
     yaml_data: list,
 ) -> str:
     all_predicates = [parse_predicate(P) for P in yaml_data['predicates']]
-    # print(all_predicates)
+    print(all_predicates)
 
     all_operators = [O.pop() for _, O in yaml_data['operators'].items()]
     # print(all_operators)
@@ -273,7 +277,7 @@ if __name__ == "__main__":
 
     run_trials(
         domain_fpath,
-        num_trials=10,
+        num_trials=1,
     )
 
 

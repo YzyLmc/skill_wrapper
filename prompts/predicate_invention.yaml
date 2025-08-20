@@ -2,7 +2,9 @@
 ---
 dorfl:
   precond: |
-    A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the preconditions for successful execution of this skill.
+    A robot with two arm is attempting to learn the preconditions and effects for a finite set of skills by executing exploratory skill sequences and exploring the environment. All images are taken from the robot's egocentric camera, so the gripper of the left of the image is the left gripper, and the gripper on the right is the right gripper.
+
+    The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the preconditions for successful execution of this skill.
 
     Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
 
@@ -12,7 +14,7 @@ dorfl:
 
     - Describe object state or spatial relations relevant to task success (e.g., gripper open/closed, object on left/right of gripper, object touching/supporting another object, etc.)
 
-    - Do not infer properties like affordances (is_graspable), alignment, or success likelihood that are vaguely defined and cannot be determined with common sense. 
+    - Do not infer properties like affordances (is_graspable), alignment with grippers, or success likelihood that are vaguely defined and cannot be clearly determined visually. 
 
     - Avoid using concept like grasping zone or robot's reachability to define the predicate since they are not defined by common sense.
 
@@ -37,11 +39,13 @@ dorfl:
     Previously proposed but rejected predicates: 
     [TRIED_PRED]
 
-    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
 
   eff: |
+    The robot with two arm is attempting to learn the preconditions and effects for a finite set of skills by executing exploratory skill sequences and exploring the environment. All images are taken from the robot's egocentric camera, so the gripper of the left of the image is the left gripper, and the gripper on the right is the right gripper.
+
     A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution shown in the first image (before) and the second (after), the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution shown in the third image (before) and the fourth (after), [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the effects for successful execution of this skill.
 
     Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before and after each execution.
@@ -77,9 +81,9 @@ dorfl:
     Previously proposed but rejected predicates: 
     [TRIED_PRED]
 
-    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
 
 # spot's prompt os identical to dorfl now. Not sure what to change.
 spot:
@@ -119,9 +123,9 @@ spot:
     Previously proposed but rejected predicates: 
     [TRIED_PRED]
 
-    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
 
   eff: |
     A robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution shown in the first image (before) and the second (after), the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution shown in the third image (before) and the fourth (after), [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the effects for successful execution of this skill.
@@ -159,6 +163,6 @@ spot:
     Previously proposed but rejected predicates: 
     [TRIED_PRED]
 
-    Only use parameters from the skill being analyzed. Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL]:
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):

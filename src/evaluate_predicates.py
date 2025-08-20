@@ -2,10 +2,10 @@
 import argparse
 
 from invent_predicate import eval_pred, possible_grounded_preds
-from data_structure import PredicateState
+from data_structure import PredicateState, Predicate
 from utils import save_to_file, load_from_file, GPT4
 
-def eval_all_predicates(model, lifted_pred_list, type_dict, args):
+def eval_all_predicates(model: GPT4, lifted_pred_list: list[Predicate], type_dict: dict[str, list[str]], args):
     # find all possible groundings of predicates
     grounded_preds = possible_grounded_preds(lifted_pred_list, type_dict)
     predicate_state = PredicateState(grounded_preds)
@@ -29,7 +29,7 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
+    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3'], default='gpt-4o-2024-11-20')
     parser.add_argument("--predicate_fpath", type=str, help="provide the file path of lifted predicates yaml file")
     parser.add_argument("--img_fpath", type=str, help="provide the file path of image to evaluate")
     parser.add_argument("--save_dir", type=str, help="directory to save log files")

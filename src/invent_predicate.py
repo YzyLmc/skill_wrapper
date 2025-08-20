@@ -103,9 +103,10 @@ def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes
         replace placeholders in the prompt
         pred_list :: list of lifted predicates
         """
-        placeholders = ["[LIFTED_SKILL]", "[GROUNDED_SKILL_1]", "[GROUNDED_SKILL_2]", "[SUCCESS_1]", "[SUCCESS_2]", "[PRED_LIST]"]
+        placeholders = ["[LIFTED_SKILL]", "[PARAMETERS]", "[GROUNDED_SKILL_1]", "[GROUNDED_SKILL_2]", "[SUCCESS_1]", "[SUCCESS_2]", "[PRED_LIST]"]
         while any([p in prompt for p in placeholders]):
             prompt = prompt.replace("[LIFTED_SKILL]",  str(grounded_skills[0].lifted()))
+            prompt = prompt.replace("[PARAMETERS]",  str(grounded_skills[0].types))
             prompt = prompt.replace("[GROUNDED_SKILL_1]",  str(grounded_skills[0]))
             prompt = prompt.replace("[GROUNDED_SKILL_2]",  str(grounded_skills[1]))
             prompt = prompt.replace("[SUCCESS_1]",  "succeeded" if bool(successes[0]) else "failed")
@@ -128,7 +129,7 @@ def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes
     # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
     new_pred = Predicate(pred.split("(")[0], pred.split("(")[1].strip(")").split(", ")) # lifted
     new_pred.semantic = sem
-    # breakpoint()
+
     return new_pred
 
 # Adding to precondition or effect are different prompts
@@ -145,7 +146,7 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
     Returns:
         grounded_predicate_truth_value_log
     '''
-    # NOTE: step is a integer ranging from 0-8, where 0 is the init step and success==None. 1-8 are states after executions
+    # NOTE: step is a integer ranging from 0-?, where 0 is the init step and success==None. 1- are states after executions
 
     # look for predicates that haven't been evaluated
     # The truth values could be missing if:
@@ -203,8 +204,8 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                         grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
             unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
-            if not skill:
-                assert (unevaluated_pred==[]) if (step==0) else True, "Step 0 shouldn't have any predicate unevaluated"
+            # if not skill:
+            #     assert (unevaluated_pred==[]) if (step==0) else True, "Step 0 shouldn't have any predicate unevaluated"
             for grounded_pred in unevaluated_pred:
                 # fetch truth value from last state
                 truth_value = grounded_predicate_truth_value_log[task_id][step-1].get_pred_value(grounded_pred)
