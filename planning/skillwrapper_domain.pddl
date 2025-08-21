@@ -4,68 +4,66 @@
 
 	(:types
 		spreadable - object
-		PeanutButter - spreadable
-		utensil - object
+		pickupable - object
+		Jar - openable
 		Table - location
 		Jar - pickupable
 		Bread - food
-		receptacle - object
-		food - object
-		openable - object
-		Knife - utensil
-		hand - object
-		Gripper - hand
-		Shelf - location
+		RightGripper - arm
 		location - object
-		utensil - pickupable
-		pickupable - object
-		Cup - receptacle
-		Jar - openable
+		utensil - object
+		LeftGripper - arm
+		PeanutButter - spreadable
+		Knife - utensil
+		openable - object
+		food - object
+		Knife - pickupable
+		arm - object
 	)
 
 	(:predicates
-		(hand_empty ?hand - hand)
+		(hand_empty ?arm - arm)
 		(on_location ?pickupable - pickupable ?location - location)
-		(contains ?pickupable - pickupable ?spreadable - spreadable)
-		(is_graspable ?pickupable - pickupable ?hand - hand)
-		(is_holding ?hand - hand ?pickupable - pickupable)
+		(contains ?openable - openable ?spreadable - spreadable)
+		(is_graspable ?pickupable - pickupable ?arm - arm)
+		(is_holding ?arm - arm ?pickupable - pickupable)
 		(is_spread ?spreadable - spreadable ?food - food)
 		(is_opened ?openable - openable)
 	)
 
 	(:action Pick
- 		:parameters (?pickupable - pickupable ?hand - hand) 
+ 		:parameters (?pickupable - pickupable ?arm - arm) 
 		:precondition (and
-			(is_graspable ?pickupable ?hand)
-			(not (is_holding ?hand ?pickupable))
-			(hand_empty ?hand)
+			(is_graspable ?pickupable ?arm)
+			(not (is_holding ?arm ?pickupable))
+			(hand_empty ?arm)
 		) 
 		:effect (and
-			(not (is_graspable ?pickupable ?hand))
-			(is_holding ?hand ?pickupable)
-			(not (hand_empty ?hand))
+			(not (is_graspable ?pickupable ?arm))
+			(is_holding ?arm ?pickupable)
+			(not (hand_empty ?arm))
 		)
 	)
 
 (:action Place
- 		:parameters (?pickupable - pickupable ?hand - hand ?location - location) 
+ 		:parameters (?pickupable - pickupable ?arm - arm ?location - location) 
 		:precondition (and
-			(is_holding ?hand ?pickupable)
+			(is_holding ?arm ?pickupable)
 			(not (on_location ?pickupable ?location))
-			(not (hand_empty ?hand))
+			(not (hand_empty ?arm))
 	) 
 		:effect (and
-			(not (is_holding ?hand ?pickupable))
+			(not (is_holding ?arm ?pickupable))
 			(on_location ?pickupable ?location)
-			(is_graspable ?pickupable ?hand)
-			(hand_empty ?hand)
+			(is_graspable ?pickupable ?arm)
+			(hand_empty ?arm)
 		)
 	)
 
 (:action Spread
- 		:parameters (?utensil - utensil ?hand - hand ?spreadable - spreadable ?food - food) 
+ 		:parameters (?utensil - utensil ?arm - arm ?spreadable - spreadable ?food - food) 
 		:precondition (and
-			(is_holding ?hand ?utensil)
+			(is_holding ?arm ?utensil)
 			(contains ?utensil ?spreadable)
 			(not (is_spread ?spreadable ?food))
 	) 
@@ -76,7 +74,7 @@
 	)
 
 (:action Open
- 	:parameters (?openable - openable ?arm1 - hand ?arm2 - hand) 
+ 	:parameters (?openable - openable ?arm1 - arm ?arm2 - arm) 
 		:precondition (and
 			(not (is_opened ?openable))
 			(is_holding ?arm1 ?openable)
@@ -88,7 +86,7 @@
 	)
 
 (:action Scoop
- 	:parameters (?utensil - utensil ?arm1 - hand ?arm2 - hand ?jar - openable ?ingredient - spreadable) 
+ 	:parameters (?utensil - utensil ?arm1 - arm ?arm2 - arm ?jar - openable ?ingredient - spreadable) 
 		:precondition (and
 			(is_holding ?arm1 ?utensil)
 			(is_holding ?arm2 ?jar)

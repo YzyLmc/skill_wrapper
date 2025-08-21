@@ -6,7 +6,8 @@ import argparse
 from data_structure import yaml
 from subprocess import check_output, CalledProcessError
 
-planner_path = 'C:/Users/david/downward/fast-downward.py'
+# FD path
+planner_path = '../../downward/fast-downward.py'
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]

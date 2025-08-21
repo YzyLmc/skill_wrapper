@@ -4,8 +4,8 @@
 	j - Jar
 	pb - PeanutButter
 	b - Bread
-	left_gripper - Gripper
-	right_gripper - Gripper
+	left_gripper - arm
+	right_gripper - arm
 	t - Table
 )
 

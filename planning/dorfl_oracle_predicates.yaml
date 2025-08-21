@@ -19,7 +19,7 @@
   params: !!python/tuple []
   semantic: "The `pickupable` object contains a `spreadable` object (typically some ingredient) on it."
   types: !!python/tuple
-  - pickupable
+  - openable
   - spreadable
 
 - !Predicate
