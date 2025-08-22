@@ -1,0 +1,80 @@
+# This yaml file contains meta data for a test task.
+---
+env: burger
+
+skills:
+  Pick: !Skill
+    name: Pick
+    types:
+      - pickupable
+    params: !!python/tuple []
+    semantics:
+      pickupable: the object to be picked up.
+
+  Place: !Skill
+    name: Place
+    types:
+      - pickupable
+      - location
+    params: !!python/tuple []
+    semantics:
+      pickupable: the object to be dropped.
+      location: the receptacle onto which object is dropped.
+
+  Stack: !Skill
+    name: Stack
+    types:
+      - pickupable
+      - pickupable
+    params: !!python/tuple []
+    semantics:
+      pickupable: The first object to put on the other.
+      pickupable: The second object to be underneath the first one.
+
+  Cut: !Skill
+    name: Cut
+    types:
+      - cuttable
+    params: !!python/tuple []
+    semantics:
+      cuttable: the object that is being cut.
+
+  Cook: !Skill
+    name: Cook
+    types:
+      - cookable
+    params: !!python/tuple []
+    semantics:
+      cookable: the object that is being cooked.
+
+
+objects:
+  Robot:
+   types:
+      - robot
+  Cheese:
+    types:
+      - pickupable
+  Lettuce:
+    types:
+      - pickupable
+      - cuttable
+  TopBun:
+    types:
+      - pickupable
+  BottomBun:
+    types:
+      - pickupable
+  Patty:
+    types:
+      - pickupable
+      - cookable
+  
+  
+     
+
+Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
+
+Initial_observation:
+  img_fpath:
+    - 'test_tasks/test_imgs/init_state/dorfl.png'
