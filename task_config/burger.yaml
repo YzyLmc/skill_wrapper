@@ -66,6 +66,14 @@ objects:
     types:
       - pickupable
       - cookable
+  Stove:
+    types:
+      - location
+      - cooker
+  Board:
+    types:
+      - location
+      - cuttingboard
   
   
      

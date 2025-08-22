@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict
 
 from data_structure import Skill, yaml
-from utils import GPT4, load_from_file, setup_logging, clean_logging, save_results, load_results
+from utils import GPT4, load_from_file, save_to_file, setup_logging, clean_logging, save_results, load_results, get_save_fpath
 from skill_sequence_proposing import SkillSequenceProposing
 from invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
 from ai2thor_task_exec import convert_task_to_code
@@ -30,8 +30,10 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
             task_success = True
         except:
             logging.info("Skill sequence execution failed.")
-            pass
-
+            break
+    # save tasks in json
+    save_path = get_save_fpath("test_tasks", args.env, "json")
+    save_to_file([str(skill) for skill in chosen_skill_sequence], save_path)
     if args.step_by_step:
             logging.info('Task done. You should check the images labels')
             breakpoint()
@@ -68,7 +70,7 @@ def main():
     log_save_path = setup_logging(args.save_dir, task_config["env"]) # configure logging
 
     # main loop
-    if args.env in ["dorfl", "spot", "franka"]:
+    if args.env in ["dorfl", "spot", "franka", "burger"]:
         model = GPT4(engine=args.model)
 
         # init skill sequence proposing system
