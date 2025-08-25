@@ -12,3 +12,7 @@ franka: |
 spot: |
   A quadraped robot with an arm on its back is executing mobile manipulation tasks. Given the following egocentric observation from the robot's body camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
   `[LIFTED_PRED]`: [SEMANTIC]
+
+burger: |
+  A kitchen robot with a torso and an arm is executing skills in a simulated kitchen domain. Given the following observation, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
+  `[LIFTED_PRED]`: [SEMANTIC]
