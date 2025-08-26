@@ -6,26 +6,75 @@ import argparse
 from data_structure import yaml
 from subprocess import check_output, CalledProcessError
 
+# Check here for more info on Kstar Planner: https://github.com/IBM/kstar
+try:
+    from kstar_planner import planners
+    from pathlib import Path
+except ImportError:
+    print("WARNING: 'kstar-planner' has not been installed!\n -- Link to repository: https://github.com/IBM/kstar")
+    kstar_available = False
+else:
+    kstar_available = True
+
+
 # FD path
 planner_path = '../../downward/fast-downward.py'
 
-algorithms = ['astar', 'eager', 'lazy', ]
-heuristics = ['lmcut', 'ff', ]
+# NOTE: FD options for algorithms and heuristics:
+fd_algorithms = ['astar', 'eager', 'lazy', ]
+fd_heuristics = ['lmcut', 'ff', ]
+
+def find_topk_plans(
+    domain_file: str,
+    problem_file: str,
+    num_k: int = 10,
+    topq: bool = False,
+):
+    if not kstar_available: return None
+
+    domain_fpath = Path(domain_file)
+    problem_fpath = Path(problem_file)
+
+    # NOTE: refer to the following section of README: 
+    # https://github.com/IBM/kstar?tab=readme-ov-file#quickstart-using-kstar-planner-as-a-python-package
+
+    if topq:
+        heuristic = "ipdb(transform=undo_to_origin())"
+
+        output = planners.plan_topq(
+            domain_file=domain_file, 
+            problem_file=problem_file, 
+            quality_bound=1.0,
+            number_of_plans_bound=num_k, # NOTE: you can define some value of k
+            timeout=30, # NOTE: max amount of time in seconds to allow the planner to find the k solutions
+            search_heuristic=heuristic,
+        )
+
+    else:
+        output = planners.plan_topk(
+            domain_file=domain_fpath, 
+            problem_file=problem_fpath, 
+            number_of_plans_bound=num_k, # NOTE: you can define some value of k
+            timeout=30, # NOTE: max amount of time in seconds to allow the planner to find the k solutions
+        )
+
+    # NOTE: output will be in the form of a dictionary; just extract the "plans" value!
+    return output['plans']
+
 
 def find_plan(
     domain_file: str,
     problem_file: str,
     algorithm: str = 'astar',
     heuristic: str = 'lmcut',
-    trial: int = 0,
+    verbose: bool = False,
 ) -> str:
 
     # NOTE: define plan execution function that can be called for different parameters:
-
     command = [
-        'python3', planner_path, domain_file, problem_file,
+        'python3', planner_path, 
+        domain_file, problem_file,
         '--search', f'{algorithm}({heuristic}())',
-        # '--plan-file', f'"trial_{trial}.plan"',
     ]
 
     plan = []
@@ -33,7 +82,8 @@ def find_plan(
     try:
         _ = check_output(command)
     except CalledProcessError as e:
-        print(f"error code: {e.returncode}\n\t-- Actual message: {str(e.output)}")
+        if verbose:
+            print(f"error code: {e.returncode}\n\t-- Actual message: {str(e.output)}")
     else:
         with open('sas_plan', 'r') as f:
             for _line in f.readlines():
@@ -45,27 +95,50 @@ def find_plan(
 def run_trials(
     domain_fpath: str,
     num_trials: int = 10,
+    method: str = 'fd',
 ):
 
+    # -- count the number of successful plans were found:
+    # TODO: how do we account for trials that are indeed unsolvable?
     count = 0
+
     for T in range(num_trials):
-        problem_fpath = create_problem_file(
-            robot=args.robot,
-            trial=T,
-        )
+        problem_fpath = create_problem_file(robot=args.robot, trial=T, )
 
-        solution = find_plan(
-            problem_file=problem_fpath,
-            domain_file=domain_fpath,
-        )
+        print(f"\n{'*' * 10} TRIAL {T+1} {'*' * 10}")
 
-        count += int(len(solution) > 0)
+        if method == 'fd':
+            solution = find_plan(
+                problem_file=problem_fpath,
+                domain_file=domain_fpath,
+            )
 
-        if solution:
-            print("plan has been found!")
-            for x in range(len(solution)):
-                print(f"{x+1} : {solution[x]}")
+            # -- check to see if there has been a solution (if plan is not empty):
+            count += int(len(solution) > 0)
 
+            if solution:
+                print(" -- plan has been found!")
+                for x in range(len(solution)):
+                    print(f"\t{x+1} : {solution[x]}")
+            else:
+                print(" -- no solution found!")
+
+        elif method == 'kstar':
+            solutions = find_topk_plans(
+                problem_file=problem_fpath,
+                domain_file=domain_fpath,
+            )
+
+            count += int(len(solutions) > 0)
+            
+            if solutions:
+                print(f" -- {len(solutions)} plans have been found!")
+                for x in range(len(solutions)):
+                    print(f"\tplan {x}:")
+                    for y in range(len(solutions[x]['actions'])):
+                        print(f"\t\t{y+1} : {solutions[x]['actions'][y]}")
+            else:
+                print(" -- no solution found!")
 
 
 def parse_predicate(pred: str):
@@ -129,6 +202,7 @@ def create_domain_file(
 def create_problem_file(
     robot: str = "dorfl",
     trial: int = 0,
+    randomize: bool = False,
 ) -> str:
 
     if robot == "dorfl":
@@ -137,7 +211,7 @@ def create_problem_file(
             f"(is_graspable k {choice(['left_gripper', 'right_gripper'])})",
             ("(hand_empty left_gripper)"if bool(randint(0, 1)) else f"(is_holding left_gripper {choice(['k', 'j'])})") ,
             ("(hand_empty right_gripper)"if bool(randint(0, 1)) else f"(is_holding right_gripper {choice(['k', 'j'])})") ,
-            ("(contains j pb)" if bool(randint(0, 1)) else ""),
+            ("(contains j pb)" if not randomize or bool(randint(0, 1)) else ""),
             ("(is_opened j)" if bool(randint(0, 1)) else ""),
             "(on_location b t)",
             "(on_location k t)",
@@ -191,7 +265,21 @@ if __name__ == "__main__":
         "--robot",
         type=str,
         default="dorfl",
-        help="This specifies the robot being used: ['dorfl', 'spot', 'panda'].",
+        help="This specifies the robot being used: ['dorfl', 'spot', 'panda'] (default: 'dorfl').",
+    )
+
+    parser.add_argument(
+        "--planner",
+        type=str,
+        default="fd",
+        help="This specifies the planner to use: ['fd', 'kstar'] (default: 'fd').",
+    )
+
+    parser.add_argument(
+        "--ntrials",
+        type=int,
+        default=2,
+        help="This specifies the number of trials to run this process (default: 1).",
     )
 
     args = parser.parse_args()
@@ -231,7 +319,7 @@ if __name__ == "__main__":
 
         run_trials(
             domain_fpath,
-            num_trials=10,
+            num_trials=args.ntrials,
+            method=args.planner,
         )
-
 
