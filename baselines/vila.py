@@ -12,7 +12,7 @@ def exec_vila(args):
 
     model = GPT4(engine=args.model)
 
-    prompt = load_from_file("prompts/vila_prompt.txt")
+    prompt = load_from_file("prompts/vila_prompt.yaml")[args.env]
 
     img_sequence = []
     if args.imgs_dir:
@@ -27,14 +27,16 @@ def exec_vila(args):
         ]
         prompt = prompt.replace("<style>", "a sequence of actions")
 
-    metadata = load_from_file(f"task_config/{args.robot}.yaml")
+    metadata = load_from_file(f"task_config/{args.env}.yaml")
 
-    if args.robot == "dorfl":
+    if args.env == "dorfl":
         prompt = prompt.replace("<robot_description>", "a robot with two arms")
-    elif args.robot == "spot":
+    elif args.env == "spot":
         prompt = prompt.replace("<robot_description>", "a quadruped robot with a single arm")
-    elif args.robot == "franka":
+    elif args.env == "franka":
         prompt = prompt.replace("<robot_description>", "a single-armed robot mounted on a table")
+    elif args.env == "burger":
+        prompt = prompt.replace("<robot_description>", "a mobile robot with a single arm")
 
     # -- let's formulate the prompt to include the skills and objects for the robot:
     skills = [str(metadata["skills"][P]) for P in metadata["skills"]]
@@ -72,7 +74,7 @@ def exec_vila(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--robot", type=str, default="dorfl", help="This specifies the robot being used: ['dorfl', 'spot', 'franka'].", )
+    parser.add_argument("--env", type=str, choices=['dorfl', 'spot', 'franka', 'burger'], default="dorfl", help="This specifies the robot being used: ['dorfl', 'spot', 'franka'].", )
 
     parser.add_argument("--init_img", type=str, default=None, help="This specifies the path to an image of the robot's INITIAL observation.", )
     parser.add_argument("--goal_img", type=str, default=None, help="This specifies the path to an image of the robot's FINAL observation.", )

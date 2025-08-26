@@ -64,7 +64,7 @@ def calculate_pred_to_update(grounded_predicates: list[Predicate], grounded_skil
 #     prompt = construct_prompt(prompt, skill)
 #     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, prompt_fpath='prompts/evaluate_pred.yaml', args=None) -> bool:
+def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, prompt_fpath='prompts/evaluate_pred.yaml', log=False) -> bool:
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     init step and later steps use different prompts. hardcoded.
@@ -78,20 +78,22 @@ def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, prompt_fpath='pro
         # Predicate might have parameters don't belong to the skill
         place_holders = ['[GROUNDED_PRED]','[LIFTED_PRED]', '[SEMANTIC]']
         while any([p in prompt for p in place_holders]):
-            # prompt = prompt.replace('[GROUNDED_SKILL]', str(grounded_skill))
             prompt = prompt.replace('[GROUNDED_PRED]', str(grounded_pred))
             prompt = prompt.replace('[LIFTED_PRED]', str(grounded_pred.lifted()))
             prompt = prompt.replace('[SEMANTIC]', grounded_pred.semantic)
         return prompt
     
-    prompt = load_from_file(prompt_fpath)[args.env]
+    prompt = load_from_file(prompt_fpath)[env]
     prompt = construct_prompt(prompt, grounded_pred)
-    # logging.info(f'Evaluating predicate {grounded_pred}')
 
     resp = model.generate_multimodal(prompt, [img])[0]
     result = True if "True" in resp.split('\n')[-1] else False
+
+    if log:
+        print(f'Prompt:\n{prompt}')
+        print(f'Model response: {resp}')
+
     logging.info(f'{grounded_pred} evaluated to `{result}` in {img}')
-    # breakpoint()
     return result
 
 def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes: list[bool], lifted_pred_list: list[Predicate], pred_type: str, model: GPT4, skill2tried_pred={}, prompt_fpath='prompts/predicate_invention.yaml', args=None) -> Predicate:
@@ -194,13 +196,13 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                     # if truth_value is not None:
                     #     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
-                    truth_value = eval_pred(state["image"], grounded_pred, model, args=args)
+                    truth_value = eval_pred(state["image"], grounded_pred, model, env=args.env)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
             
             # 3.copy all empty predicates from previous state
                 elif not step == 0: # if is a non-init state, update the predicates
                     if (new_task) or (not new_task and grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None):
-                        truth_value = eval_pred(state["image"], grounded_pred, model, args=args)
+                        truth_value = eval_pred(state["image"], grounded_pred, model, env=args.env)
                         grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
             unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
@@ -362,7 +364,7 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
                              [state_0["skill"], state_1["skill"]],
                              [state_0["success"], state_1["success"]],
                             lifted_pred_list, pred_type, model, skill2triedpred, args=args)
-    logging.info(f"Generated new predicate {new_pred}")
+    logging.info(f"Generated new predicate {new_pred}: {new_pred.semantic}")
     if len(new_pred.types) > 2:
         logging.info(f"Predicate {new_pred} is NOT added to predicate set because contain more then 2 parameters")
         skill2triedpred[lifted_skill].append(new_pred)
@@ -471,7 +473,7 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                 task_num += 1
 
     result = True if score/task_num > threshold[pred_type] else False
-    logging.info(f"Predicate is {'' if result else 'not'} added. Score = {score/task_num}")
+    logging.info(f"Predicate is {'' if result else 'not '}added. Score = {score/task_num}")
     return result
 
 def score_by_partition_final(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:

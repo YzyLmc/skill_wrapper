@@ -276,6 +276,7 @@ def load_tasks(load_path, task_config):
     converted_tasks = defaultdict(dict)
     # reassembly skill string to skill objects
     for task_name, task_meta in tasks.items():
+        task_meta = {str(k): v for k, v in sorted(task_meta.items(), key=lambda x: int(x[0]))}
         for step in task_meta:
             converted_tasks[task_name][int(step)] = deepcopy(tasks[task_name][step])
             if not int(step) == 0:

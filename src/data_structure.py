@@ -154,7 +154,7 @@ class PredicateState:
             raise Exception("Predicate {pred_obj} not found!")
 
     def get_pred_value(self, pred_obj):
-        return self.pred_dict.get(pred_obj, {})
+        return self.pred_dict.get(pred_obj, None)
 
     def add_pred_list(self, new_pred_list):
         """
