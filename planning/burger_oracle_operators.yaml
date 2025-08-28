@@ -60,7 +60,7 @@
     cooker: the object that will be used for cooking
   types:
   - cookable
-: - "(:action Scoop\n\
+: - "(:action Cook\n\
     \ \t:parameters (?cookable - cookable ?cooker - cooker)\
     \ \n\t\t:precondition (and\n\t\t\t(not (is_cooked ?cookable))\n\t\t\t(not (is_in_stack ?cookable))\n\t\t\t(at_location ?cookable ?cooker)\n\t)\
     \ \n\t\t:effect (and\n\t\t\t(is_cooked ?cookable)\n\t\t)\n\t)"
