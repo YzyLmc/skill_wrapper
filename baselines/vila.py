@@ -1,31 +1,31 @@
-# reproduction of vila baseline: given image of init state and final state and the history, return a next skill
+" reproduction of vila baseline: given image of init state and final state and the history, return a next skill"
+
 import os
 import sys
 import argparse
 # get current directory
-current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(f"{current_dir}/src")
-
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(f".")
+# import src
 from src.utils import load_from_file, GPT4
 
 def exec_vila(args):
 
     model = GPT4(engine=args.model)
-
     prompt = load_from_file("prompts/vila_prompt.yaml")[args.env]
 
-    img_sequence = []
-    if args.imgs_dir:
-        # NOTE: closed-loop setting
-        img_sequence = os.listdir(args.imgs_dir)
-        prompt = prompt.replace("<style>", "the next possible action")
-    else:
-        # NOTE: open-loop setting
-        img_sequence = [
-            args.init_img,
-            args.goal_img,
-        ]
-        prompt = prompt.replace("<style>", "a sequence of actions")
+    # img_sequence = []
+    # if args.imgs_dir:
+    #     # NOTE: closed-loop setting
+    #     img_sequence = os.listdir(args.imgs_dir)
+    #     prompt = prompt.replace("<style>", "the next possible action")
+    # else:
+    #     # NOTE: open-loop setting
+    #     img_sequence = [
+    #         args.init_img,
+    #         args.goal_img,
+    #     ]
+    #     prompt = prompt.replace("<style>", "a sequence of actions")
 
     metadata = load_from_file(f"task_config/{args.env}.yaml")
 
@@ -41,7 +41,7 @@ def exec_vila(args):
     # -- let's formulate the prompt to include the skills and objects for the robot:
     skills = [str(metadata["skills"][P]) for P in metadata["skills"]]
     skills = [f"{sk+1}. {skills[sk]}" for sk in range(len(skills))]
-    prompt = prompt.replace("<actions>", "\n".join(skills))
+    prompt = prompt.replace("<skills>", "\n".join(skills))
 
     objects = [f"- {O}: {metadata['objects'][O]['types']}" for O in metadata["objects"]]
     prompt = prompt.replace("<objects>", "\n".join(objects))
@@ -49,27 +49,36 @@ def exec_vila(args):
     # -- we will keep track of all actions proposed by
     interaction = []
 
-    for x in range(len(img_sequence) - 1):
-        # -- make a copy of the prompt string:
+    current_img = args.init_img
+    goal_img = args.goal_img
+    while True:
+
         new_prompt = str(prompt)
 
-        # -- if there exists some history of actions, we will provide the
         if len(interaction):
             new_prompt += f" Your last set of actions were:\n"
             for y in range(len(interaction)):
                 new_prompt += f"{y+1}. {interaction[y]}\n"
-
-        resp = model.generate_multimodal(new_prompt, imgs=[img_sequence[x], img_sequence[x+1]])
+        resp = model.generate_multimodal(new_prompt, imgs=[current_img, goal_img])
+        print(resp[0])
 
         if "impossible" in resp[0].lower():
-            print(resp)
-            return []
+            break
 
         interaction.extend(resp[0].split('\n'))
 
+        next_img = input("Enter path to the current image (or type 'done' to finish): ").strip()
+        if next_img.lower() == "done":
+            break
+        if not os.path.exists(next_img):
+            print("Image path does not exist. Try again.")
+            continue
+
+        current_img = next_img
+
+
     return interaction
 
-#end
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -78,9 +87,9 @@ if __name__ == "__main__":
 
     parser.add_argument("--init_img", type=str, default=None, help="This specifies the path to an image of the robot's INITIAL observation.", )
     parser.add_argument("--goal_img", type=str, default=None, help="This specifies the path to an image of the robot's FINAL observation.", )
-    parser.add_argument("--imgs_dir", type=str, default=None, help="This specifies the path to a sequence of images for closed-loop planning.", )
+    # parser.add_argument("--imgs_dir", type=str, default=None, help="This specifies the path to a sequence of images for closed-loop planning.", )
 
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
+    parser.add_argument("--model", type=str, choices=["gpt-4o", 'gpt-4o-2024-11-20'], default='gpt-4o')
 
     args = parser.parse_args()
 

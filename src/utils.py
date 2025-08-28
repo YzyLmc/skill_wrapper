@@ -5,7 +5,9 @@ from time import sleep
 import logging
 import json
 import csv
-from data_structure import yaml
+import sys
+sys.path.append(f".")
+from src.data_structure import yaml
 import os
 import dill
 import re
