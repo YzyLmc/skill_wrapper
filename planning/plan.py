@@ -103,7 +103,7 @@ def run_trials(
     count = 0
 
     for T in range(num_trials):
-        problem_fpath = create_problem_file(robot=args.robot, trial=T, )
+        problem_fpath = create_problem_file(setting=args.setting, trial=T, )
 
         print(f"\n{'*' * 10} TRIAL {T+1} {'*' * 10}")
 
@@ -149,9 +149,9 @@ def parse_predicate(pred: str):
 
     # -- we need to format predicates with question marks for variables:
     args_with_variables = []
-    for arg in args_no_variables:
+    for a in range(len(args_no_variables)):
         # -- we will format as "?<obj_type> - <obj_type>":
-        args_with_variables.append(f'?{arg} - {arg}')
+        args_with_variables.append(f'?arg{a} - {args_no_variables[a]}')
 
     # -- return a PDDL-structured predicate:
     return f"({name} {' '.join(args_with_variables)})"
@@ -160,6 +160,7 @@ def parse_predicate(pred: str):
 def create_domain_file(
     method: str,
     yaml_data: list,
+    setting: str,
 ) -> str:
     all_predicates = [parse_predicate(P) for P in yaml_data['predicates']]
     # print(all_predicates)
@@ -179,7 +180,7 @@ def create_domain_file(
 
     # print(object_types)
 
-    domain_fpath = os.path.join(os.getcwd(), f'{method}_domain.pddl')
+    domain_fpath = os.path.join(os.getcwd(), f'{setting}_domain_{method}.pddl')
 
     with open(domain_fpath, 'w') as nf:
         prototype_content = None
@@ -192,6 +193,7 @@ def create_domain_file(
         new_content = prototype_content.replace('<actions>', "\n\n".join(all_operators))
         new_content = new_content.replace('<types>', "\n\t\t".join(list(object_types)))
         new_content = new_content.replace('<predicates>', "\n\t\t".join(all_predicates))
+        new_content = new_content.replace('<domain>', f"{setting}_{method}")
 
         # -- write content to new PDDL file:
         nf.write(new_content)
@@ -200,12 +202,13 @@ def create_domain_file(
 
 
 def create_problem_file(
-    robot: str = "dorfl",
+    method: str = "skillwrapper",
+    setting: str = "dorfl",
     trial: int = 0,
     randomize: bool = False,
 ) -> str:
 
-    if robot == "dorfl":
+    if setting == "dorfl":
         state = [
             f"(is_graspable j {choice(['left_gripper', 'right_gripper'])})",
             f"(is_graspable k {choice(['left_gripper', 'right_gripper'])})",
@@ -217,20 +220,27 @@ def create_problem_file(
             "(on_location k t)",
             "(on_location j t)",
         ]
+    elif setting == "burger":
+        state = [
+            ("(is_cooked p)" if bool(randint(0, 1)) else "(not (is_cooked p))"), # NOTE: patty may or may not already be cooked
+            ("(is_cut l)" if bool(randint(0, 1)) else "(not (is_cut p))"), # NOTE: patty may or may not already be cooked
+            "(hand_empty)",
+        ]
 
     state = list(filter(None, state))
 
-    problem_fpath = f"{robot}_problem_trial-{trial}.pddl"
+    problem_fpath = f"{setting}_problem_trial-{trial}.pddl"
 
     with open(problem_fpath, 'w') as nf:
         prototype_content = None
 
         # -- read all content from the prototype file:
-        with open(f'{robot}_problem_template.pddl', 'r') as df:
+        with open(f'{setting}_problem_template.pddl', 'r') as df:
             prototype_content = df.read()
 
         # -- find and replace placeholders in the prototype file:
         new_content = prototype_content.replace('<init_state>', "\n\t".join(state))
+        new_content = new_content.replace('<domain>', f"{setting}_{method}")
 
         # -- write content to new PDDL file:
         nf.write(new_content)
@@ -262,10 +272,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--robot",
+        "--setting",
         type=str,
         default="dorfl",
-        help="This specifies the robot being used: ['dorfl', 'spot', 'panda'] (default: 'dorfl').",
+        help="This specifies the task setting being considered: ['dorfl', 'spot', 'panda', 'burger'] (default: 'dorfl').",
     )
 
     parser.add_argument(
@@ -314,7 +324,8 @@ if __name__ == "__main__":
                 'predicates': data_predicates,
                 'operators': data_operators,
                 'objects': data_objects,
-            }
+            },
+            setting=args.setting,
         )
 
         run_trials(

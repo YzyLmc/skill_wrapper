@@ -1,4 +1,4 @@
-(define (problem dorfl_problem_1) (:domain skillwrapper)
+(define (problem dorfl_problem) (:domain <domain>)
 (:objects
 	k - Knife
 	j - Jar
