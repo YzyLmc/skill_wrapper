@@ -1,0 +1,49 @@
+- !Predicate
+  name: hand_empty
+  params: null
+  semantic: "The agent's hand is empty."
+  types: !!python/tuple []
+
+- !Predicate
+  name: is_holding
+  params: !!python/tuple []
+  semantic: "The agent is holding a `pickupable` object."
+  types: !!python/tuple
+  - pickupable
+
+- !Predicate
+  name: at_location
+  params: !!python/tuple []
+  semantic: "A `pickupable` object is placed at a `location` object."
+  types: !!python/tuple
+  - pickupable
+  - location
+
+- !Predicate
+  name: is_on_top
+  params: !!python/tuple []
+  semantic: "A `pickupable` object is on top of another `pickupable` object."
+  types: !!python/tuple
+  - pickupable
+  - pickupable
+
+- !Predicate
+  name: is_in_stack
+  params: !!python/tuple []
+  semantic: "The `pickupable` object is in a stack, making it not possible to cut or cook."
+  types: !!python/tuple
+  - pickupable
+
+- !Predicate
+  name: is_cut
+  params: !!python/tuple []
+  semantic: "The `cuttable` object is cut or sliced."
+  types: !!python/tuple
+  - cuttable
+
+- !Predicate
+  name: is_cooked
+  params: !!python/tuple []
+  semantic: "The `cookable` object is cooked and ready for consumption or further meal preparation."
+  types: !!python/tuple
+  - cookable

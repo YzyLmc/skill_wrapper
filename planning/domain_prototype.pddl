@@ -1,4 +1,4 @@
-(define (domain skillwrapper)
+(define (domain <domain>)
 
 	(:requirements :adl :typing :equality :conditional-effects)
 

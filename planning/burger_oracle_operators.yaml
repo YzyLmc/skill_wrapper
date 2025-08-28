@@ -1,0 +1,66 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+  types:
+  - pickupable
+: - "(:action Pick\n\
+    \ \t\t:parameters (?pickupable - pickupable)\
+    \ \n\t\t:precondition (and\n\t\t\t(not (is_holding ?pickupable))\n\t\t\t(hand_empty)\n\t\t)\
+    \ \n\t\t:effect (and\n\t\t\t(is_holding ?pickupable)\n\t\t\t(not (hand_empty))\n\t\t)\n\t)"
+
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be dropped.
+    location: the receptacle onto which object is dropped.
+  types:
+  - pickupable
+  - location
+: - "(:action Place\n\
+    \ \t\t:parameters (?pickupable - pickupable ?location - location)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?pickupable)\n\t\t\t(not (at_location ?pickupable ?location))\n\t\t\t(not (hand_empty))\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(not (is_holding ?pickupable))\n\t\t\t(at_location ?pickupable ?location)\n\t\t\t(hand_empty)\n\t\t)\n\t)"
+
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    pickupable: The first object to put on the other.
+    pickupable: The second object to be underneath the first one.
+  types:
+  - pickupable
+  - pickupable
+: - "(:action Stack\n\
+    \ \t\t:parameters (?top - pickupable ?bot - pickupable)\
+    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?top)\n\t\t\t(not (hand_empty))\n\t\t\t(not (is_on_top ?top ?bot))\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(not (is_holding ?top))\n\t\t\t(hand_empty)\n\t\t\t(is_on_top ?top ?bot)\n\t\t\t(is_in_stack ?top)\n\t\t\t(is_in_stack ?bot)\n\t\t)\n\t)"
+
+? !Skill
+  name: Cut
+  params: []
+  semantics:
+    cuttable: the object that is being cut.
+    cuttingboard: the object that the cuttable is placed on top of.
+  types:
+  - cuttable
+  - cuttingboard
+: - "(:action Cut\n\
+    \ \t:parameters (?cuttable - cuttable ?board - cuttingboard)\
+    \ \n\t\t:precondition (and\n\t\t\t(not (is_cut ?cuttable))\n\t\t\t(not (is_in_stack ?cuttable))\n\t\t\t(at_location ?cuttable ?board)\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(is_cut ?cuttable)\n\t\t)\n\t)"
+
+? !Skill
+  name: Cook
+  params: []
+  semantics:
+    cookable: the object that is being cooked.
+    cooker: the object that will be used for cooking
+  types:
+  - cookable
+: - "(:action Scoop\n\
+    \ \t:parameters (?cookable - cookable ?cooker - cooker)\
+    \ \n\t\t:precondition (and\n\t\t\t(not (is_cooked ?cookable))\n\t\t\t(not (is_in_stack ?cookable))\n\t\t\t(at_location ?cookable ?cooker)\n\t)\
+    \ \n\t\t:effect (and\n\t\t\t(is_cooked ?cookable)\n\t\t)\n\t)"

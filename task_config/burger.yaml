@@ -74,9 +74,6 @@ objects:
     types:
       - location
       - cuttingboard
-  
-  
-     
 
 Env_description: 'There is a robot in the kitchen. The robot can pick up, place, stack, cut, and cook objects. The robot has access to lettuce, top bun, bottom bun, and patty. The stove and cutting board are available. The lettuce is uncut and the patty is raw. The robot can navigate the environment freely but only has one gripper.'
 
