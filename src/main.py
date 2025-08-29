@@ -33,7 +33,7 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
             break
     # save tasks in json
     save_path = get_save_fpath("test_tasks", args.env, "json")
-    save_to_file([str(skill) for skill in chosen_skill_sequence], save_path)
+    save_to_file(chosen_skill_sequence, save_path)
     if args.step_by_step:
             logging.info('Task done. You should check the images labels')
             breakpoint()

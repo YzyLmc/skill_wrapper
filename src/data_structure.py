@@ -60,6 +60,32 @@ class Skill:
         )
 
         return lifted_skill
+    
+    @staticmethod
+    def from_string(skill_str: str):
+        """
+        Create a Skill object from its string representation.
+        Example input: "PickUp(Apple, Table)" or "PickUp(object, location)"
+        """
+        if '(' not in skill_str or ')' not in skill_str:
+            raise ValueError(f"Invalid skill string format {skill_str}. Expected 'SkillName(param1, param2, ...)'")
+        
+        name_part, params_part = skill_str.split('(', 1)
+        name = name_part.strip()
+        params_str = params_part.rstrip(')').strip()
+        
+        if params_str:
+            params = [param.strip() for param in params_str.split(',')]
+        else:
+            params = []
+        
+        # If params are all lowercase, treat them as types (lifted skill)
+        if all(param.islower() for param in params):
+            types = params
+            return Skill(name=name, types=types, params=[])
+        else:
+            # Otherwise, treat them as specific parameters (grounded skill)
+            return Skill(name=name, types=[], params=params)
 
 class Predicate:
     def __init__(self, name, types, params=[], semantic=None):

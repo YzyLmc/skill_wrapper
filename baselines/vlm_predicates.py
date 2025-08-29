@@ -2,10 +2,10 @@
 import sys
 import argparse
 
-sys.path.append("/home/ziyi/git/skill_wrapper/src")
-from utils import GPT4, load_from_file, save_to_file, load_results
-from invent_predicate import calculate_operators_for_all_skill, update_empty_predicates
-from data_structure import Skill
+sys.path.append(".")
+from src.utils import GPT4, load_from_file, save_to_file, load_results
+from src.invent_predicate import calculate_operators_for_all_skill, update_empty_predicates
+from src.data_structure import Skill
 
 def get_batch_pred(model,  args, prompt_fpath="prompts/evaluate_pred.yaml"):
     """
