@@ -16,6 +16,7 @@ sys.path.append("robotouille")
 import robotouille
 # from robotouille import run_skill_sequence
 # from robotouille.run_skill_sequence import exec_and_record
+from robotouille.run_skill_sequence import exec_and_record
 from src.utils import GPT4, load_from_file, save_to_file, setup_logging, get_save_fpath
 from src.data_structure import Skill
 
@@ -35,26 +36,27 @@ def main(cfg: DictConfig):
     elif cfg.env == "franka":
         prompt = prompt.replace("<robot_description>", "a single-armed robot mounted on a table")
     elif cfg.env == "burger":
-        breakpoint()
         kwcfg = OmegaConf.to_container(cfg.game, resolve=True)
         environment_name = kwcfg.pop('environment_name')
         prompt = prompt.replace("<robot_description>", "a kitchen robot with a single arm and a torso")
 
     # -- let's formulate the prompt to include the skills and objects for the robot:
-    skills = [str(task_config["skills"][P]) for P in task_config["skills"]]
-    skills = [f"{sk+1}. {skills[sk]}" for sk in range(len(skills))]
-    prompt = prompt.replace("<skills>", "\n".join(skills))
-
-    objects = [f"- {O}: {task_config['objects'][O]['types']}" for O in task_config["objects"]]
-    prompt = prompt.replace("<objects>", "\n".join(objects))
+    skills = task_config["skills"]
+    skills_str = [str(skills[P]) for P in skills]
+    skills_str = [f"{sk+1}. {skills_str[sk]}" for sk in range(len(skills_str))]
+    prompt = prompt.replace("<skills>", "\n".join(skills_str))
+    objects = task_config["objects"]
+    objects_str = [f"- {O}: {objects[O]['types']}" for O in objects]
+    prompt = prompt.replace("<objects>", "\n".join(objects_str))
 
     # -- we will keep track of all actions proposed by
     skill_sequence = []
 
     current_img = cfg.init_img
     goal_img = cfg.goal_img
-    while True:
-
+    step = 0
+    while step < cfg.max_steps:
+        step += 1
         new_prompt = str(prompt)
 
         if len(skill_sequence):
@@ -72,9 +74,21 @@ def main(cfg: DictConfig):
             logging.info("done")
             break
 
-        skill = Skill.from_string(skill_string)
-        logging.info(f"Proposed skill: {str(skill)}")
-        skill_sequence.append(skill)
+        proposed_skill = Skill.from_string(skill_string)
+        logging.info(f"Proposed skill: {str(proposed_skill)}")
+        # If skill arguments match the types
+        primitive_skill = [s for sname, s in skills.items() if s.name == proposed_skill.name][0]
+        # object types of the proposed skill should match the types of the primitive skill
+        type_matched = True
+
+        for i, obj in enumerate(proposed_skill.params):
+            if not primitive_skill.types[i] in objects[obj]["types"]:
+                type_matched = False
+        if not type_matched:
+            logging.info("Type mismatch. Try again.")
+            continue
+        
+        skill_sequence.append(proposed_skill)
 
         if cfg.env == "burger":
             last_img_path = run_burger(environment_name, skill_sequence, cfg, **kwcfg)
@@ -89,9 +103,12 @@ def main(cfg: DictConfig):
             logging.info(f"Next image: {next_img}")
 
         current_img = next_img
+        logging.info(f"Current plan:\n{[str(s) for s in skill_sequence]}")
 
     save_results(skill_sequence, cfg)
-    logging.info(f"{[str(s) for s in skill_sequence]}")
+    # delete the cached images in tmp_dir
+    if cfg.env == "burger":
+        os.system(f"rm -r {cfg.tmp_dir}/*")
 
 def run_burger(environment_name, skill_sequence, cfg, **kwcfg):
     "Take in skill sequence and execute them, save files to tmp_dir"

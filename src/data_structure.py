@@ -62,7 +62,7 @@ class Skill:
         return lifted_skill
     
     @staticmethod
-    def from_string(skill_str: str):
+    def from_string(skill_str: str, lifted=False):
         """
         Create a Skill object from its string representation.
         Example input: "PickUp(Apple, Table)" or "PickUp(object, location)"
@@ -79,8 +79,7 @@ class Skill:
         else:
             params = []
         
-        # If params are all lowercase, treat them as types (lifted skill)
-        if all(param.islower() for param in params):
+        if lifted:
             types = params
             return Skill(name=name, types=types, params=[])
         else:
