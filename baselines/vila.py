@@ -14,9 +14,6 @@ import argparse
 sys.path.append(f".") # if you run this script from the root directory
 sys.path.append("robotouille")
 import robotouille
-# from robotouille import run_skill_sequence
-# from robotouille.run_skill_sequence import exec_and_record
-from robotouille.run_skill_sequence import exec_and_record
 from src.utils import GPT4, load_from_file, save_to_file, setup_logging, get_save_fpath
 from src.data_structure import Skill
 

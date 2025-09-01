@@ -1,1 +1,0 @@
-"Random exploration baseline that randomly picks a skill and popultates the type-matched arguments randomly."
