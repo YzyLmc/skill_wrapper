@@ -34,7 +34,7 @@ def main():
             grounded_skill = lifted_skill.ground_with(params)
 
             skill_sequence.append(grounded_skill)
-        save_path = get_save_fpath(f"results/baselines/random_explore/{args.env}/skill_sequences", args.env, "yaml")
+        save_path = get_save_fpath(f"results/random_explore/{args.env}/skill_sequences", args.env, "yaml")
         save_to_file(skill_sequence, save_path)
         print(f"Saved random skill sequence to {save_path}")
 

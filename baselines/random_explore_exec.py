@@ -24,7 +24,7 @@ def main(cfg: DictConfig):
         for f in file_list:
             f = os.path.join(cfg.skill_sequence_dir, f)
             skill_sequence = load_from_file(f)
-            save_dir = "results/baselines/random_explore/burger/transitions/"
+            save_dir = "results/random_explore/burger/transitions/"
             run_burger(environment_name, skill_sequence, save_dir, **kwargs)
 
 def run_burger(environment_name, skill_sequence, save_path, **kwcfg):
