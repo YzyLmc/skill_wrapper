@@ -105,9 +105,9 @@ def main(cfg: DictConfig):
 if __name__ == "__main__":
     """
     Arguments & Default values:
-    environment_name: The json file full path respect to evaluation/data/burger
+    environment_name: The json file full path respect to eval/data/burger
 
     Example terminal command:
-        python evaluation/burger_data_collection.py ++game.environment_name=test/problems/0/problem +save_fpath=evaluation/data/burger/test/problems/0
+        python eval/burger_data_collection.py ++game.environment_name=test/problems/0/problem +save_fpath=eval/data/burger/test/problems/0
     """
     main()
