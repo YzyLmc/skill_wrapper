@@ -12,27 +12,19 @@
   - pickupable
 
 - !Predicate
-  name: at_location
+  name: obj_free
   params: !!python/tuple []
-  semantic: "A `pickupable` object is placed at a `location` object."
+  semantic: "A `pickupable` object is free for picking."
   types: !!python/tuple
-  - pickupable
-  - location
+  - object
 
 - !Predicate
   name: is_on_top
   params: !!python/tuple []
-  semantic: "A `pickupable` object is on top of another `pickupable` object."
+  semantic: "A `pickupable` object is on top of another `object` object."
   types: !!python/tuple
   - pickupable
-  - pickupable
-
-- !Predicate
-  name: is_in_stack
-  params: !!python/tuple []
-  semantic: "The `pickupable` object is in a stack, making it not possible to cut or cook."
-  types: !!python/tuple
-  - pickupable
+  - object
 
 - !Predicate
   name: is_cut

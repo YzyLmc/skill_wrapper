@@ -1,10 +1,12 @@
 import os
 import sys
-from random import randint, choice
+import json
+from random import randint, choice, shuffle
 import argparse
 
 from data_structure import yaml
 from subprocess import check_output, CalledProcessError
+from datetime import datetime as dt
 
 # Check here for more info on Kstar Planner: https://github.com/IBM/kstar
 try:
@@ -23,6 +25,8 @@ planner_path = '../../downward/fast-downward.py'
 # NOTE: FD options for algorithms and heuristics:
 fd_algorithms = ['astar', 'eager', 'lazy', ]
 fd_heuristics = ['lmcut', 'ff', ]
+
+original_skills = None
 
 def find_topk_plans(
     domain_file: str,
@@ -94,6 +98,7 @@ def find_plan(
 
 def run_trials(
     domain_fpath: str,
+    yaml_data: dict,
     num_trials: int = 10,
     method: str = 'fd',
 ):
@@ -102,8 +107,17 @@ def run_trials(
     # TODO: how do we account for trials that are indeed unsolvable?
     count = 0
 
+    data_per_trial = {
+        "setting": args.setting,
+        "plan_method": method,
+    }
+
     for T in range(num_trials):
-        problem_fpath = create_problem_file(setting=args.setting, trial=T, )
+        data_per_trial[T] = {}
+
+        problem_fpath, state = create_problem_file(setting=args.setting, trial=T, )
+
+        data_per_trial[T]['state'] = state
 
         print(f"\n{'*' * 10} TRIAL {T+1} {'*' * 10}")
 
@@ -123,6 +137,14 @@ def run_trials(
             else:
                 print(" -- no solution found!")
 
+            data_per_trial[T]['all_plans'] = [solution]
+
+            data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
+                plans=[solution], 
+                yaml_data=yaml_data, 
+                setting=args.setting,
+            )
+
         elif method == 'kstar':
             solutions = find_topk_plans(
                 problem_file=problem_fpath,
@@ -139,6 +161,47 @@ def run_trials(
                         print(f"\t\t{y+1} : {solutions[x]['actions'][y]}")
             else:
                 print(" -- no solution found!")
+
+            data_per_trial[T]['all_plans'] = solutions
+
+            data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
+                plans=solutions, 
+                yaml_data=yaml_data, 
+                setting=args.setting,
+            )
+    timestamp = dt.today().strftime('%Y-%m-%d_%H-%M-%SS')
+
+    json.dump(data_per_trial, open(f"{timestamp}_all_trials.json", "w"), indent=4)
+
+
+def postprocess_plans(plans: list[str], yaml_data: dict, setting: str):
+    all_processed_plans = []
+
+    skills = yaml_data['skills']
+    objects = yaml_data['objects']
+
+    for plan in plans:
+        processed_plan = []
+        for action in plan:
+            action_parts = action.replace("(", "").replace(")", "").split(" ")
+
+            # -- we will replace any auxiliary expert-defined skills with those of the basic ones in the YAML:
+            for S in skills:
+                if action_parts[0].startswith(S.lower()):
+                    action_parts[0] = S
+
+            for x in range(1, len(action_parts)):
+                for O in objects:
+                    if action_parts[x].startswith(O.lower()):
+                        action_parts[x] = O
+                        
+            processed_plan.append(
+                f"{action_parts[0]}({', '.join([x for x in action_parts[1:]])})"
+            )
+
+        all_processed_plans.append(processed_plan)
+
+    return all_processed_plans
 
 
 def parse_predicate(pred: str):
@@ -162,23 +225,12 @@ def create_domain_file(
     yaml_data: list,
     setting: str,
 ) -> str:
-    all_predicates = [parse_predicate(P) for P in yaml_data['predicates']]
-    # print(all_predicates)
-
-    all_operators = [O.pop() for _, O in yaml_data['operators'].items()]
-    # print(all_operators)
-
-    all_objects = yaml_data['objects']['objects']
 
     object_types = set()
-    for obj_name in all_objects:
-        for obj_type in all_objects[obj_name]['types']:
+    for obj in yaml_data['objects']:
+        for obj_type in yaml_data['objects'][obj]['types']:
+            object_types.add(f'{obj} - {obj_type}')
             object_types.add(f'{obj_type} - object')
-
-        for obj_type in all_objects[obj_name]['types']:
-            object_types.add(f'{obj_name} - {obj_type}')
-
-    # print(object_types)
 
     domain_fpath = os.path.join(os.getcwd(), f'{setting}_domain_{method}.pddl')
 
@@ -190,9 +242,9 @@ def create_domain_file(
             prototype_content = df.read()
 
         # -- find and replace placeholders in the prototype file:
-        new_content = prototype_content.replace('<actions>', "\n\n".join(all_operators))
+        new_content = prototype_content.replace('<actions>', "\n\n".join(yaml_data["operators"]))
         new_content = new_content.replace('<types>', "\n\t\t".join(list(object_types)))
-        new_content = new_content.replace('<predicates>', "\n\t\t".join(all_predicates))
+        new_content = new_content.replace('<predicates>', "\n\t\t".join(yaml_data["predicates"]))
         new_content = new_content.replace('<domain>', f"{setting}_{method}")
 
         # -- write content to new PDDL file:
@@ -222,12 +274,43 @@ def create_problem_file(
         ]
     elif setting == "burger":
         state = [
-            ("(is_cooked p)" if bool(randint(0, 1)) else "(not (is_cooked p))"), # NOTE: patty may or may not already be cooked
-            ("(is_cut l)" if bool(randint(0, 1)) else "(not (is_cut p))"), # NOTE: patty may or may not already be cooked
+            # ("(is_cooked p)" if bool(randint(0, 1)) else "(not (is_cooked p))"), # NOTE: patty may or may not already be cooked
+            # ("(is_cut l)" if bool(randint(0, 1)) else "(not (is_cut p))"), # NOTE: patty may or may not already be cooked
+            
             "(hand_empty)",
+            ("(not (is_cut Lettuce))" if  bool(randint(0, 1)) else "(is_cut Lettuce)"),
+            ("(not (is_cooked Patty))" if  bool(randint(0, 1)) else "(is_cooked Patty)"),
         ]
 
-    state = list(filter(None, state))
+        # -- randomly shuffle objects to either be under a stack or free:
+        burger_objects = ["Patty", "Lettuce", "TopBun", "BottomBun"]
+
+        shuffle(burger_objects)
+
+        ontop = {}
+
+        already_assigned = []
+
+        for O in ['Stove', 'Board'] + burger_objects:
+            already_assigned.append(O)
+
+            available_objects = list(set(burger_objects) - set(already_assigned))
+            if not bool(randint(0, 1)) or not available_objects:
+                ontop[O] = None
+            else:
+                ontop[O] = choice(available_objects)
+                already_assigned.append(ontop[O])
+
+
+        for obj in ontop:
+            if not ontop[obj]:
+                state.append(f"(obj_free {obj})")
+            else:
+                state.append(f"(is_on_top {ontop[obj]} {obj})")
+
+    state = list(filter(None, set(state)))
+
+    state.sort()
 
     problem_fpath = f"{setting}_problem_trial-{trial}.pddl"
 
@@ -245,7 +328,7 @@ def create_problem_file(
         # -- write content to new PDDL file:
         nf.write(new_content)
 
-    return problem_fpath
+    return problem_fpath, state
 
 
 if __name__ == "__main__":
@@ -317,19 +400,25 @@ if __name__ == "__main__":
         print('-- Missing YAML objects file!')
         sys.exit()
 
-    if data_predicates and data_operators and data_objects:
+    if data_predicates and data_operators and data_objects:    
+        yaml_data = {
+            "operators": [O.pop() for _, O in data_operators.items()],   
+            "predicates": [parse_predicate(P) for P in data_predicates],
+            "objects": data_objects['objects'],
+            "skills": data_objects['skills'],
+        }
+
         domain_fpath = create_domain_file(
             method='skillwrapper',
-            yaml_data={
-                'predicates': data_predicates,
-                'operators': data_operators,
-                'objects': data_objects,
-            },
+            yaml_data=yaml_data,
             setting=args.setting,
         )
 
+        data_skills = data_objects
+
         run_trials(
             domain_fpath,
+            yaml_data,
             num_trials=args.ntrials,
             method=args.planner,
         )

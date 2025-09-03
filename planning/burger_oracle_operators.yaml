@@ -7,8 +7,39 @@
   - pickupable
 : - "(:action Pick\n\
     \ \t\t:parameters (?pickupable - pickupable)\
-    \ \n\t\t:precondition (and\n\t\t\t(not (is_holding ?pickupable))\n\t\t\t(hand_empty)\n\t\t)\
-    \ \n\t\t:effect (and\n\t\t\t(is_holding ?pickupable)\n\t\t\t(not (hand_empty))\n\t\t)\n\t)"
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?pickupable)\
+    \ \n\t\t\t(not (is_holding ?pickupable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(not (obj_free ?pickupable))\
+    \ \n\t\t\t(is_holding ?pickupable)\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: PickFromTop
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    object: the object below an object being picked up.
+  types:
+  - pickupable
+  - object
+: - "(:action PickFromTop\n\
+    \ \t\t:parameters (?top - pickupable ?bot - object)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(is_on_top ?top ?bot)\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(obj_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\
+    \ \n\t\t\t(not (is_on_top ?top ?bot))\
+    \ \n\t\t)\n\t)"
 
 ? !Skill
   name: Place
@@ -21,8 +52,17 @@
   - location
 : - "(:action Place\n\
     \ \t\t:parameters (?pickupable - pickupable ?location - location)\
-    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?pickupable)\n\t\t\t(not (at_location ?pickupable ?location))\n\t\t\t(not (hand_empty))\n\t)\
-    \ \n\t\t:effect (and\n\t\t\t(not (is_holding ?pickupable))\n\t\t\t(at_location ?pickupable ?location)\n\t\t\t(hand_empty)\n\t\t)\n\t)"
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?pickupable)\ 
+    \ \n\t\t\t(obj_free ?location)\
+    \ \n\t\t\t(not (obj_free ?pickupable))\n\t\t)\
+    \ \n\t\t:effect (and\ 
+    \ \n\t\t\t(not (is_holding ?pickupable))\ 
+    \ \n\t\t\t(obj_free ?pickupable)\
+    \ \n\t\t\t(hand_empty)\ 
+    \ \n\t\t\t(not (obj_free ?location))\
+    \ \n\t\t\t(is_on_top ?pickupable ?location)\
+    \ \n\t\t)\n\t)"
 
 ? !Skill
   name: Stack
@@ -35,8 +75,17 @@
   - pickupable
 : - "(:action Stack\n\
     \ \t\t:parameters (?top - pickupable ?bot - pickupable)\
-    \ \n\t\t:precondition (and\n\t\t\t(is_holding ?top)\n\t\t\t(not (hand_empty))\n\t\t\t(not (is_on_top ?top ?bot))\n\t)\
-    \ \n\t\t:effect (and\n\t\t\t(not (is_holding ?top))\n\t\t\t(hand_empty)\n\t\t\t(is_on_top ?top ?bot)\n\t\t\t(is_in_stack ?top)\n\t\t\t(is_in_stack ?bot)\n\t\t)\n\t)"
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(obj_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\n\t\t)\
+    \ \n\t\t:effect (and\ 
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(not (obj_free ?bot))\
+    \ \n\t\t\t(is_on_top ?top ?bot)\
+    \ \n\t\t)\n\t)"
 
 ? !Skill
   name: Cut
@@ -49,8 +98,14 @@
   - cuttingboard
 : - "(:action Cut\n\
     \ \t:parameters (?cuttable - cuttable ?board - cuttingboard)\
-    \ \n\t\t:precondition (and\n\t\t\t(not (is_cut ?cuttable))\n\t\t\t(not (is_in_stack ?cuttable))\n\t\t\t(at_location ?cuttable ?board)\n\t)\
-    \ \n\t\t:effect (and\n\t\t\t(is_cut ?cuttable)\n\t\t)\n\t)"
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?cuttable)\
+    \ \n\t\t\t(is_on_top ?cuttable ?board)\
+    \ \n\t\t\t(not (is_cut ?cuttable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_cut ?cuttable)\
+    \ \n\t\t)\n\t)"
 
 ? !Skill
   name: Cook
@@ -62,5 +117,11 @@
   - cookable
 : - "(:action Cook\n\
     \ \t:parameters (?cookable - cookable ?cooker - cooker)\
-    \ \n\t\t:precondition (and\n\t\t\t(not (is_cooked ?cookable))\n\t\t\t(not (is_in_stack ?cookable))\n\t\t\t(at_location ?cookable ?cooker)\n\t)\
-    \ \n\t\t:effect (and\n\t\t\t(is_cooked ?cookable)\n\t\t)\n\t)"
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?cookable)\
+    \ \n\t\t\t(is_on_top ?cookable ?cooker)\
+    \ \n\t\t\t(not (is_cooked ?cookable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_cooked ?cookable)\
+    \ \n\t\t)\n\t)"
