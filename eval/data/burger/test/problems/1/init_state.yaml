@@ -168,16 +168,6 @@ predicates:
     name: istopbun
     params: !!python/tuple
     - &id010 !!python/object:robotouille.backend.object.Object
-      name: lettuce1
-      object_type: item
-    semantic: null
-    types: !!python/tuple
-    - pickupable
-  truth_value: false
-- predicate: !Predicate
-    name: istopbun
-    params: !!python/tuple
-    - &id011 !!python/object:robotouille.backend.object.Object
       name: bottombun1
       object_type: item
     semantic: null
@@ -187,7 +177,7 @@ predicates:
 - predicate: !Predicate
     name: istopbun
     params: !!python/tuple
-    - &id012 !!python/object:robotouille.backend.object.Object
+    - &id011 !!python/object:robotouille.backend.object.Object
       name: topbun1
       object_type: item
     semantic: null
@@ -195,6 +185,16 @@ predicates:
     - pickupable
   truth_value: true
 - predicate: !Predicate
+    name: istopbun
+    params: !!python/tuple
+    - &id012 !!python/object:robotouille.backend.object.Object
+      name: lettuce1
+      object_type: item
+    semantic: null
+    types: !!python/tuple
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
     name: isbottombun
     params: !!python/tuple
     - *id009
@@ -209,7 +209,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: isbottombun
     params: !!python/tuple
@@ -217,7 +217,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: isbottombun
     params: !!python/tuple
@@ -241,7 +241,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: islettuce
     params: !!python/tuple
@@ -257,7 +257,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: ispatty
     params: !!python/tuple
@@ -361,7 +361,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: iscooked
     params: !!python/tuple
@@ -401,7 +401,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: iscuttable
     params: !!python/tuple
@@ -417,7 +417,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: iscut
     params: !!python/tuple
@@ -433,7 +433,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: iscut
     params: !!python/tuple
@@ -459,7 +459,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -509,7 +509,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -539,7 +539,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -589,7 +589,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -649,7 +649,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -669,7 +669,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -749,7 +749,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -759,7 +759,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_at
     params: !!python/tuple
@@ -785,7 +785,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: station_empty
     params: !!python/tuple
@@ -809,7 +809,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: station_empty
     params: !!python/tuple
@@ -825,7 +825,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: station_empty
     params: !!python/tuple
@@ -833,7 +833,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: station_empty
     params: !!python/tuple
@@ -931,7 +931,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_on
     params: !!python/tuple
@@ -1041,7 +1041,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_on
     params: !!python/tuple
@@ -1061,7 +1061,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: item_on
     params: !!python/tuple
@@ -1151,7 +1151,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - location
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: item_on
     params: !!python/tuple
@@ -1169,7 +1169,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: clear
     params: !!python/tuple
@@ -1185,7 +1185,7 @@ predicates:
     semantic: null
     types: !!python/tuple
     - pickupable
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: clear
     params: !!python/tuple
@@ -1203,21 +1203,21 @@ predicates:
     types: !!python/tuple
     - pickupable
     - pickupable
-  truth_value: false
-- predicate: !Predicate
-    name: atop
-    params: !!python/tuple
-    - *id009
-    - *id011
-    semantic: null
-    types: !!python/tuple
-    - pickupable
-    - pickupable
   truth_value: true
 - predicate: !Predicate
     name: atop
     params: !!python/tuple
     - *id009
+    - *id011
+    semantic: null
+    types: !!python/tuple
+    - pickupable
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - *id009
     - *id012
     semantic: null
     types: !!python/tuple
@@ -1233,7 +1233,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: atop
     params: !!python/tuple
@@ -1303,7 +1303,7 @@ predicates:
     types: !!python/tuple
     - pickupable
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: atop
     params: !!python/tuple

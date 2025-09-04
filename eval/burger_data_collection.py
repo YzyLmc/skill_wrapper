@@ -27,13 +27,32 @@ def env_state_to_pred_state(env, save_fpath):
     """
     state = env.current_state
     pred_state = PredicateState([])
+    # NOTE: We might need bread onion tomato chicken and patato later.
+    bad_preds = ["istable", "isfryer", "issink", "isbread", "isonion", "istomato", "ischicken", "ispotato", "isfryable", "isfryableifcut", "isfried", "iscooking", "ispot", "isbowl", "iswater", "isboiling", "loc", "container_empty", "vacant", "has_container", "in", "addedto",  "container_at"]
+    type_dict = {"item": "pickupable", "station": "location", "player": "robot"}
     for literal, is_true in state.predicates.items():
-            grounded_pred = Predicate(name=literal.name, params=literal.params, types=literal.types)
-            pred_state.pred_dict[grounded_pred] = is_true
+            if literal.name not in bad_preds:
+                name = literal.name
+                params = literal.params
+                types = [type_dict[t] for t in literal.types]
+                grounded_pred = Predicate(name=name, params=params, types=types)
+                pred_state.pred_dict[grounded_pred] = is_true
     save_to_file(pred_state, save_fpath)
 
 def env_state_to_text(env, save_fpath):
-    pass
+    wait = [a for a in env.current_state.get_valid_actions_and_str()[0] if a[0].name == "wait"][0]
+    obs, reward, done, info = env.step([wait])
+    lines = obs.split("\n\n")
+    cleared_lines = []
+    for line in lines:
+        # Remove lines that contains "table"
+        l = line.split("\n")
+        cleared_line = [i for i in l if "table" not in i]
+        if cleared_line:
+            cleared_lines.append("\n".join(cleared_line).strip())
+    obs = "\n\n".join(cleared_lines[:-2]) # remove available actions and the goal state description
+
+    save_to_file(obs, save_fpath)
 
 @hydra.main(version_base=None, config_path="../robotouille/conf", config_name="data_collection_config")
 def main(cfg: DictConfig):
@@ -61,6 +80,8 @@ def main(cfg: DictConfig):
     print("Goal State:")
     print(env.current_state.goal)
 
+    if cfg.save_fpath is not None:
+        os.makedirs(cfg.save_fpath, exist_ok=True)
     init_img_fpath = os.path.join(cfg.save_fpath, "init_img.jpg")
     render_img(env, env.current_state, init_img_fpath)
     init_pred_state_fpath = os.path.join(cfg.save_fpath, "init_state.yaml")

@@ -45,7 +45,10 @@ def main(cfg: DictConfig):
 
     assert results, "No results found!"
 
-    save_to_file(results, os.path.join("results", cfg.baseline, cfg.env, f"{cfg.env}_{root_components[-3]}_results.json"))
+    log_file = os.path.join("results", cfg.baseline, cfg.env, f"{cfg.env}_{root_components[-3]}_results.json")
+    save_to_file(results, log_file)
+    print("Results saved to", log_file)
+
 
 def get_successfulness(env, plan) -> bool:
     # run the plan and return true if the goal state is reached at the end of the plan
@@ -54,7 +57,7 @@ def get_successfulness(env, plan) -> bool:
         suc = skill_manager.execute_skill(skill)
         # Ugly way of getting "done"
         wait = [a for a in skill_manager.env.current_state.get_valid_actions_and_str()[0] if a[0].name == "wait"][0]
-        _, _, done, _ = env.step([])
+        _, _, done, _ = env.step([wait])
     return done
 
 if __name__ == "__main__":
