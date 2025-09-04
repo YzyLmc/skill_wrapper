@@ -80,13 +80,16 @@ def main(cfg: DictConfig):
     print("Goal State:")
     print(env.current_state.goal)
 
-    if cfg.save_fpath is not None:
-        os.makedirs(cfg.save_fpath, exist_ok=True)
-    init_img_fpath = os.path.join(cfg.save_fpath, "init_img.jpg")
+    dataset = os.path.split(environment_name)[0]
+    save_fpath = os.path.join("eval", "data", "burger", dataset)
+    print(save_fpath)
+    if save_fpath is not None:
+        os.makedirs(save_fpath, exist_ok=True)
+    init_img_fpath = os.path.join(save_fpath, "init_img.jpg")
     render_img(env, env.current_state, init_img_fpath)
-    init_pred_state_fpath = os.path.join(cfg.save_fpath, "init_state.yaml")
+    init_pred_state_fpath = os.path.join(save_fpath, "init_state.yaml")
     env_state_to_pred_state(env, init_pred_state_fpath)
-    init_pred_state_text = os.path.join(cfg.save_fpath, "init_state.txt")
+    init_pred_state_text = os.path.join(save_fpath, "init_state.txt")
     env_state_to_text(env, init_pred_state_text)
 
     done = False
@@ -116,12 +119,14 @@ def main(cfg: DictConfig):
         # Step environment
         obs, _, done, _ = env.step(actions)
 
-    goal_img_fpath = os.path.join(cfg.save_fpath, "goal_img.jpg")
+    goal_img_fpath = os.path.join(save_fpath, "goal_img.jpg")
     render_img(env, env.current_state, goal_img_fpath)
-    goal_pred_state_fpath = os.path.join(cfg.save_fpath, "goal_state.yaml")
+    goal_pred_state_fpath = os.path.join(save_fpath, "goal_state.yaml")
     env_state_to_pred_state(env, goal_pred_state_fpath)
-    goal_pred_state_text = os.path.join(cfg.save_fpath, "goal_state.txt")
+    goal_pred_state_text = os.path.join(save_fpath, "goal_state.txt")
     env_state_to_text(env, goal_pred_state_text)
+
+    print("Data saved to: ", save_fpath)
 
 if __name__ == "__main__":
     """
