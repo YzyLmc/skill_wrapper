@@ -63,9 +63,11 @@ def get_successfulness(env, plan) -> bool:
 if __name__ == "__main__":
     """
     Arguments & Default values:
-    problem_dir: The directory containing problem files, either test, seen, or unseen.
     baseline: Name of the baseline {"FMinvent", "oracle", "random_explore", "vila", "skillwrapper"}
     dataset: ["test", "seen", "unseen"]
     env: Name of the environment. For now only burger is supported.
+
+    Example command:
+        python eval/eval_plans.py +dataset=seen +baseline=vila ++env=burger
     """
     main()

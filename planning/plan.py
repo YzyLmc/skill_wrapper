@@ -1,10 +1,17 @@
+"""
+Takes in an operator and predicate YAML file, creates a PDDL domain file, and runs a specified planner.
+task_config.yaml is needed. kstar planner is optional.
+
+Example command:
+    python planning/plan.py --yaml_operators planning/burger_oracle_operators.yaml --setting burger --yaml_predicates planning/burger_oracle_predicates.yaml --yaml_objects task_config/burger.yaml --planner kstar --ntrials 2
+"""
 import os
 import sys
 import json
 from random import randint, choice, shuffle
 import argparse
-
-from data_structure import yaml
+sys.path.append(f".") # if you run this script from the root directory
+from src.data_structure import yaml
 from subprocess import check_output, CalledProcessError
 from datetime import datetime as dt
 
@@ -20,7 +27,7 @@ else:
 
 
 # FD path
-planner_path = '../../downward/fast-downward.py'
+planner_path = '../downward/fast-downward.py'
 
 # NOTE: FD options for algorithms and heuristics:
 fd_algorithms = ['astar', 'eager', 'lazy', ]
@@ -238,7 +245,7 @@ def create_domain_file(
         prototype_content = None
 
         # -- read all content from the prototype file:
-        with open('domain_prototype.pddl', 'r') as df:
+        with open('planning/domain_prototype.pddl', 'r') as df:
             prototype_content = df.read()
 
         # -- find and replace placeholders in the prototype file:
@@ -318,7 +325,7 @@ def create_problem_file(
         prototype_content = None
 
         # -- read all content from the prototype file:
-        with open(f'{setting}_problem_template.pddl', 'r') as df:
+        with open(f'planning/{setting}_problem_template.pddl', 'r') as df:
             prototype_content = df.read()
 
         # -- find and replace placeholders in the prototype file:

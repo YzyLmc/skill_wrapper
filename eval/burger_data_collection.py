@@ -134,6 +134,6 @@ if __name__ == "__main__":
     environment_name: The json file full path respect to eval/data/burger
 
     Example terminal command:
-        python eval/burger_data_collection.py ++game.environment_name=test/problems/0/problem +save_fpath=eval/data/burger/test/problems/0
+        python eval/burger_data_collection.py ++game.environment_name=test/problems/2/problem 
     """
     main()

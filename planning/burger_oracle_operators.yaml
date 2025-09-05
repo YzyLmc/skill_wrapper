@@ -17,17 +17,18 @@
     \ \n\t\t\t(is_holding ?pickupable)\
     \ \n\t\t)\n\t)"
 
+
 ? !Skill
-  name: PickFromTop
+  name: PickFromStack
   params: []
   semantics:
     pickupable: the object to be picked up.
-    object: the object below an object being picked up.
+    pickupable: the object below an object being picked up.
   types:
   - pickupable
-  - object
-: - "(:action PickFromTop\n\
-    \ \t\t:parameters (?top - pickupable ?bot - object)\
+  - pickupable
+: - "(:action PickFromStack\n\
+    \ \t\t:parameters (?top - pickupable ?bot - pickupable)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(not (is_holding ?top))\
@@ -39,6 +40,30 @@
     \ \n\t\t\t(obj_free ?bot)\
     \ \n\t\t\t(not (obj_free ?top))\
     \ \n\t\t\t(not (is_on_top ?top ?bot))\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: PickFromLocation
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    location: the location below an object being picked up.
+  types:
+  - pickupable
+  - location
+: - "(:action PickFromLocation\n\
+    \ \t\t:parameters (?top - pickupable ?bot - location)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(is_on_location ?top ?bot)\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(location_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\
+    \ \n\t\t\t(not (is_on_location ?top ?bot))\
     \ \n\t\t)\n\t)"
 
 ? !Skill

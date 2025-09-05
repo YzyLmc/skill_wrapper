@@ -16,15 +16,30 @@
   params: !!python/tuple []
   semantic: "A `pickupable` object is free for picking."
   types: !!python/tuple
-  - object
+  - pickupable
+
+- !Predicate
+  name: location_free
+  params: !!python/tuple []
+  semantic: "A `location` is empty and available for an object to be placed on."
+  types: !!python/tuple
+  - location
 
 - !Predicate
   name: is_on_top
   params: !!python/tuple []
-  semantic: "A `pickupable` object is on top of another `object` object."
+  semantic: "A `pickupable` object is on top of another `pickupable` object."
   types: !!python/tuple
   - pickupable
-  - object
+  - pickupable
+
+- !Predicate
+  name: is_on_location
+  params: !!python/tuple []
+  semantic: "A `pickupable` object is on top of a `location`."
+  types: !!python/tuple
+  - pickupable
+  - location
 
 - !Predicate
   name: is_cut

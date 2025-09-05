@@ -48,15 +48,27 @@ def main(cfg: DictConfig):
     prompt = prompt.replace("<objects>", "\n".join(objects_str))
 
     problem_dir = f"eval/data/{cfg.env}/{cfg.dataset}/problems/"
-    result_dir = f"results/vila/{cfg.env}/{cfg.dataset}/"
+    result_dir = f"results/vila/{cfg.env}/plans/{cfg.dataset}/"
 
+    logging.info(f"Loading problems from {problem_dir}")
+    if not os.path.exists(problem_dir):
+        raise ValueError(f"Problem directory {problem_dir} does not exist.")
+    
     # Run for all problems
     results = {}
     for root, dirs, files in os.walk(problem_dir):
         for d in dirs: # d is the problem name
+
+            save_path = get_save_path(result_dir, d)
+            # if the plan file already exists, skip
+            if os.path.exists(os.path.join(save_path, "plan.yaml")):
+                logging.info(f"Problem {d} already has a plan at {save_path}, skipping...")
+                continue
+            else:
+                logging.info(f"Solving problem {d} in {cfg.dataset}...")
+
             current_img = os.path.join(root, d, "init_img.jpg")
             goal_img = os.path.join(root, d, "goal_img.jpg")
-            print(current_img, goal_img)
             root_components = root.split(os.sep)[-3:]
             root_path = os.sep.join(root_components)
             environment_name = os.path.join(root_path, d, "problem")
@@ -91,8 +103,15 @@ def main(cfg: DictConfig):
                 type_matched = True
 
                 for i, obj in enumerate(proposed_skill.params):
+                    if obj not in objects:
+                        type_matched = False
+                        break
+                    if i >= len(primitive_skill.types):
+                        type_matched = False
+                        break
                     if not primitive_skill.types[i] in objects[obj]["types"]:
                         type_matched = False
+                        break
                 if not type_matched:
                     logging.info("Type mismatch. Try again.")
                     continue
@@ -114,24 +133,30 @@ def main(cfg: DictConfig):
                 current_img = next_img
                 logging.info(f"Current plan:\n{[str(s) for s in plan]}")
 
-            save_results(plan, result_dir, d)
+            # save_results(plan, result_dir, d)
+            os.makedirs(save_path, exist_ok=True)
+            save_to_file({"plan": plan}, os.path.join(save_path, "plan.yaml"))
     # delete the cached images in tmp_dir
     if cfg.env == "burger":
-        os.system(f"rm -r {cfg.tmp_dir}/*")
+        os.system(f"rm -r {cfg.tmp_dir}*")
 
 def run_burger(environment_name, plan, cfg, **kwcfg):
     "Take in skill sequence and execute them, save files to tmp_dir"
     img_save_path = robotouille.run_skill_sequence.exec_and_record(environment_name, plan, cfg.tmp_dir, **kwcfg)
     return img_save_path
 
-
-def save_results(plan, save_fpath, problem_name):
-    os.makedirs(save_fpath, exist_ok=True)
+def get_save_path(save_fpath, problem_name):
     save_path = os.path.join(save_fpath, problem_name)
     os.makedirs(save_path, exist_ok=True)
-    save_path = get_save_fpath(save_path, "plan", "yaml")
-    save_to_file({"plan": plan}, save_path)
-    print(f"Plan saved to {save_path}")
+    return save_path
+
+# def save_results(plan, save_fpath, problem_name):
+#     os.makedirs(save_fpath, exist_ok=True)
+#     save_path = os.path.join(save_fpath, problem_name)
+#     os.makedirs(save_path, exist_ok=True)
+#     save_path = get_save_fpath(save_path, "plan", "yaml")
+#     save_to_file({"plan": plan}, save_path)
+#     print(f"Plan saved to {save_path}")
 
 
 if __name__ == "__main__":
@@ -144,6 +169,6 @@ if __name__ == "__main__":
     tmp_dir: tmp/
 
     example command:
-        python baselines/vila.py ++env=burger +dataset=test ++max_steps=12
+        python baselines/vila.py ++env=burger +dataset=test ++max_steps=20
     """
     main()
