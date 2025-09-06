@@ -21,7 +21,7 @@
 - !Predicate
   name: location_free
   params: !!python/tuple []
-  semantic: "A `location` is empty and available for an object to be placed on."
+  semantic: "A `station` is free for cooking ingredients."
   types: !!python/tuple
   - location
 

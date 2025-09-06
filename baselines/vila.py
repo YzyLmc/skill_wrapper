@@ -55,7 +55,6 @@ def main(cfg: DictConfig):
         raise ValueError(f"Problem directory {problem_dir} does not exist.")
     
     # Run for all problems
-    results = {}
     for root, dirs, files in os.walk(problem_dir):
         for d in dirs: # d is the problem name
 
@@ -84,7 +83,7 @@ def main(cfg: DictConfig):
                     for y in range(len(plan)):
                         new_prompt += f"{y+1}. {plan[y]}\n"
                 resp = model.generate_multimodal(new_prompt, imgs=[current_img, goal_img])
-                print(resp[0])
+                logging.info(resp[0])
 
                 if "impossible" in resp[0].lower():
                     logging.info("impossible")
@@ -156,7 +155,7 @@ def get_save_path(save_fpath, problem_name):
 #     os.makedirs(save_path, exist_ok=True)
 #     save_path = get_save_fpath(save_path, "plan", "yaml")
 #     save_to_file({"plan": plan}, save_path)
-#     print(f"Plan saved to {save_path}")
+#     logging.info(f"Plan saved to {save_path}")
 
 
 if __name__ == "__main__":

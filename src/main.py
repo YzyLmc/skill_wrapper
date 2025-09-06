@@ -1,5 +1,6 @@
-'refinement and proposal loop'
-'remember to change the for loop in update_tasks() if you have changed the input skill'
+"""
+Main function for SkillWrapper. Because of the robot experiments, skill sequence proposal and predicate invention are separated into two parts."
+"""
 import argparse
 import logging
 from collections import defaultdict
@@ -43,7 +44,7 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
     # in the format of:
     #   dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
     # The file will be read and returned for predicate invention
-    tasks = load_from_file(args.save_dir)
+    tasks = load_from_file(save_path)
     return tasks
 
 def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args):
@@ -82,13 +83,13 @@ def main():
         tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
         # main loop
         for i in range(args.num_iter):
-            if not args.invent_pred_only:
+            if not args.invent_pred:
                 # propose skill sequence and execute
                 tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args)
             else:
                 assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention."
 
-            if not args.propose_skill_sequence_only:
+            if not args.skill_seq:
                 # invent predicates
                 skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
             else:
@@ -96,12 +97,13 @@ def main():
 
             logging.info(f"iteration #{i+1} is done")
             operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
+            
             logging.info("Operators learned this round:")
             for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
 
             if args.step_by_step:
-                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next interation?")
+                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next iteration?")
                 breakpoint()
         clean_logging(log_save_path)
 
@@ -110,15 +112,18 @@ def main():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
+
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
     parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--step_by_step", action="store_true")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
+    parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
+    parser.add_argument("--save_dir", type=str, help="directory to save learned operators files")
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
-    parser.add_argument("--save_dir", type=str, default='tasks/log', help="directory to save log files")
-    parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
-    parser.add_argument("--skill_seq_only", action="store_true", help="Read from existing data and invent predicates") # TODO: implement this
+    parser.add_argument("--logging_dir", type=str, default='results/', help="directory to save logging files")
+    parser.add_argument("--invent_pred", action="store_true", help="Read from existing data and invent predicates.")
+    parser.add_argument("--skill_seq", action="store_true", help="Read from existing data and invent predicates")
+
     args = parser.parse_args()
 
     main()

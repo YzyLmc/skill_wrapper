@@ -50,7 +50,15 @@ def main(cfg: DictConfig):
     print("Results saved to", log_file)
 
 
-def get_successfulness(env, plan) -> bool:
+def get_successfulness(env, plan, impossible=False) -> bool:
+    if impossible:
+        if "impossible" in plan:
+            return True
+        else:
+            return False
+    # If possible plan misclassified as impossible
+    if "impossible" in plan:
+        return True
     # run the plan and return true if the goal state is reached at the end of the plan
     skill_manager = SkillManager(env)
     for i, skill in enumerate(plan):

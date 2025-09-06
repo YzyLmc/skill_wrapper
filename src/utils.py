@@ -242,6 +242,10 @@ def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
 
 def setup_logging(dir_name, env_name) -> str:
     save_path = get_save_fpath(dir_name, f"{env_name}_log_raw_results", "log")
+    # Remove all handlers associated with the root logger
+    root_logger = logging.getLogger()
+    if root_logger.hasHandlers():
+        root_logger.handlers.clear()
     logging.basicConfig(level=logging.INFO,
                         format='%(message)s',
                         handlers=[
