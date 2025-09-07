@@ -1,19 +1,22 @@
 # given a list of grounded predicates, evaluate each of them and save it as a yaml file
 import argparse
+import sys
+sys.path.append(f".")
 
 from invent_predicate import eval_pred, possible_grounded_preds
 from data_structure import PredicateState, Predicate
-from utils import save_to_file, load_from_file, GPT4
+from src.utils import save_to_file, load_from_file, GPT4
 
 def eval_all_predicates(model: GPT4, lifted_pred_list: list[Predicate], type_dict: dict[str, list[str]], args):
     # find all possible groundings of predicates
     grounded_preds = possible_grounded_preds(lifted_pred_list, type_dict)
     predicate_state = PredicateState(grounded_preds)
     for i, grounded_pred in enumerate(grounded_preds):
-        truth_value = eval_pred(args.img_fpath, grounded_pred, model, env=args.env)
-        predicate_state.set_pred_value(grounded_pred, truth_value)
-        print(f'Evaluating predicate {grounded_pred} to be {truth_value}')
-        print(f'{i+1}/{len(grounded_preds)} is done')
+        if "station_free" in grounded_pred.name:
+            truth_value = eval_pred(args.img_fpath, grounded_pred, model, env=args.env, log=True)
+            predicate_state.set_pred_value(grounded_pred, truth_value)
+            print(f'Evaluating predicate {grounded_pred} to be {truth_value}')
+            print(f'{i+1}/{len(grounded_preds)} is done')
     save_to_file(predicate_state, f"{args.save_dir}/truth_value.yaml")
     return predicate_state
 

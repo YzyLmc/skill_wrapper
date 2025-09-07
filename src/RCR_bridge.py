@@ -2,7 +2,7 @@ import copy
 from itertools import product
 import functools
 
-from data_structure import Predicate, PredicateState, Skill
+from src.data_structure import Predicate, PredicateState, Skill
 
 @functools.total_ordering
 class Link(object):

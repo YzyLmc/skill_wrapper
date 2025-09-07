@@ -85,7 +85,7 @@ def main(cfg: DictConfig):
     print(save_fpath)
     if save_fpath is not None:
         os.makedirs(save_fpath, exist_ok=True)
-    init_img_fpath = os.path.join(save_fpath, "init_img.jpg")
+    init_img_fpath = os.path.join(save_fpath, "init_state.jpg")
     render_img(env, env.current_state, init_img_fpath)
     init_pred_state_fpath = os.path.join(save_fpath, "init_state.yaml")
     env_state_to_pred_state(env, init_pred_state_fpath)
@@ -119,7 +119,7 @@ def main(cfg: DictConfig):
         # Step environment
         obs, _, done, _ = env.step(actions)
 
-    goal_img_fpath = os.path.join(save_fpath, "goal_img.jpg")
+    goal_img_fpath = os.path.join(save_fpath, "goal_state.jpg")
     render_img(env, env.current_state, goal_img_fpath)
     goal_pred_state_fpath = os.path.join(save_fpath, "goal_state.yaml")
     env_state_to_pred_state(env, goal_pred_state_fpath)

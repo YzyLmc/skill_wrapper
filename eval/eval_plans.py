@@ -1,4 +1,9 @@
-"For all problems, run the result skill sequence, return Done if the goal state is reached, and log them."
+"""
+For all problems, run the result skill sequence, return Done if the goal state is reached, and log them.
+
+Example command:
+        python eval/eval_plans.py +dataset=easy +baseline=vila ++env=burger
+"""
 import os
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -66,16 +71,15 @@ def get_successfulness(env, plan, impossible=False) -> bool:
         # Ugly way of getting "done"
         wait = [a for a in skill_manager.env.current_state.get_valid_actions_and_str()[0] if a[0].name == "wait"][0]
         _, _, done, _ = env.step([wait])
+        # if done:
+        #     break
     return done
 
 if __name__ == "__main__":
     """
     Arguments & Default values:
-    baseline: Name of the baseline {"FMinvent", "oracle", "random_explore", "vila", "skillwrapper"}
+    baseline: Name of the baseline {"FMinvent", "oracle", "expert", "random_explore", "vila", "skillwrapper"}
     dataset: ["test", "seen", "unseen"]
     env: Name of the environment. For now only burger is supported.
-
-    Example command:
-        python eval/eval_plans.py +dataset=seen +baseline=vila ++env=burger
     """
     main()

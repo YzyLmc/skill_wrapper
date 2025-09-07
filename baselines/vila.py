@@ -2,6 +2,9 @@
 Reproduction of vila baseline: given image of current state and final state and the action history, return a next skill
 Franka, Dorfl, and Spot need manual input of the next image after executing the proposed skill
 Burger is automated.
+
+example command:
+    python baselines/vila.py ++env=burger +dataset=test ++max_steps=20
 """
 
 import os
@@ -166,8 +169,5 @@ if __name__ == "__main__":
     model: gpt-4o
     max_steps: 10
     tmp_dir: tmp/
-
-    example command:
-        python baselines/vila.py ++env=burger +dataset=test ++max_steps=20
     """
     main()

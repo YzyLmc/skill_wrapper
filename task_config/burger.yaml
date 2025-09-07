@@ -15,11 +15,11 @@ skills:
     name: Place
     types:
       - pickupable
-      - location
+      - station
     params: !!python/tuple []
     semantics:
       pickupable: the object to be dropped.
-      location: the receptacle onto which object is dropped.
+      station: the receptacle onto which object is dropped.
 
   Stack: !Skill
     name: Stack
@@ -68,11 +68,11 @@ objects:
       - cookable
   Stove:
     types:
-      - location
+      - station
       - cooker
-  Board:
+  CuttingBoard:
     types:
-      - location
+      - station
       - cuttingboard
 
 Env_description: 'There is a robot in the kitchen. The robot can pick up, place, stack, cut, and cook objects. The robot has access to lettuce, top bun, bottom bun, and patty. The stove and cutting board are available. The lettuce is uncut and the patty is raw. The robot can navigate the environment freely but only has one gripper.'

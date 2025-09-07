@@ -6,7 +6,6 @@ import logging
 import json
 import csv
 import sys
-sys.path.append(f".")
 from src.data_structure import yaml
 import os
 import dill

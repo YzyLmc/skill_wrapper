@@ -5,10 +5,10 @@ import argparse
 import logging
 from collections import defaultdict
 
-from data_structure import Skill, yaml
-from utils import GPT4, load_from_file, save_to_file, setup_logging, clean_logging, save_results, load_results, get_save_fpath
-from skill_sequence_proposing import SkillSequenceProposing
-from invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
+from src.data_structure import Skill
+from src.utils import GPT4, load_from_file, save_to_file, setup_logging, clean_logging, save_results, load_results, get_save_fpath
+from src.skill_sequence_proposing import SkillSequenceProposing
+from src.invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, args):
     """
@@ -67,17 +67,17 @@ def main():
     # init env
     task_config = load_from_file(args.task_config_fpath)
     args.env = task_config["env"]
-    log_save_path = setup_logging(args.save_dir, task_config["env"]) # configure logging
+    log_dir = f"results/skillwrapper/{args.env}/log/"
+    log_save_path = setup_logging(log_dir, task_config["env"]) # configure logging
 
     # main loop
     if args.env in ["dorfl", "spot", "franka", "burger"]:
         model = GPT4(engine=args.model)
 
         # init skill sequence proposing system
-        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath) # prompt not included but 
+        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath)
 
         type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
-        # assert any(['robot' in types for types in type_dict.values()]), "Don't forget to include robot as an object!"
         
         tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
         # main loop
@@ -114,14 +114,15 @@ if __name__ == "__main__":
 
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
     parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
-    parser.add_argument("--step_by_step", action="store_true")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
     parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
     parser.add_argument("--save_dir", type=str, help="directory to save learned operators files")
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
-    parser.add_argument("--logging_dir", type=str, default='results/', help="directory to save logging files")
+
     parser.add_argument("--invent_pred", action="store_true", help="Read from existing data and invent predicates.")
     parser.add_argument("--skill_seq", action="store_true", help="Read from existing data and invent predicates")
+
+    parser.add_argument("--step_by_step", action="store_true")
 
     args = parser.parse_args()
 

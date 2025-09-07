@@ -1,4 +1,3 @@
-import itertools
 import yaml
 
 class Skill:

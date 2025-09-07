@@ -15,9 +15,9 @@ import logging
 import random
 from typing import Union
 
-from utils import GPT4, load_from_file
-from data_structure import Skill, Predicate, PredicateState
-from RCR_bridge import PDDLState, LiftedPDDLAction, Parameter, RCR_bridge, generate_possible_groundings
+from src.utils import GPT4, load_from_file
+from src.data_structure import Skill, Predicate, PredicateState
+from src.RCR_bridge import PDDLState, LiftedPDDLAction, Parameter, RCR_bridge, generate_possible_groundings
 
 def possible_grounded_preds(lifted_pred_list: list[Predicate], type_dict: dict[str, list[str] ]) -> list[Predicate]:
     """
@@ -64,7 +64,7 @@ def calculate_pred_to_update(grounded_predicates: list[Predicate], grounded_skil
 #     prompt = construct_prompt(prompt, skill)
 #     return model.generate_multimodal(prompt, consecutive_pair)[0]
 
-def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, prompt_fpath='prompts/evaluate_pred.yaml', log=False) -> bool:
+def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, input_modality: str = "image", prompt_fpath='prompts/evaluate_pred.yaml', log=False) -> bool:
     '''
     evaluate truth value of a predicate using a dictionary of parameters
     init step and later steps use different prompts. hardcoded.
@@ -82,6 +82,9 @@ def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, prompt_
             prompt = prompt.replace('[LIFTED_PRED]', str(grounded_pred.lifted()))
             prompt = prompt.replace('[SEMANTIC]', grounded_pred.semantic)
         return prompt
+    
+    if input_modality == "text":
+        raise NotImplementedError("Text input modality is not implemented yet.")
     
     prompt = load_from_file(prompt_fpath)[env]
     prompt = construct_prompt(prompt, grounded_pred)
