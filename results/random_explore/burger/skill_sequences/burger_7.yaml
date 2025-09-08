@@ -1,0 +1,76 @@
+- !Skill
+  name: Stack
+  params:
+  - TopBun
+  - BottomBun
+  semantics: &id001 {}
+  types:
+  - pickupable
+  - pickupable
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types:
+  - cookable
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: *id001
+  types:
+  - pickupable
+- !Skill
+  name: Stack
+  params:
+  - Patty
+  - TopBun
+  semantics: *id001
+  types:
+  - pickupable
+  - pickupable
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types:
+  - cuttable
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types:
+  - pickupable
+  - location
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types:
+  - cuttable
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types:
+  - cuttable
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: *id001
+  types:
+  - pickupable
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types:
+  - cookable

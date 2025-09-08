@@ -1,0 +1,1114 @@
+2025-9-1-4-43-43:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/1.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Patty
+      - Lettuce
+      semantics: &id001 {}
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/10.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id001
+      types:
+      - cookable
+    success: true
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/2.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id001
+      types:
+      - cookable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/3.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id001
+      types:
+      - cookable
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/4.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - Lettuce
+      semantics: *id001
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id001
+      types:
+      - pickupable
+    success: true
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/6.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id001
+      types:
+      - cookable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/7.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - Patty
+      semantics: *id001
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/8.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - pickupable
+      - location
+    success: true
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-43/9.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id001
+      types:
+      - cuttable
+    success: false
+2025-9-1-4-43-51:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/1.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - TopBun
+      semantics: &id002 {}
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - TopBun
+      semantics: *id002
+      types:
+      - pickupable
+    success: true
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/2.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id002
+      types:
+      - cuttable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/3.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - BottomBun
+      - Stove
+      semantics: *id002
+      types:
+      - pickupable
+      - location
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/4.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id002
+      types:
+      - cookable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id002
+      types:
+      - cookable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/6.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Patty
+      - Stove
+      semantics: *id002
+      types:
+      - pickupable
+      - location
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/7.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id002
+      types:
+      - cookable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/8.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Patty
+      - TopBun
+      semantics: *id002
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-51/9.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - TopBun
+      - Stove
+      semantics: *id002
+      types:
+      - pickupable
+      - location
+    success: false
+2025-9-1-4-43-59:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/1.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: &id003 {}
+      types:
+      - cuttable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/10.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id003
+      types:
+      - cookable
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/2.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id003
+      types:
+      - cookable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/3.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id003
+      types:
+      - cuttable
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/4.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id003
+      types:
+      - cookable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id003
+      types:
+      - cookable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/6.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id003
+      types:
+      - cuttable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/7.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id003
+      types:
+      - pickupable
+    success: true
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/8.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - TopBun
+      - BottomBun
+      semantics: *id003
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-43-59/9.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id003
+      types:
+      - cuttable
+    success: false
+2025-9-1-4-44-15:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: &id004 {}
+      types:
+      - cookable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/10.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id004
+      types:
+      - cuttable
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - TopBun
+      - Stove
+      semantics: *id004
+      types:
+      - pickupable
+      - location
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/3.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - Patty
+      semantics: *id004
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/4.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id004
+      types:
+      - pickupable
+    success: true
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - BottomBun
+      semantics: *id004
+      types:
+      - pickupable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/6.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id004
+      types:
+      - cuttable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/7.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Patty
+      - TopBun
+      semantics: *id004
+      types:
+      - pickupable
+      - pickupable
+    success: true
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/8.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id004
+      types:
+      - pickupable
+    success: true
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-15/9.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Lettuce
+      - BottomBun
+      semantics: *id004
+      types:
+      - pickupable
+      - pickupable
+    success: true
+2025-9-1-4-44-23:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: &id005 {}
+      types:
+      - cookable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/10.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Stove
+      semantics: *id005
+      types:
+      - pickupable
+      - location
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/2.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id005
+      types:
+      - pickupable
+    success: true
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/3.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Stove
+      semantics: *id005
+      types:
+      - pickupable
+      - location
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/4.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - TopBun
+      - Board
+      semantics: *id005
+      types:
+      - pickupable
+      - location
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id005
+      types:
+      - cookable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/6.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id005
+      types:
+      - pickupable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/7.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id005
+      types:
+      - cuttable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/8.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Board
+      semantics: *id005
+      types:
+      - pickupable
+      - location
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-23/9.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id005
+      types:
+      - pickupable
+    success: false
+2025-9-1-4-44-30:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: &id006 {}
+      types:
+      - cookable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id006
+      types:
+      - pickupable
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/2.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Lettuce
+      - BottomBun
+      semantics: *id006
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/3.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id006
+      types:
+      - cookable
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/4.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Patty
+      - Stove
+      semantics: *id006
+      types:
+      - pickupable
+      - location
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id006
+      types:
+      - cookable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/6.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id006
+      types:
+      - cuttable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/7.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - Patty
+      semantics: *id006
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/8.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id006
+      types:
+      - cookable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-30/9.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id006
+      types:
+      - pickupable
+    success: true
+2025-9-1-4-44-38:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/1.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - TopBun
+      - BottomBun
+      semantics: &id007 {}
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/10.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id007
+      types:
+      - cookable
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/2.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id007
+      types:
+      - cookable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/3.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id007
+      types:
+      - pickupable
+    success: true
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/4.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Patty
+      - TopBun
+      semantics: *id007
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/5.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id007
+      types:
+      - cuttable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/6.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - BottomBun
+      - Board
+      semantics: *id007
+      types:
+      - pickupable
+      - location
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/7.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id007
+      types:
+      - cuttable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/8.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id007
+      types:
+      - cuttable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-38/9.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id007
+      types:
+      - pickupable
+    success: false
+2025-9-1-4-44-46:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: &id008 {}
+      types:
+      - cookable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/10.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id008
+      types:
+      - cookable
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/2.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id008
+      types:
+      - cuttable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/3.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - TopBun
+      semantics: *id008
+      types:
+      - pickupable
+    success: true
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/4.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id008
+      types:
+      - cuttable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - BottomBun
+      semantics: *id008
+      types:
+      - pickupable
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/6.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id008
+      types:
+      - cuttable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/7.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - BottomBun
+      - Stove
+      semantics: *id008
+      types:
+      - pickupable
+      - location
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/8.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Lettuce
+      - Patty
+      semantics: *id008
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-46/9.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id008
+      types:
+      - cuttable
+    success: false
+2025-9-1-4-44-54:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: &id009 {}
+      types:
+      - cookable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/10.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Stove
+      semantics: *id009
+      types:
+      - pickupable
+      - location
+    success: true
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/2.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id009
+      types:
+      - cuttable
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/3.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id009
+      types:
+      - pickupable
+    success: true
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/4.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - BottomBun
+      - Board
+      semantics: *id009
+      types:
+      - pickupable
+      - location
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/5.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Patty
+      - Board
+      semantics: *id009
+      types:
+      - pickupable
+      - location
+    success: false
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/6.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id009
+      types:
+      - pickupable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/7.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id009
+      types:
+      - cuttable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/8.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - BottomBun
+      semantics: *id009
+      types:
+      - pickupable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-54/9.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Lettuce
+      semantics: *id009
+      types:
+      - cuttable
+    success: false
+2025-9-1-4-44-7:
+  '0':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/1.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - BottomBun
+      - TopBun
+      semantics: &id010 {}
+      types:
+      - pickupable
+      - pickupable
+    success: false
+  '10':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/10.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Board
+      semantics: *id010
+      types:
+      - pickupable
+      - location
+    success: false
+  '2':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Lettuce
+      - Stove
+      semantics: *id010
+      types:
+      - pickupable
+      - location
+    success: false
+  '3':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/3.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - cookable
+    success: false
+  '4':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/4.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - cookable
+    success: false
+  '5':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - pickupable
+    success: true
+  '6':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/6.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - cookable
+    success: false
+  '7':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/7.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - pickupable
+    success: false
+  '8':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/8.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Lettuce
+      semantics: *id010
+      types:
+      - pickupable
+    success: false
+  '9':
+    image: ults/baselines/random_explore/burger/transitions/2025-9-1-4-44-7/9.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Patty
+      semantics: *id010
+      types:
+      - cookable
+    success: false
