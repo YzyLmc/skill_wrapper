@@ -240,6 +240,7 @@ def get_save_fpath(directory: str, fname: str, ftype: str) -> str:
     return save_path
 
 def setup_logging(dir_name, env_name) -> str:
+    os.makedirs(dir_name, exist_ok=True)
     save_path = get_save_fpath(dir_name, f"{env_name}_log_raw_results", "log")
     # Remove all handlers associated with the root logger
     root_logger = logging.getLogger()
@@ -306,15 +307,22 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
         lifted_pred_list :: list[Predicate]
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     """
-    save_to_file(skill2operator, f"{save_directory}/skill2operator.pkl")
+    os.makedirs(save_directory, exist_ok=True)
+    # if "0" exists under save_directory, rename it to "1" to avoid overwriting, so on and so forth
+    i = 0
+    while os.path.exists(f"{save_directory}/runs/{i}"):
+        i += 1
+    save_directory_full = f"{save_directory}/runs/{i}"
+    os.makedirs(save_directory_full, exist_ok=True)
+    save_to_file(skill2operator, f"{save_directory_full}/operators/skill2operator.pkl")
     readable_operators = {lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas] for lifted_skill, operator_metas in skill2operator.items()}
-    save_to_file(readable_operators, f"{save_directory}/skill2operator.yaml")
+    save_to_file(readable_operators, f"{save_directory_full}/operators/operators.yaml")
 
-    save_to_file(lifted_pred_list, f"{save_directory}/lifted_pred_list.yaml")
+    save_to_file(lifted_pred_list, f"{save_directory_full}/predicates/predicates.yaml")
 
-    save_to_file(grounded_predicate_truth_value_log, f"{save_directory}/grounded_predicate_truth_value_log.yaml")
+    save_to_file(grounded_predicate_truth_value_log, f"{save_directory_full}/transitions/grounded_predicate_truth_value_log.yaml")
     # TODO: auto rename in case of overwriting
-    logging.info(f"results have been saved to {save_directory}")
+    logging.info(f"results have been saved to {save_directory_full}")
 
 def load_results(load_fpath, task_config):
     """

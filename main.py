@@ -1,5 +1,5 @@
 """
-Main function for SkillWrapper. Because of the robot experiments, skill sequence proposal and predicate invention are separated into two parts."
+Main function for SkillWrapper. Because of the robot experiments, skill sequence proposal and predicate invention are separated into two parts.
 """
 import argparse
 import logging
@@ -65,57 +65,56 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
 
 def main():
     # init env
-    task_config = load_from_file(args.task_config_fpath)
-    args.env = task_config["env"]
+    task_config_fpath = f"task_config/{args.env}.yaml"
+    task_config = load_from_file(task_config_fpath)
+    type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
+
     log_dir = f"results/skillwrapper/{args.env}/log/"
-    log_save_path = setup_logging(log_dir, task_config["env"]) # configure logging
+    log_save_path = setup_logging(log_dir, args.env) # configure logging
 
+    model = GPT4(engine=args.model)
+
+    # init skill sequence proposing system
+    skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=task_config_fpath)
+    
+    tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
+    
     # main loop
-    if args.env in ["dorfl", "spot", "franka", "burger"]:
-        model = GPT4(engine=args.model)
+    for i in range(args.num_iter):
+        if not args.invent_pred:
+            # propose skill sequence
+            tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args)
+        else:
+            assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention."
 
-        # init skill sequence proposing system
-        skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=args.task_config_fpath)
+        if not args.skill_seq:
+            # invent predicates
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
+        else:
+            assert not args.invent_pred_only, "Either one of proposal and predicate invention must be called."
 
-        type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
-        
-        tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
-        # main loop
-        for i in range(args.num_iter):
-            if not args.invent_pred:
-                # propose skill sequence and execute
-                tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args)
-            else:
-                assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention."
+        save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
 
-            if not args.skill_seq:
-                # invent predicates
-                skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
-            else:
-                assert not args.invent_pred_only, "Either one of proposal and predicate invention must be called."
+        logging.info(f"iteration #{i+1} is done")
 
-            logging.info(f"iteration #{i+1} is done")
-            operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
-            
-            logging.info("Operators learned this round:")
-            for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
-            save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
+        # log results
+        operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
+        logging.info("Operators learned this round:")
+        for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
 
-            if args.step_by_step:
-                logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next iteration?")
-                breakpoint()
-        clean_logging(log_save_path)
-
-    else:
-        raise NotImplementedError(f"Env {task_config['env']} has not been implemented.")
+        if args.step_by_step:
+            logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next iteration?")
+            breakpoint()
+    clean_logging(log_save_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--env", type=str, choices=["dorfl", "spot", "franka", "burger"], default="dorfl", help="the name of the environment")
+
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
     parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
     parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-    parser.add_argument("--task_config_fpath", type=str, default="task_config/dorfl.yaml", help="yaml file that store meta data of the env")
     parser.add_argument("--save_dir", type=str, help="directory to save learned operators files")
     parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
 
