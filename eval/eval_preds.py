@@ -20,18 +20,16 @@ def eval_all_predicates(model: GPT4, lifted_pred_list: list[Predicate], type_dic
     grounded_preds = possible_grounded_preds(lifted_pred_list, type_dict)
     predicate_state = PredicateState(grounded_preds)
     for i, grounded_pred in enumerate(grounded_preds):
-        if "station_free" in grounded_pred.name:
-            truth_value = eval_pred(fpath, grounded_pred, model, env, input_modality)
-            predicate_state.set_pred_value(grounded_pred, truth_value)
-            logging.info(f'Evaluating predicate {grounded_pred} to be {truth_value}')
-            logging.info(f'{i+1}/{len(grounded_preds)} is done')
+        truth_value = eval_pred(fpath, grounded_pred, model, env, input_modality)
+        predicate_state.set_pred_value(grounded_pred, truth_value)
+        logging.info(f'Evaluating predicate {grounded_pred} to be {truth_value}')
+        logging.info(f'{i+1}/{len(grounded_preds)} is done')
     return predicate_state
 
 def main():
     # setup logging
     logging_dir = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/"
-    os.makedirs(logging_dir, exist_ok=True)
-    logging_fpath = os.path.join(logging_dir, "eval_preds")
+    logging_fpath = os.path.join(logging_dir, "eval_preds_log")
     setup_logging(logging_fpath, args.env)
 
     # init model
@@ -43,7 +41,8 @@ def main():
     logging.info(f"Loaded predicates from {pred_fpath}")
 
     # load typed dict
-    task_config = load_from_file(args.task_config_fpath)
+    task_config_fpath = f"task_config/{args.env}.yaml"
+    task_config = load_from_file(task_config_fpath)
     type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
 
     # loop through all problems under a dataset
@@ -66,10 +65,10 @@ def main():
             os.makedirs(save_dir, exist_ok=True)
             save_to_file(init_pred_state, f"{save_dir}/init_state_{args.input_modality}.yaml")
             save_to_file(goal_pred_state, f"{save_dir}/goal_state_{args.input_modality}.yaml")
+            logging.info(f"Saved predicate states to {save_dir}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task_config_fpath", type=str, default="task_config/burger.yaml", help="yaml file that store meta data of the env")
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3'], default='gpt-4o-2024-11-20')
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")

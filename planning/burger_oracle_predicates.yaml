@@ -19,11 +19,11 @@
   - pickupable
 
 - !Predicate
-  name: location_free
+  name: station_free
   params: !!python/tuple []
   semantic: "A `station` is free for cooking ingredients."
   types: !!python/tuple
-  - location
+  - station
 
 - !Predicate
   name: is_on_top
@@ -34,12 +34,12 @@
   - pickupable
 
 - !Predicate
-  name: is_on_location
+  name: is_on_station
   params: !!python/tuple []
-  semantic: "A `pickupable` object is on top of a `location`."
+  semantic: "A `pickupable` object is on top of a `station`."
   types: !!python/tuple
   - pickupable
-  - location
+  - station
 
 - !Predicate
   name: is_cut

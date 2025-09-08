@@ -1,6 +1,8 @@
 """
 Load preadicate states of init state and goal state of each problem, learned operators & predicates, and plan with K star or FD.
 
+Example usage:
+    python eval/plan_with_operators.py --baseline expert_operators --dataset test
 """
 import os
 import sys
@@ -20,9 +22,8 @@ except ImportError:
 else:
     kstar_available = True
 
-from src.utils import save_to_file, load_from_file, get_save_fpath
-from src.evaluate_predicates import evaluate_predicates
-from src.data_structure import yaml
+from src.utils import save_to_file, load_from_file
+from src.data_structure import PredicateState, Skill
 
 planner_path = '/home/ziyi/git/downward/fast-downward.py'
 
@@ -100,6 +101,9 @@ def find_plan(
 def run_trials(
     domain_fpath: str,
     yaml_data: dict,
+    init_state: PredicateState,
+    goal_state: PredicateState,
+    problem_dir: str,
     num_trials: int = 10,
     method: str = 'fd',
 ):
@@ -109,16 +113,14 @@ def run_trials(
     count = 0
 
     data_per_trial = {
-        "setting": args.setting,
+        "env": args.env,
         "plan_method": method,
     }
 
     for T in range(num_trials):
         data_per_trial[T] = {}
 
-        problem_fpath, state = create_problem_file(setting=args.setting, trial=T, )
-
-        data_per_trial[T]['state'] = state
+        problem_fpath = create_problem_file(init_state, goal_state, problem_dir, trial=T, )
 
         print(f"\n{'*' * 10} TRIAL {T+1} {'*' * 10}")
 
@@ -143,7 +145,6 @@ def run_trials(
             data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
                 plans=[solution], 
                 yaml_data=yaml_data, 
-                setting=args.setting,
             )
 
         elif method == 'kstar':
@@ -168,13 +169,17 @@ def run_trials(
             data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
                 plans=solutions, 
                 yaml_data=yaml_data, 
-                setting=args.setting,
             )
-    timestamp = dt.today().strftime('%Y-%m-%d_%H-%M-%SS')
+    # lowest level directory of problem_dir
+    problem_num = problem_dir.split('/')[-1]
+    save_dir = f"results/{args.baseline}/{args.env}/plans/{args.dataset}/{problem_num}"
+    save_fpath = os.path.join(save_dir, "plan.yaml")
+    os.makedirs(save_dir, exist_ok=True)
+    save_to_file(data_per_trial, save_fpath)
+    print(f"Saved plans to {save_fpath}")
+    # json.dump(data_per_trial, open(save_fpath, "w"), indent=4)
 
-    json.dump(data_per_trial, open(f"{timestamp}_all_trials.json", "w"), indent=4)
-
-def postprocess_plans(plans: list[str], yaml_data: dict, setting: str):
+def postprocess_plans(plans: list[str], yaml_data: dict):
     all_processed_plans = []
 
     skills = yaml_data['skills']
@@ -189,12 +194,14 @@ def postprocess_plans(plans: list[str], yaml_data: dict, setting: str):
             for S in skills:
                 if action_parts[0].startswith(S.lower()):
                     action_parts[0] = S
+                    skill = S
 
             for x in range(1, len(action_parts)):
                 for O in objects:
                     if action_parts[x].startswith(O.lower()):
                         action_parts[x] = O
-                        
+
+            grounded_skill = Skill(name=action_parts[0], params=action_parts[1:])
             processed_plan.append(
                 f"{action_parts[0]}({', '.join([x for x in action_parts[1:]])})"
             )
@@ -203,17 +210,24 @@ def postprocess_plans(plans: list[str], yaml_data: dict, setting: str):
 
     return all_processed_plans
 
-def parse_predicate(pred: str):
-    # -- change all parentheses into commas for easy parsing and remove whitespaces; then remove any empty strings:
-    pred = list(filter(None, str(pred).replace('(', ',').replace(')', ',').replace(' ', '').split(',')))
-    # -- extract the predicate name and all proceeding arguments :
-    name, args_no_variables = pred[0], pred[1:]
+def parse_predicate(pred: str, is_domain: bool = True):
+    # # -- change all parentheses into commas for easy parsing and remove whitespaces; then remove any empty strings:
+    # pred = list(filter(None, str(pred).replace('(', ',').replace(')', ',').replace(' ', '').split(',')))
+    # # -- extract the predicate name and all proceeding arguments :
+    # name, args_no_variables = pred[0], pred[1:]
+    if is_domain:
+        name, args_no_variables = pred.name, pred.types
+    else:
+        name, args_no_variables = pred.name, pred.params
 
     # -- we need to format predicates with question marks for variables:
     args_with_variables = []
-    for a in range(len(args_no_variables)):
+    for arg in args_no_variables:
         # -- we will format as "?<obj_type> - <obj_type>":
-        args_with_variables.append(f'?arg{a} - {args_no_variables[a]}')
+        if is_domain:
+            args_with_variables.append(f'?{arg} - {arg}')
+        else:
+            args_with_variables.append(f'{arg}')
 
     # -- return a PDDL-structured predicate:
     return f"({name} {' '.join(args_with_variables)})"
@@ -221,7 +235,7 @@ def parse_predicate(pred: str):
 def create_domain_file(
     method: str,
     yaml_data: list,
-    setting: str,
+    env: str,
 ) -> str:
 
     object_types = set()
@@ -230,7 +244,9 @@ def create_domain_file(
             object_types.add(f'{obj} - {obj_type}')
             object_types.add(f'{obj_type} - object')
 
-    domain_fpath = os.path.join(os.getcwd(), f'{setting}_domain_{method}.pddl')
+    problem_dir = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/"
+
+    domain_fpath = os.path.join(problem_dir, f'{env}_domain_{method}.pddl')
 
     with open(domain_fpath, 'w') as nf:
         prototype_content = None
@@ -243,7 +259,7 @@ def create_domain_file(
         new_content = prototype_content.replace('<actions>', "\n\n".join(yaml_data["operators"]))
         new_content = new_content.replace('<types>', "\n\t\t".join(list(object_types)))
         new_content = new_content.replace('<predicates>', "\n\t\t".join(yaml_data["predicates"]))
-        new_content = new_content.replace('<domain>', f"{setting}_{method}")
+        new_content = new_content.replace('<domain>', f"{env}_{method}")
 
         # -- write content to new PDDL file:
         nf.write(new_content)
@@ -251,76 +267,103 @@ def create_domain_file(
     return domain_fpath
 
 def create_problem_file(
+    init_state: PredicateState,
+    goal_state: PredicateState,
+    problem_dir,
     trial: int = 0,
 ) -> str:
 
-    init_state, goal_state = [], []
+    init_state_strs, goal_state_strs = [], []
 
     # -- generating the initial state for problem file:
-
-    predicate_state = load_from_file()
-
-    for pred in predicate_state.iter_predicates():
-        if predicate_state.get_pred_value(pred):
-            init_state.append(parse_predicate(pred, is_domain=False))
+    for pred in init_state.iter_predicates():
+        if init_state.get_pred_value(pred):
+            init_state_strs.append(parse_predicate(pred, is_domain=False))
 
     # -- generating the goal state for problem file:
-    predicate_state = load_from_file()
 
-    for pred in predicate_state.iter_predicates():
-        if predicate_state.get_pred_value(pred):
-                goal_state.append(parse_predicate(pred, is_domain=False))
+    for pred in goal_state.iter_predicates():
+        if goal_state.get_pred_value(pred):
+                goal_state_strs.append(parse_predicate(pred, is_domain=False))
 
-    init_state = list(filter(None, init_state))
-    goal_state = list(filter(None, goal_state))
+    init_state_strs = list(filter(None, init_state_strs))
+    goal_state_strs = list(filter(None, goal_state_strs))
 
-    problem_fpath = os.path.join(os.getcwd(), f"{robot}_problem_trial-{trial}.pddl")
+    problem_fpath = os.path.join(problem_dir, f"{args.env}_problem_trial-{trial}.pddl")
 
     with open(problem_fpath, 'w') as nf:
         prototype_content = None
 
         # -- read all content from the prototype file:
-        with open(f'prompts/{robot}_problem_template.pddl', 'r') as df:
+        with open(f'planning/{args.env}_problem_template.pddl', 'r') as df:
             prototype_content = df.read()
 
         # -- find and replace placeholders in the prototype file:
-        new_content = prototype_content.replace('<init_state>', "\n\t".join(init_state))
-        new_content = new_content.replace('<goal_state>', "\n\t".join(goal_state))
+        new_content = prototype_content.replace('<init_state>', "\n\t".join(init_state_strs))
+        new_content = new_content.replace('<goal_state>', "\n\t".join(goal_state_strs))
 
         # -- write content to new PDDL file:
         nf.write(new_content)
 
     return problem_fpath
 
+def main():
+
+    # load predicates
+    pred_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/predicates/predicates.yaml"
+    data_predicates = load_from_file(pred_fpath)
+    print(f"Loaded predicates from {pred_fpath}")
+
+    # load operators
+    op_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/operators/operators.yaml"
+    data_operators = load_from_file(op_fpath)
+    print(f"Loaded operators from {op_fpath}")
+
+    # load task config
+    task_config_fpath = f"task_config/{args.env}.yaml"
+    data_objects = load_from_file(task_config_fpath)
+
+    # create domain file
+    yaml_data = {
+        "operators": [O.pop() for _, O in data_operators.items()],   
+        "predicates": [parse_predicate(P) for P in data_predicates],
+        "objects": data_objects['objects'],
+        "skills": data_objects['skills'],
+    }
+
+    domain_fpath = create_domain_file(
+                method='skillwrapper',
+                yaml_data=yaml_data,
+                env=args.env,
+            )
+
+    # loop through all problems under a dataset
+    problem_dir = f"results/{args.baseline}/{args.env}/pred_state/{args.dataset}/"
+    for root, dirs, files in os.walk(problem_dir):
+        for d in dirs:
+            print(f"Processing problem {d} in {root}...")
+
+            init_state = load_from_file(os.path.join(root, d, f"init_state_{args.input_modality}.yaml"))
+            goal_state = load_from_file(os.path.join(root, d, f"goal_state_{args.input_modality}.yaml"))
+
+            run_trials(
+                domain_fpath,
+                yaml_data,
+                init_state,
+                goal_state,
+                problem_dir=os.path.join(root, d),
+                num_trials=args.ntrials,
+                method=args.planner,
+            )
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--yaml_operators",
-        type=str,
-        default=None,
-        help="This specifies the path to the YAML file containing all operators.",
-    )
 
-    parser.add_argument(
-        "--yaml_predicates",
-        type=str,
-        default=None,
-        help="This specifies the path to the YAML file containing all predicates.",
-    )
-
-    parser.add_argument(
-        "--yaml_objects",
-        type=str,
-        default=None,
-        help="This specifies the path to the YAML file containing all objects.",
-    )
-
-    parser.add_argument(
-        "--setting",
-        type=str,
-        default="dorfl",
-        help="This specifies the task setting being considered: ['dorfl', 'spot', 'panda', 'burger'] (default: 'dorfl').",
-    )
+    parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
+    parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
+    parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
+    parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
+    parser.add_argument("--input_modality", type=str, choices=["image", "text"], default="image", help="the input modality of the state")
 
     parser.add_argument(
         "--planner",
@@ -332,56 +375,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ntrials",
         type=int,
-        default=2,
+        default=1,
         help="This specifies the number of trials to run this process (default: 1).",
     )
 
     args = parser.parse_args()
 
-    data_predicates, data_operators, data_objects = [], [], []
-
-    if args.yaml_operators:
-        with open(args.yaml_operators, "r") as f:
-            data_operators = yaml.load(f, Loader=yaml.FullLoader)
-    else:
-        print('-- Missing YAML operators file!')
-        sys.exit()
-
-    if args.yaml_predicates:
-        with open(args.yaml_predicates, "r") as f:
-            data_predicates = yaml.load(f, Loader=yaml.FullLoader)
-    else:
-        print('-- Missing YAML predicates file!')
-        sys.exit()
-
-    if args.yaml_objects:
-        with open(args.yaml_objects, "r") as f:
-            data_objects = yaml.load(f, Loader=yaml.FullLoader)
-    else:
-        print('-- Missing YAML objects file!')
-        sys.exit()
-
-    if data_predicates and data_operators and data_objects:    
-        yaml_data = {
-            "operators": [O.pop() for _, O in data_operators.items()],   
-            "predicates": [parse_predicate(P) for P in data_predicates],
-            "objects": data_objects['objects'],
-            "skills": data_objects['skills'],
-        }
-
-        domain_fpath = create_domain_file(
-            method='skillwrapper',
-            yaml_data=yaml_data,
-            setting=args.setting,
-        )
-
-        data_skills = data_objects
-
-        run_trials(
-            domain_fpath,
-            yaml_data,
-            num_trials=args.ntrials,
-            method=args.planner,
-        )
-
-
+    main()
