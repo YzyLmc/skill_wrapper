@@ -26,7 +26,6 @@ from src.utils import save_to_file, load_from_file
 from src.data_structure import PredicateState, Skill
 
 planner_path = '/home/ziyi/git/downward/fast-downward.py'
-planner_path = '../downward/fast-downward.py'
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]

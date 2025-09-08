@@ -79,14 +79,14 @@
     \ \t\t:parameters (?pickupable - pickupable ?station - station)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(is_holding ?pickupable)\ 
-    \ \n\t\t\t(obj_free ?station)\
+    \ \n\t\t\t(station_free ?station)\
     \ \n\t\t\t(not (obj_free ?pickupable))\n\t\t)\
     \ \n\t\t:effect (and\ 
     \ \n\t\t\t(not (is_holding ?pickupable))\ 
     \ \n\t\t\t(obj_free ?pickupable)\
     \ \n\t\t\t(hand_empty)\ 
-    \ \n\t\t\t(not (obj_free ?station))\
-    \ \n\t\t\t(is_on_top ?pickupable ?station)\
+    \ \n\t\t\t(not (station_free ?station))\
+    \ \n\t\t\t(is_on_station ?pickupable ?station)\
     \ \n\t\t)\n\t)"
 
 ? !Skill
@@ -126,7 +126,7 @@
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(obj_free ?cuttable)\
-    \ \n\t\t\t(is_on_top ?cuttable ?board)\
+    \ \n\t\t\t(is_on_station ?cuttable ?board)\
     \ \n\t\t\t(not (is_cut ?cuttable))\n\t\t)\
     \ \n\t\t:effect (and\
     \ \n\t\t\t(is_cut ?cuttable)\
@@ -145,7 +145,7 @@
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(obj_free ?cookable)\
-    \ \n\t\t\t(is_on_top ?cookable ?cooker)\
+    \ \n\t\t\t(is_on_station ?cookable ?cooker)\
     \ \n\t\t\t(not (is_cooked ?cookable))\n\t\t)\
     \ \n\t\t:effect (and\
     \ \n\t\t\t(is_cooked ?cookable)\
