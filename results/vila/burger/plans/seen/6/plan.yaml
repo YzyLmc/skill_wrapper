@@ -1,0 +1,7 @@
+plan:
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: {}
+  types: []

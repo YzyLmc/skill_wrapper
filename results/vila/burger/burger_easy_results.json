@@ -1,0 +1,142 @@
+{
+    "0": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": {
+            "plan.yaml": true
+        }
+    },
+    "1": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": {
+            "plan.yaml": true
+        }
+    },
+    "10": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": {
+            "plan.yaml": true
+        }
+    },
+    "11": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "12": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "13": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": {
+            "plan.yaml": true
+        }
+    },
+    "14": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": {
+            "plan.yaml": true
+        }
+    },
+    "15": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "16": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "17": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "18": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "19": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "2": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "3": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "4": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "5": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "6": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "7": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "8": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    },
+    "9": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": {
+            "plan.yaml": false
+        }
+    }
+}

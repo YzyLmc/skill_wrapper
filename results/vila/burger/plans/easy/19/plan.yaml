@@ -1,0 +1,59 @@
+plan:
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: &id001 {}
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - TopBun
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - TopBun
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - TopBun
+  - CuttingBoard
+  semantics: *id001
+  types: []

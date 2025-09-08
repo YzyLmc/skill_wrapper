@@ -1,0 +1,133 @@
+plan:
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: &id001 {}
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - BottomBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - TopBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - BottomBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []

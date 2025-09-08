@@ -1,0 +1,13 @@
+plan:
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: &id001 {}
+  types: []
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types: []

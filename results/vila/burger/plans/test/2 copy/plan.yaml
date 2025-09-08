@@ -1,0 +1,93 @@
+plan:
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: &id001 {}
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - BottomBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - Board
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cut
+  params:
+  - Lettuce
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Cook
+  params:
+  - Patty
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Patty
+  semantics: *id001
+  types: []

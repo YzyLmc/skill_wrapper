@@ -69,8 +69,8 @@ def main(cfg: DictConfig):
             else:
                 logging.info(f"Solving problem {d} in {cfg.dataset}...")
 
-            current_img = os.path.join(root, d, "init_img.jpg")
-            goal_img = os.path.join(root, d, "goal_img.jpg")
+            current_img = os.path.join(root, d, "init_state.jpg")
+            goal_img = os.path.join(root, d, "goal_state.jpg")
             root_components = root.split(os.sep)[-3:]
             root_path = os.sep.join(root_components)
             environment_name = os.path.join(root_path, d, "problem")
