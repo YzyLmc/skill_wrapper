@@ -12,8 +12,8 @@
 	<init_state>
 )
 
-(:goal 
+(:goal (and
     <goal_state>
-)
+))
 
 )

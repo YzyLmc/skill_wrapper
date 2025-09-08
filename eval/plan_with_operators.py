@@ -26,6 +26,7 @@ from src.utils import save_to_file, load_from_file
 from src.data_structure import PredicateState, Skill
 
 planner_path = '/home/ziyi/git/downward/fast-downward.py'
+planner_path = '../downward/fast-downward.py'
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]
@@ -84,6 +85,8 @@ def find_plan(
         '--search', f'{algorithm}({heuristic}())',
     ]
 
+    print(" ".join(command))
+
     plan = []
 
     try:
@@ -120,7 +123,7 @@ def run_trials(
     for T in range(num_trials):
         data_per_trial[T] = {}
 
-        problem_fpath = create_problem_file(init_state, goal_state, problem_dir, trial=T, )
+        problem_fpath = create_problem_file(init_state, goal_state, problem_dir, domain=f"{args.env}_skillwrapper", trial=T, )
 
         print(f"\n{'*' * 10} TRIAL {T+1} {'*' * 10}")
 
@@ -270,6 +273,7 @@ def create_problem_file(
     init_state: PredicateState,
     goal_state: PredicateState,
     problem_dir,
+    domain: str,
     trial: int = 0,
 ) -> str:
 
@@ -301,6 +305,7 @@ def create_problem_file(
         # -- find and replace placeholders in the prototype file:
         new_content = prototype_content.replace('<init_state>', "\n\t".join(init_state_strs))
         new_content = new_content.replace('<goal_state>', "\n\t".join(goal_state_strs))
+        new_content = new_content.replace('<domain>', domain)
 
         # -- write content to new PDDL file:
         nf.write(new_content)
