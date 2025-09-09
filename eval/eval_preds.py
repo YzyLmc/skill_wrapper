@@ -28,15 +28,21 @@ def eval_all_predicates(model: GPT4, lifted_pred_list: list[Predicate], type_dic
 
 def main():
     # setup logging
-    logging_dir = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/"
+    logging_dir = f"results/{args.baseline}/{args.env}/"
     logging_fpath = os.path.join(logging_dir, "eval_preds_log")
     setup_logging(logging_fpath, args.env)
 
     # init model
     model = GPT4(engine=args.model)
 
+    if not args.iter_idx:
+        # all iterations under the runs folder
+        iters = os.listdir(f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/")
+        # largest iteration number
+        args.iter_idx = max([int(i) for i in iters if i.isdigit()])
+
     # load predicates
-    pred_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/predicates/predicates.yaml"
+    pred_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/{args.iter_idx}/predicates/predicates.yaml"
     lifted_pred_list = load_from_file(pred_fpath)
     logging.info(f"Loaded predicates from {pred_fpath}")
 
@@ -71,6 +77,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3'], default='gpt-4o-2024-11-20')
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
+    parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
     parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
     parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")

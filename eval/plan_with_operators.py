@@ -193,9 +193,8 @@ def postprocess_plans(plans: list[str], yaml_data: dict):
             action_parts = action.replace("(", "").replace(")", "").split(" ")
 
             # -- we will replace any auxiliary expert-defined skills with those of the basic ones in the YAML:
-            for S in skills:
-                if action_parts[0].startswith(S.lower()):
-                    action_parts[0] = S
+            for S_name, S in skills.items():
+                if action_parts[0].startswith(S_name.lower()):
                     skill = S
 
             for x in range(1, len(action_parts)):
@@ -203,9 +202,10 @@ def postprocess_plans(plans: list[str], yaml_data: dict):
                     if action_parts[x].startswith(O.lower()):
                         action_parts[x] = O
 
-            grounded_skill = Skill(name=action_parts[0], params=action_parts[1:])
+            grounded_skill = skill.ground_with(action_parts[1:])
             processed_plan.append(
-                f"{action_parts[0]}({', '.join([x for x in action_parts[1:]])})"
+                # f"{action_parts[0]}({', '.join([x for x in action_parts[1:]])})"
+                grounded_skill
             )
 
         all_processed_plans.append(processed_plan)
@@ -313,13 +313,19 @@ def create_problem_file(
 
 def main():
 
+    if not args.iter_idx:
+        # all iterations under the runs folder
+        iters = os.listdir(f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/")
+        # largest iteration number
+        args.iter_idx = max([int(i) for i in iters if i.isdigit()])
+
     # load predicates
-    pred_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/predicates/predicates.yaml"
+    pred_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/{args.iter_idx}/predicates/predicates.yaml"
     data_predicates = load_from_file(pred_fpath)
     print(f"Loaded predicates from {pred_fpath}")
 
     # load operators
-    op_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/operators/operators.yaml"
+    op_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/{args.iter_idx}/operators/operators.yaml"
     data_operators = load_from_file(op_fpath)
     print(f"Loaded operators from {op_fpath}")
 
@@ -367,6 +373,7 @@ if __name__ == "__main__":
     parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
     parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
+    parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
     parser.add_argument("--input_modality", type=str, choices=["image", "text"], default="image", help="the input modality of the state")
 
     parser.add_argument(

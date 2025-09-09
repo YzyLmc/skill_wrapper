@@ -99,7 +99,7 @@ def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, input_m
     logging.info(f'{grounded_pred} evaluated to `{result}` in {img}')
     return result
 
-def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes: list[bool], lifted_pred_list: list[Predicate], pred_type: str, model: GPT4, skill2tried_pred={}, prompt_fpath='prompts/predicate_invention.yaml', args=None) -> Predicate:
+def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes: list[bool], lifted_pred_list: list[Predicate], pred_type: str, model: GPT4, env, skill2tried_pred={}, prompt_fpath='prompts/predicate_invention.yaml') -> Predicate:
     '''
     propose new predicates based on the contrastive pair.
     '''
@@ -123,7 +123,7 @@ def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes
         return prompt
 
     tried_pred = skill2tried_pred[grounded_skills[0].lifted()] if skill2tried_pred else []
-    prompt = load_from_file(prompt_fpath)[args.env][pred_type]
+    prompt = load_from_file(prompt_fpath)[env][pred_type]
     prompt = construct_prompt(prompt, grounded_skills, successes, lifted_pred_list, tried_pred)
     assert len(image_pair)==4 if pred_type=="eff" else len(image_pair)==2, "precondition need 2 images while effect need 4"
     logging.info('Generating predicate')
@@ -138,7 +138,7 @@ def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes
     return new_pred
 
 # Adding to precondition or effect are different prompts
-def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate], type_dict, grounded_predicate_truth_value_log, skill: Skill = None, args=None):
+def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate], type_dict, grounded_predicate_truth_value_log, env, skill: Skill = None):
     '''
     Find the grounded predicates with missing values and evaluate them.
     The grounded predicates are evaluated from the beginning to the end, and then lifted to the lifted predicates.
@@ -199,13 +199,13 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
                     # if truth_value is not None:
                     #     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
-                    truth_value = eval_pred(state["image"], grounded_pred, model, env=args.env)
+                    truth_value = eval_pred(state["image"], grounded_pred, model, env)
                     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
             
             # 3.copy all empty predicates from previous state
                 elif not step == 0: # if is a non-init state, update the predicates
                     if (new_task) or (not new_task and grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None):
-                        truth_value = eval_pred(state["image"], grounded_pred, model, env=args.env)
+                        truth_value = eval_pred(state["image"], grounded_pred, model, env)
                         grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
             unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
@@ -338,7 +338,7 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
                 mismatched_pairs.append([task_step_tuple_1, task_step_tuple_2])
     return mismatched_pairs   
 
-def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_skill: Skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=defaultdict(list), threshold={"precond":0.5, "eff":0.5}, args=None) -> Predicate:
+def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_skill: Skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, env, skill2triedpred=defaultdict(list), threshold={"precond":0.5, "eff":0.5}) -> Predicate:
     """
     One iteration of predicate invention.
 
@@ -366,7 +366,7 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     new_pred = generate_pred(image_pair,
                              [state_0["skill"], state_1["skill"]],
                              [state_0["success"], state_1["success"]],
-                            lifted_pred_list, pred_type, model, skill2triedpred, args=args)
+                            lifted_pred_list, pred_type, model, env, skill2triedpred)
     logging.info(f"Generated new predicate {new_pred}: {new_pred.semantic}")
     if len(new_pred.types) > 2:
         logging.info(f"Predicate {new_pred} is NOT added to predicate set because contain more then 2 parameters")
@@ -383,13 +383,13 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     hypothetical_pred_list.append(new_pred)
     hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
     # task unchanged, only add candidate predicate
-    hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, skill=lifted_skill, args=args)
+    hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
     add_new_pred = score_by_partition(lifted_skill, hypothetical_grounded_predicate_truth_value_log, tasks, pred_type, type_dict, threshold)
     if add_new_pred:
         logging.info(f"Predicate {new_pred} added to predicate set by {pred_type} check")
         lifted_pred_list.append(new_pred)
         grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
-        grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args) # udpate for all skills
+        grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
         new_pred_accepted = True
     else:
         logging.info(f"Predicate {new_pred} is NOT added to predicate set by {pred_type} check")
@@ -397,7 +397,7 @@ def invent_predicate_one(mismatch_pair: list[tuple, tuple], model: GPT4, lifted_
     
     return lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log
 
-def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=defaultdict(list), max_t=3, args=None):
+def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=defaultdict(list), max_t=3,):
     '''
     Main loop of generating predicates.
     Invent one pred for precondition and one for effect.
@@ -405,13 +405,13 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     # check precondition first
     t = 0
     pred_type = "precond"
-    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args)
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
     mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type=pred_type)
     logging.info(f"About to enter precondition check of skill {lifted_skill}")
     new_pred_accepted = False
     while mismatch_pairs and t < max_t:
         # Always solve the first mismatch pair
-        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred, args=args)
+        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, env, skill2triedpred=skill2triedpred)
         if new_pred_accepted: break
         t += 1
     
@@ -421,12 +421,12 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     # check effect
     t = 0
     pred_type = "eff"
-    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, args=args)
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
     mismatch_pairs = detect_mismatch(lifted_skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type=pred_type)
     logging.info(f"About to enter effect check of skill {lifted_skill}")
     new_pred_accepted = False
     while mismatch_pairs and t < max_t:
-        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, skill2triedpred=skill2triedpred, args=args)
+        lifted_pred_list, skill2triedpred, new_pred_accepted, grounded_predicate_truth_value_log = invent_predicate_one(random.choice(mismatch_pairs), model, lifted_skill, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, pred_type, env, skill2triedpred=skill2triedpred)
         if new_pred_accepted: break
         t += 1
     
@@ -722,111 +722,7 @@ def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:
 
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-11-20')
-    # # mock symbolic state
-    # type_dict = {"Robot": ["robot"], "Apple": ['object'], "Banana": ['object'], "Table": ['location'], "Couch": ['location']}
-    # type_dict = {
-    #     "Robot": ["robot"], 
-    #     "Apple": ['object'], 
-    #     "Banana": ['object'], 
-    #     "Table": ['location'], 
-    #     "Couch": ['location']
-    #     }
-
-    # pred = Predicate("At", ["object", "location"])
-    # grounded_pred = pred.ground_with(["Apple", "Table"], type_dict)
-    # lifted_pred = grounded_pred.lifted()
-    # skill = Skill("PlaceAt", ["object", "location"])
-    # grounded_skill = skill.ground_with(["Apple", "Table"], type_dict)
-    # lifted_skill = grounded_skill.lifted()
-
-    # lifted_pred_list = [
-    #     Predicate("At", ["object", "location"]),
-    #     Predicate("CloseTo", ["robot", "location"]),
-    #     Predicate("HandOccupied", []),
-    #     Predicate("IsHolding", ["object"]),
-    #     Predicate("EnoughBattery", []),
-    #     Predicate('handEmpty', [])
-    # ]
-    # pred_state = PredicateState(lifted_pred_list)
-
-    # # predicate invention tuning
-    # from attrdict import AttrDict
-    # args = AttrDict()
-    # args.env = "dorfl"
-    # # pickleft()
-    # image_pair = [
-    #     'test_tasks/task_imgs/1/1.jpg',
-    #     'test_tasks/task_imgs/1/5.jpg'
-    # ]
-    # grounded_skills = [
-    #     Skill('PickLeft', ['pickupable'], ['Knife']),
-    #     Skill('PickLeft', ['pickupable'], ['PeanutButter'])
-    # ]
-    # successes = [
-    #     False,
-    #     True
-    # ]
-    # lifted_pred_list = []
-    # pred_type = 'precond'
-
-    # # open()
-    # image_pair = [
-    #     'test_tasks/dorfl_images/1/3.jpg',
-    #     'test_tasks/dorfl_images/1/6.jpg'
-    # ]
-    # grounded_skills = [
-    #     Skill('Open', ['openable'], ['PeanutButter']),
-    #     Skill('Open', ['openable'], ['PeanutButter'])
-    # ]
-    # successes = [
-    #     False,
-    #     True
-    # ]
-    # lifted_pred_list = []
-    # pred_type = 'precond'
-
-    # # scoop
-    # image_pair = [
-    #     'test_tasks/dorfl_images/1/5.jpg',
-    #     'test_tasks/dorfl_images/1/10.jpg'
-    # ]
-    # grounded_skills = [
-    #     Skill('Scoop', ['utensil', 'openable'], ['Knife', 'PeanutButter']),
-    #     Skill('Scoop', ['utensil', 'openable'], ['Knife', 'PeanutButter'])
-    # ]
-    # successes = [
-    #     False,
-    #     True
-    # ]
-    # lifted_pred_list = []
-    # pred_type = 'precond'
-
-    pred_type = "eff"
-    # image_pair = [
-    #     'test_tasks/dorfl_images/1/4.jpg',
-    #     'test_tasks/dorfl_images/1/5.jpg',
-    #     'test_tasks/dorfl_images/1/10.jpg',
-    #     'test_tasks/dorfl_images/1/11.jpg'
-    # ]
-
-    # image_pair = [
-    #     'test_tasks/dorfl_images/1/7.jpg',
-    #     'test_tasks/dorfl_images/1/8.jpg',
-    #     'test_tasks/dorfl_images/1/11.jpg',
-    #     'test_tasks/dorfl_images/1/12.jpg'
-    # ]
-    # grounded_skills = [
-    #     Skill('Spread', ['utensil', 'food'], ['Knife', 'Bread']),
-    #     Skill('Spread', ['utensil', 'food'], ['Knife', 'Bread'])
-    # ]
-
-
-
-    # new_pred = generate_pred(image_pair, grounded_skills, successes, lifted_pred_list, pred_type, model, args=args)
-    # new_pred = Predicate("IsOpen", ["openable"], semantic='the object (e.g., a jar) is visually open, with its lid removed or absent.')
-    # grounded_pred = new_pred.ground_with(["PeanutButter"])
-    # truth_value = eval_pred(image_pair[1], grounded_pred, model, args=args)
-
+    
     type_dict = {'PeanutButter': ['openable', 'pickupable'], 'Knife': ['pickupable', 'utensil'], 'Bread': ['food'], 'Cup': ['receptacle'], 'Table': ['location'], 'Shelf': ['location'], 'Robot': ['robot']}
     lifted_skill = Skill("PickLeft", ["pickupable"])
     threshold={"precond":0.5, "eff":0.5}

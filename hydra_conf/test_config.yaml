@@ -1,0 +1,16 @@
+defaults:
+  - _self_
+  - evaluation: base_evaluation
+  - llm: base_llm
+  - game: test_game
+  
+env: dorfl
+model: gpt-4o
+max_steps: 10
+init_img: null
+goal_img: null
+tmp_dir: tmp/
+
+hydra:
+  run:
+    dir: .

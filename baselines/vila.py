@@ -135,9 +135,13 @@ def main(cfg: DictConfig):
                 current_img = next_img
                 logging.info(f"Current plan:\n{[str(s) for s in plan]}")
 
-            # save_results(plan, result_dir, d)
             os.makedirs(save_path, exist_ok=True)
-            save_to_file({"plan": plan}, os.path.join(save_path, "plan.yaml"))
+            results = {
+                "env": cfg.env,
+                "plan_method": "vila",
+                "0": {"all_parsed_plans": plan} 
+                }
+            save_to_file(results, os.path.join(save_path, "plan.yaml"))
     # delete the cached images in tmp_dir
     if cfg.env == "burger":
         os.system(f"rm -r {cfg.tmp_dir}*")

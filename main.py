@@ -3,14 +3,19 @@ Main function for SkillWrapper. Because of the robot experiments, skill sequence
 """
 import argparse
 import logging
+import os
 from collections import defaultdict
 
+import hydra
+from omegaconf import DictConfig, OmegaConf
+from robotouille.run_skill_sequence import exec_and_record
+
 from src.data_structure import Skill
-from src.utils import GPT4, load_from_file, save_to_file, setup_logging, clean_logging, save_results, load_results, get_save_fpath
+from src.utils import GPT4, load_from_file, save_to_file, setup_logging, clean_logging, save_results, load_results, get_save_fpath, init_new_iter
 from src.skill_sequence_proposing import SkillSequenceProposing
 from src.invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill
 
-def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, args):
+def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
     """
     Propose a skill sequence and execute the skill sequence
     """
@@ -20,33 +25,39 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
         chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(lifted_pred_list, skill2operator, tasks)
         t += 1
         logging.info(f'Task: {[str(skill) for skill in chosen_skill_sequence]}')
-        try:
-            if len(chosen_skill_sequence) < 6:
-                continue
-            # this is an example way of executing tasks with a templated script
-            generated_code = convert_task_to_code(chosen_skill_sequence)
-            local_scope, global_scope = {}, {}
-            exec(generated_code, global_scope, local_scope)
-            task_success = True
-        except:
-            logging.info("Skill sequence execution failed.")
-            break
-    # save tasks in json
-    save_path = get_save_fpath("test_tasks", args.env, "json")
-    save_to_file(chosen_skill_sequence, save_path)
-    if args.step_by_step:
+        if len(chosen_skill_sequence) < 10:
+            continue
+        
+        # save the plan
+        save_path = get_save_fpath(f"{save_dir}/skill_sequences", "skill_sequence", "yaml")
+        save_to_file(chosen_skill_sequence, save_path)
+
+        # if in burger, execute the skill sequence and save the transitions in
+        # results/skillwrapper/burger/runs/{run_idx}/{iter_idx}/transitions/tasks.yaml
+        if cfg.env == 'burger':
+            kwargs = OmegaConf.to_container(cfg.game, resolve=True)
+            environment_name = kwargs.pop('environment_name')
+            exec_and_record(environment_name, chosen_skill_sequence, os.path.join(save_dir, "transitions"))
+
+        else:
+            # NOTE: The execution script should save a yaml file
+            #       in the format of:
+            #           dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
+            #       The file will be read and returned for predicate invention
+            logging.warning(f"Execute the plan and collect data on {cfg.env} and save it as (or add to) {os.path.join(save_dir, 'transitions/tasks.yaml')}.")
+            logging.warning(f"Then, continue from the breakpoint.")
+            breakpoint()
+
+    if cfg.step_by_step:
             logging.info('Task done. You should check the images labels')
             breakpoint()
 
-    # NOTE: The execution script should save a yaml file to 
-    #   {args.save_dir}/tasks_{args.env}.yaml
-    # in the format of:
-    #   dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
-    # The file will be read and returned for predicate invention
-    tasks = load_from_file(save_path)
+    task_fpath = os.path.join(save_dir, "transitions", "tasks.yaml")
+    tasks = load_from_file(task_fpath)
+
     return tasks
 
-def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args):
+def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, env: str, cfg):
     '''
     run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement. 
@@ -55,7 +66,7 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     '''
     for lifted_skill in skill2operator:
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
-        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, skill2triedpred=skill2triedpred, max_t=args.max_retry_time, args=args)
+        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
 
     # filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log,tasks)
     # breakpoint()
@@ -63,66 +74,109 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
 
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
-def main():
+@hydra.main(version_base=None, config_path="hydra_conf", config_name="skillwrapper_config")
+def main(cfg: DictConfig):
     # init env
-    task_config_fpath = f"task_config/{args.env}.yaml"
+    task_config_fpath = f"task_config/{cfg.env}.yaml"
     task_config = load_from_file(task_config_fpath)
     type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
 
-    log_dir = f"results/skillwrapper/{args.env}/log/"
-    log_save_path = setup_logging(log_dir, args.env) # configure logging
+    log_dir = f"results/skillwrapper/{cfg.env}/log/"
+    log_save_path = setup_logging(log_dir, cfg.env) # configure logging
 
-    model = GPT4(engine=args.model)
+    model = GPT4(engine=cfg.model)
 
     # init skill sequence proposing system
     skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=task_config_fpath)
     
-    tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(args.load_fpath, task_config)
-    
     # main loop
-    for i in range(args.num_iter):
-        if not args.invent_pred:
+    iter_idx = cfg.iter_idx if cfg.iter_idx else 0
+    for i in range(cfg.num_iter):
+        if not cfg.invent_pred_only:
+
+            # prepare folder structures, copy from previous iteration if exists
+            load_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}/"
+            tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
+            save_dir = init_new_iter(cfg.env, cfg.run_idx)
+
             # propose skill sequence
-            tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, args)
-        else:
-            assert args.load_fpath is not None, "must provide tasks.yaml to start predicate invention."
+            tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg)
 
-        if not args.skill_seq:
+        else:
+            load_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
+            assert os.path.exists(load_dir), "must provide tasks.yaml to start predicate invention."
+
+        if not cfg.skill_seq_only:
+
+            # load partial results copied from previous iteration
+            if not cfg.invent_pred_only:
+                load_dir = save_dir
+            else:
+                load_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
+            tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
+
             # invent predicates
-            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, args)
-        else:
-            assert not args.invent_pred_only, "Either one of proposal and predicate invention must be called."
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, cfg.env, cfg)
 
-        save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, args.save_dir)
+            # save results of the iteration by overwriting the copied folders
+            save_dir = load_dir
+            save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_dir)
+
+            # rename the folder to remove _partial
+            new_save_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}"
+            os.rename(save_dir, new_save_dir)
+
+            # log results
+            operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
+            logging.info("Operators learned this round:")
+            for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
+
+        else:
+            assert not cfg.invent_pred_only, "Either one of proposal and predicate invention must be called."
 
         logging.info(f"iteration #{i+1} is done")
+        iter_idx += 1
 
-        # log results
-        operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
-        logging.info("Operators learned this round:")
-        for operator_string_list in operator_string_lists: logging.info('\n'.join(operator_string_list))
-
-        if args.step_by_step:
-            logging.info(f"iteration #{i+1}/{args.num_iter} is done, run next iteration?")
+        if cfg.step_by_step:
+            logging.info(f"iteration #{i+1}/{cfg.num_iter} is done, run next iteration?")
             breakpoint()
     clean_logging(log_save_path)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    """
+    Arguments & Default values:
+    env: The name of the environment, one of ["dorfl", "spot", "franka", "burger"]
+    model: The name of the GPT-4 model to use, one of ["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20']
 
-    parser.add_argument("--env", type=str, choices=["dorfl", "spot", "franka", "burger"], default="dorfl", help="the name of the environment")
+    run_idx: index of the run that produce the best operators.
+    iter_idx: index of iter run the full refinement and proposal loop.
 
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
-    parser.add_argument("--num_iter", type=int, default=2, help="num of iter run the full refinement and proposal loop.")
-    parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-    parser.add_argument("--save_dir", type=str, help="directory to save learned operators files")
-    parser.add_argument("--load_fpath", type=str, help="provide the log file to restore from a previous checkpoint. must specify if continue learning is true")
+    num_iter: number of iterations to run
+    max_retry_time: maximum time to generate predicate to distinguish two states.
 
-    parser.add_argument("--invent_pred", action="store_true", help="Read from existing data and invent predicates.")
-    parser.add_argument("--skill_seq", action="store_true", help="Read from existing data and invent predicates")
+    invent_pred_only: Read from existing data and invent predicates.
+    skill_seq_only: Read from existing data and propose skill sequences.
 
-    parser.add_argument("--step_by_step", action="store_true")
+    step_by_step: Whether to run in step-by-step mode.  
 
-    args = parser.parse_args()
+    game.environment_game: burger environment used for collecting transitions. default "easy/problems/0/problem"
+    """
+    # parser = argparse.ArgumentParser()
+
+    # parser.add_argument("--env", type=str, choices=["dorfl", "spot", "franka", "burger"], default="burger", help="the name of the environment")
+    # parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
+
+    # parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
+    # parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
+
+    # parser.add_argument("--num_iter", type=int, default=5, help="number of iterations to run")
+    # parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
+
+    # parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
+    # parser.add_argument("--skill_seq_only", action="store_true", help="Read from existing data and invent predicates")
+
+    # parser.add_argument("--step_by_step", action="store_true")
+
+    # args = parser.parse_args()
 
     main()

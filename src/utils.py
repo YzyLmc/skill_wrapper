@@ -286,13 +286,12 @@ def load_tasks(load_path, task_config):
         for step in task_meta:
             converted_tasks[task_name][int(step)] = deepcopy(tasks[task_name][step])
             if not int(step) == 0:
-                skill_string = tasks[task_name][step]["skill"]
+                skill_string = str(tasks[task_name][step]["skill"])
                 match = re.match(r"(\w+)\((.*)\)", skill_string.strip())
                 skill_name = match.group(1)
                 parameters = match.group(2).split(", ")
                 # assuming every different skill has different names
                 lifted_skill = [skill for skill in task_config['skills'].values() if skill.name==skill_name][0]
-                # tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
                 converted_tasks[task_name][int(step)]["skill"] = lifted_skill.ground_with(parameters)
 
     return converted_tasks
@@ -307,13 +306,14 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
         lifted_pred_list :: list[Predicate]
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     """
-    os.makedirs(save_directory, exist_ok=True)
-    # if "0" exists under save_directory, rename it to "1" to avoid overwriting, so on and so forth
-    i = 0
-    while os.path.exists(f"{save_directory}/runs/{i}"):
-        i += 1
-    save_directory_full = f"{save_directory}/runs/{i}"
-    os.makedirs(save_directory_full, exist_ok=True)
+    iters = os.listdir(save_directory)
+    # largest iteration number
+    iter_idx = max([int(i) for i in iters if i.isdigit()])
+    save_directory_full = f"{save_directory}/{iter_idx}"
+
+    for subdir in ['operators', 'predicates']:
+        os.makedirs(f"{save_directory_full}/{subdir}", exist_ok=True)
+
     save_to_file(skill2operator, f"{save_directory_full}/operators/skill2operator.pkl")
     readable_operators = {lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas] for lifted_skill, operator_metas in skill2operator.items()}
     save_to_file(readable_operators, f"{save_directory_full}/operators/operators.yaml")
@@ -321,7 +321,7 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
     save_to_file(lifted_pred_list, f"{save_directory_full}/predicates/predicates.yaml")
 
     save_to_file(grounded_predicate_truth_value_log, f"{save_directory_full}/transitions/grounded_predicate_truth_value_log.yaml")
-    # TODO: auto rename in case of overwriting
+
     logging.info(f"results have been saved to {save_directory_full}")
 
 def load_results(load_fpath, task_config):
@@ -329,28 +329,53 @@ def load_results(load_fpath, task_config):
     Load tasks, operators, predicate list, and truth value log
     """
     try:
-        tasks = load_tasks(load_fpath, task_config)
+        tasks = load_tasks(f"{load_fpath}/transitions", task_config)
     except:
         tasks = {}
 
     try:
-        skill2operator = load_from_file(f"{load_fpath}/skill2operator.pkl")
+        skill2operator = load_from_file(f"{load_fpath}/operators/operator.pkl")
     except:
         skill2operator = {lifted_skill: None for lifted_skill in list(task_config['skills'].values())}
 
     try:
-        lifted_pred_list = load_from_file(f"{load_fpath}/lifted_pred_list.yaml")
+        lifted_pred_list = load_from_file(f"{load_fpath}/predicates/predicates.yaml")
     except:
         lifted_pred_list = []
 
     try:
-        grounded_predicate_truth_value_log = load_from_file(f"{load_fpath}/grounded_predicate_truth_value_log.yaml")
+        grounded_predicate_truth_value_log = load_from_file(f"{load_fpath}/transitions/grounded_predicate_truth_value_log.yaml")
     except:
         grounded_predicate_truth_value_log = {}
     
     # TODO: add logging when loading data
     
     return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+
+def init_new_iter(env, run_idx):
+    # prepare folder structures
+    run_dir = f"results/skillwrapper/{env}/runs/{run_idx}"
+    os.makedirs(run_dir, exist_ok=True)
+    iters = os.listdir(run_dir)
+    iters = [int(i) for i in iters if i.isdigit()]
+    if iters: # previous iterations exist
+        # largest iteration number
+        iter_idx = max(iters) if iters else 0
+        new_iter_idx = iter_idx + 1
+        new_iter_dir = f"{run_dir}/{new_iter_idx}_partial/"
+
+        # copy transitions of previous iteration and rename to new iteration
+        prev_iter_dir = f"{run_dir}/{iter_idx}"
+        os.system(f"cp -r {prev_iter_dir} {run_dir}/{new_iter_idx}_partial")
+        
+    else:
+        new_iter_idx = 0
+        new_iter_dir = f"{run_dir}/{new_iter_idx}_partial"
+        os.makedirs(new_iter_dir, exist_ok=True)
+        for subdir in ['operators', 'predicates', 'transitions', 'skill_sequences', 'log']:
+            os.makedirs(f"{new_iter_dir}/{subdir}", exist_ok=True)
+
+    return new_iter_dir
 
 if __name__ == "__main__":
     gpt = GPT4(engine="o1")
