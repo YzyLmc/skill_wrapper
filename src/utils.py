@@ -306,23 +306,23 @@ def save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_valu
         lifted_pred_list :: list[Predicate]
         skill2operator :: {lifted_skill: [(LiftedPDDLAction, {pid: int: type: str})]}
     """
-    iters = os.listdir(save_directory)
-    # largest iteration number
-    iter_idx = max([int(i) for i in iters if i.isdigit()])
-    save_directory_full = f"{save_directory}/{iter_idx}"
+    # iters = os.listdir(save_directory)
+    # # largest iteration number
+    # iter_idx = max([int(i) for i in iters if i.isdigit()])
+    # save_directory = f"{save_directory}/{iter_idx}"
 
     for subdir in ['operators', 'predicates']:
-        os.makedirs(f"{save_directory_full}/{subdir}", exist_ok=True)
+        os.makedirs(f"{save_directory}/{subdir}", exist_ok=True)
 
-    save_to_file(skill2operator, f"{save_directory_full}/operators/skill2operator.pkl")
+    save_to_file(skill2operator, f"{save_directory}/operators/skill2operator.pkl")
     readable_operators = {lifted_skill: [str(operator_meta[0]) for operator_meta in operator_metas] for lifted_skill, operator_metas in skill2operator.items()}
-    save_to_file(readable_operators, f"{save_directory_full}/operators/operators.yaml")
+    save_to_file(readable_operators, f"{save_directory}/operators/operators.yaml")
 
-    save_to_file(lifted_pred_list, f"{save_directory_full}/predicates/predicates.yaml")
+    save_to_file(lifted_pred_list, f"{save_directory}/predicates/predicates.yaml")
 
-    save_to_file(grounded_predicate_truth_value_log, f"{save_directory_full}/transitions/grounded_predicate_truth_value_log.yaml")
+    save_to_file(grounded_predicate_truth_value_log, f"{save_directory}/transitions/grounded_predicate_truth_value_log.yaml")
 
-    logging.info(f"results have been saved to {save_directory_full}")
+    logging.info(f"results have been saved to {save_directory}")
 
 def load_results(load_fpath, task_config):
     """
@@ -352,9 +352,9 @@ def load_results(load_fpath, task_config):
     
     return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
-def init_new_iter(env, run_idx):
+def init_new_iter(env, method, run_idx):
     # prepare folder structures
-    run_dir = f"results/skillwrapper/{env}/runs/{run_idx}"
+    run_dir = f"results/{method}/{env}/runs/{run_idx}"
     os.makedirs(run_dir, exist_ok=True)
     iters = os.listdir(run_dir)
     iters = [int(i) for i in iters if i.isdigit()]

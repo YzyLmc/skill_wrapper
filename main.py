@@ -1,5 +1,10 @@
 """
 Main function for SkillWrapper. Because of the robot experiments, skill sequence proposal and predicate invention are separated into two parts.
+Propose_skill_sequence will propose and save a skill sequence under a new iteration with the postfix "_partial", and if the environment is burger, it will execute the skill sequence and save the transitions.
+invent_predicates_for_all_skill will read the transitions, and invent predicates for operator learning, and save them in the partial folder and remove the postfix.
+
+Example command:
+    python main.py ++skill_seq_only=True
 """
 import argparse
 import logging
@@ -97,7 +102,7 @@ def main(cfg: DictConfig):
             # prepare folder structures, copy from previous iteration if exists
             load_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}/"
             tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
-            save_dir = init_new_iter(cfg.env, cfg.run_idx)
+            save_dir = init_new_iter(cfg.env, cfg.method, cfg.run_idx)
 
             # propose skill sequence
             tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg)

@@ -402,11 +402,11 @@ class SkillSequenceProposing():
         foundation_model_output = self.run_foundation_model(prompt_context, prompt, self.curr_observation)
         #Step 3: parse and ground FM output into a task dictionary
         skill_sequences = self.construct_skill_sequences(foundation_model_output)
-        for i, skill_sequence in enumerate(skill_sequences):
-            print(f"Output skill sequence {i}")
-            for skill in skill_sequence:
-                print(skill)
-            print('\n')
+        # for i, skill_sequence in enumerate(skill_sequences):
+        #     print(f"Output skill sequence {i}")
+        #     for skill in skill_sequence:
+        #         print(skill)
+        #     print('\n')
 
         #Step 4: generate scores + combine for pareto optimal way for coverage and chainability for all tasks + choose the best most pareto-optimal sequence to run
         chosen_skill_sequence = self.generate_scores_and_choose_skill_sequence(skill_sequences)

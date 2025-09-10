@@ -8,7 +8,7 @@ from omegaconf import DictConfig, OmegaConf
 sys.path.append(f".") # if you run this script from the root directory
 sys.path.append("robotouille")
 import robotouille
-from robotouille.skills import render_img
+from robotouille.skills import render_img, create_lifted_pred_list_from_env
 from robotouille.agents import NAME_TO_AGENT
 from robotouille.robotouille.robotouille_env import create_robotouille_env
 from src.data_structure import Predicate, PredicateState
@@ -29,14 +29,33 @@ def env_state_to_pred_state(env, save_fpath):
     pred_state = PredicateState([])
     # NOTE: We might need bread onion tomato chicken and patato later.
     bad_preds = ["istable", "isfryer", "issink", "isbread", "isonion", "istomato", "ischicken", "ispotato", "isfryable", "isfryableifcut", "isfried", "iscooking", "ispot", "isbowl", "iswater", "isboiling", "loc", "container_empty", "vacant", "has_container", "in", "addedto",  "container_at"]
-    type_dict = {"item": "pickupable", "station": "location", "player": "robot"}
+    type_dict = {"item": "pickupable", "station": "station", "player": "robot"}
+    obj_dict = {"patty": "Patty", "lettuce": "Lettuce", "topbun": "TopBun", "bottombun": "BottomBun", "board": "CuttingBoard", "stove": "Stove", "robot": "Robot"}
     for literal, is_true in state.predicates.items():
             if literal.name not in bad_preds:
                 name = literal.name
-                params = literal.params
+                params = [p.name for p in literal.params]
+                if any(["table" in p for p in params]):
+                    continue
+                renamed_params = []
+                for p in params: # ugly hack
+                    for k in obj_dict:
+                        if k in p.lower():
+                            renamed_params.append(obj_dict[k])
+                        
                 types = [type_dict[t] for t in literal.types]
-                grounded_pred = Predicate(name=name, params=params, types=types)
+                language_descriptors = literal.language_descriptors
+                assert len(types) == len(language_descriptors)
+                grounded_language_descriptors = []
+                for idx, sem in language_descriptors.items():
+                    for k in language_descriptors:
+                        placeholder = "{" + k + "}"
+                        sem = sem.replace(placeholder, f"args{int(k)+1}(`{types[int(k)]}`)")
+                    grounded_language_descriptors.append(sem)
+                semantic = ", and ".join(grounded_language_descriptors)
+                grounded_pred = Predicate(name=name, params=renamed_params, types=types, semantic=semantic)
                 pred_state.pred_dict[grounded_pred] = is_true
+                
     save_to_file(pred_state, save_fpath)
 
 def env_state_to_text(env, save_fpath):
@@ -91,6 +110,8 @@ def main(cfg: DictConfig):
     env_state_to_pred_state(env, init_pred_state_fpath)
     init_pred_state_text = os.path.join(save_fpath, "init_state.txt")
     env_state_to_text(env, init_pred_state_text)
+
+    create_lifted_pred_list_from_env(env, os.path.join('.', "lifted_predicates.yaml"))
 
     done = False
     queued_actions = []
