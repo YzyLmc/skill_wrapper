@@ -215,8 +215,8 @@ class PredicateState:
         keep_set = set(keep_list)
         new_pred_dict = {}
 
-        for pred in keep_set:
-            if pred in self.pred_dict:
+        for pred in self.pred_dict:
+            if pred.lifted() in keep_set:
                 new_pred_dict[pred] = self.pred_dict[pred]
 
         self.pred_dict = new_pred_dict

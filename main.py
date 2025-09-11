@@ -25,8 +25,7 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
     Propose a skill sequence and execute the skill sequence
     """
     t = 0
-    task_success = False
-    while t < 10 and not task_success:
+    while t < 10:
         chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(lifted_pred_list, skill2operator, tasks)
         t += 1
         logging.info(f'Task: {[str(skill) for skill in chosen_skill_sequence]}')
@@ -45,16 +44,8 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
             exec_and_record(environment_name, chosen_skill_sequence, os.path.join(save_dir, "transitions"))
 
         else:
-            # NOTE: The execution script should save a yaml file
-            #       in the format of:
-            #           dict(task_name: (step: dict("skill": grounded_skill, 'image':img_path, 'success': Bool)))
-            #       The file will be read and returned for predicate invention
             logging.warning(f"Execute the plan and collect data on {cfg.env} and save it as (or add to) {os.path.join(save_dir, 'transitions/tasks.yaml')}.")
             logging.warning(f"Then, continue from the breakpoint.")
-            breakpoint()
-
-    if cfg.step_by_step:
-            logging.info('Task done. You should check the images labels')
             breakpoint()
 
     task_fpath = os.path.join(save_dir, "transitions", "tasks.yaml")
@@ -73,9 +64,8 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
         skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
 
-    # filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log,tasks)
-    # breakpoint()
-    # skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks,filtered_lifted_pred_list)
+    filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, filtered_lifted_pred_list)
 
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
@@ -120,16 +110,16 @@ def main(cfg: DictConfig):
                 load_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
             tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
 
+            # copy and past load dir
+            save_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}"
+            if not os.path.exists(save_dir):
+                os.system(f"cp -r {load_dir} {save_dir}")
+
             # invent predicates
             skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, cfg.env, cfg)
 
             # save results of the iteration by overwriting the copied folders
-            save_dir = load_dir
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_dir)
-
-            # rename the folder to remove _partial
-            new_save_dir = f"results/skillwrapper/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}"
-            os.rename(save_dir, new_save_dir)
 
             # log results
             operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
@@ -166,22 +156,5 @@ if __name__ == "__main__":
 
     game.environment_game: burger environment used for collecting transitions. default "easy/problems/0/problem"
     """
-    # parser = argparse.ArgumentParser()
-
-    # parser.add_argument("--env", type=str, choices=["dorfl", "spot", "franka", "burger"], default="burger", help="the name of the environment")
-    # parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
-
-    # parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
-    # parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
-
-    # parser.add_argument("--num_iter", type=int, default=5, help="number of iterations to run")
-    # parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-
-    # parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
-    # parser.add_argument("--skill_seq_only", action="store_true", help="Read from existing data and invent predicates")
-
-    # parser.add_argument("--step_by_step", action="store_true")
-
-    # args = parser.parse_args()
-
+    
     main()

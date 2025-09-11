@@ -3,7 +3,7 @@ Use priviledged predicates from burger simulator to learn operators.
 Propose skill sequence as SkillWrapper, get predicate state directly without classification.
 
 Example command:
-    python baselines/oracle_predicates.py ++invent_pred_only=True
+    python baselines/random_explore.py ++invent_pred_only=True
 """
 
 # read plan from results, run the plans and save the predicate states in yaml files under results/transitions
@@ -15,6 +15,8 @@ from collections import defaultdict
 import os
 import sys
 sys.path.append(f".") 
+
+import random
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from robotouille.run_skill_sequence import exec_and_record
@@ -25,49 +27,82 @@ from src.invent_predicate import calculate_operators_for_all_skill, filter_predi
 from src.skill_sequence_proposing import SkillSequenceProposing
 from src.data_structure import Skill, PredicateState, Predicate
 
-def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
-    """
-    Propose a skill sequence and execute the skill sequence
-    """
-    t = 0
-    while t < 10:
-        chosen_skill_sequence = skill_sequence_proposing.run_skill_sequence_proposing(lifted_pred_list, skill2operator, tasks)
-        t += 1
-        logging.info(f'Task: {[str(skill) for skill in chosen_skill_sequence]}')
-        if len(chosen_skill_sequence) < 10:
-            continue
-        
-        # save the plan
-        save_path = get_save_fpath(f"{save_dir}/skill_sequences", "skill_sequence", "yaml")
-        save_to_file(chosen_skill_sequence, save_path)
 
-        # if in burger, execute the skill sequence and save the transitions in
-        # results/oracle_predicates/burger/runs/{run_idx}/{iter_idx}/transitions/tasks.yaml
-        if cfg.env == 'burger':
-            kwargs = OmegaConf.to_container(cfg.game, resolve=True)
-            environment_name = kwargs.pop('environment_name')
-            exec_and_record(environment_name, chosen_skill_sequence, os.path.join(save_dir, "transitions"), oracle_state=True)
-            
-            break
+def propose_and_execute(cfg, save_dir, steps=10):
+    task_config_fpath = f"task_config/{cfg.env}.yaml"
+    task_config = load_from_file(task_config_fpath)
 
-        else:
-            raise Exception(f"Execute the plan and collect data on {cfg.env} is not implemented yet.")
+    skills = task_config['skills']
+    objects = task_config['objects']
+
+    skill_sequence = []
+    for step in range(steps):
+        sampled_skill_name: str = random.choice(list(skills.keys()))
+        lifted_skill: Skill = skills[sampled_skill_name]
+        param_types = lifted_skill.types
+        params = []
+        for arg_type in param_types:
+            candidates = [obj for obj, obj_meta in objects.items() if arg_type in obj_meta['types']]
+            if not candidates:
+                raise ValueError(f"No object of type {arg_type} found for skill {sampled_skill_name}.")
+            while True:
+                chosen_obj = random.choice(candidates)
+                if chosen_obj not in params:
+                    break
+            params.append(chosen_obj)
         
+        grounded_skill = lifted_skill.ground_with(params)
+
+        skill_sequence.append(grounded_skill)
+    save_path = get_save_fpath(f"{save_dir}/skill_sequences", "skill_sequence", "yaml")
+    save_to_file(skill_sequence, save_path)
+    print(f"Saved random skill sequence to {save_path}")
+
+    # if in burger, execute the skill sequence and save the transitions in
+    # results/random_explore/burger/runs/{run_idx}/{iter_idx}/transitions/tasks.yaml
+    if cfg.env == 'burger':
+        kwargs = OmegaConf.to_container(cfg.game, resolve=True)
+        environment_name = kwargs.pop('environment_name')
+        exec_and_record(environment_name, skill_sequence, os.path.join(save_dir, "transitions"))
+
+    else:
+        logging.warning(f"Execute the plan and collect data on {cfg.env} and save it as (or add to) {os.path.join(save_dir, 'transitions/tasks.yaml')}.")
+        logging.warning(f"Then, continue from the breakpoint.")
+        breakpoint()
 
     task_fpath = os.path.join(save_dir, "transitions", "tasks.yaml")
     tasks = load_from_file(task_fpath)
 
     return tasks
 
-@hydra.main(version_base=None, config_path="../hydra_conf", config_name="oracle_predicates_config")
+def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, env: str, cfg):
+    '''
+    run one iteration of refinement and proposal
+    pred_dict, skill2operator and skill2tasks are from refinement. 
+    replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
+    skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
+    '''
+    for lifted_skill in skill2operator:
+        skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
+        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
+
+    filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, filtered_lifted_pred_list)
+
+    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+
+
+@hydra.main(version_base=None, config_path="../hydra_conf", config_name="random_explore_config")
 def main(cfg: DictConfig):
     # init env
     task_config_fpath = f"task_config/{cfg.env}.yaml"
     task_config = load_from_file(task_config_fpath)
     type_dict = {obj: obj_meta['types'] for obj, obj_meta in task_config['objects'].items()}
 
-    log_dir = f"results/oracle_predicates/{cfg.env}/log/"
+    log_dir = f"results/random_explore/{cfg.env}/log/"
     log_save_path = setup_logging(log_dir, cfg.env) # configure logging
+
+    model = GPT4(engine=cfg.model)
 
     # init skill sequence proposing system
     skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=task_config_fpath)
@@ -78,7 +113,7 @@ def main(cfg: DictConfig):
         if not cfg.invent_pred_only:
 
             # prepare folder structures, copy from previous iteration if exists
-            load_dir = f"results/oracle_predicates/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}/"
+            load_dir = f"results/random_explore/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}/"
             tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
             save_dir = init_new_iter(cfg.env, cfg.method, cfg.run_idx)
 
@@ -86,7 +121,7 @@ def main(cfg: DictConfig):
             tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg)
 
         else:
-            load_dir = f"results/oracle_predicates/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
+            load_dir = f"results/random_explore/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
             assert os.path.exists(load_dir), "must provide tasks.yaml to start predicate invention."
 
         if not cfg.skill_seq_only:
@@ -95,19 +130,17 @@ def main(cfg: DictConfig):
             if not cfg.invent_pred_only:
                 load_dir = save_dir
             else:
-                load_dir = f"results/oracle_predicates/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
+                load_dir = f"results/random_explore/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"
             tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = load_results(load_dir, task_config)
 
             # copy and past load dir
-            save_dir = f"results/oracle_predicates/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}"
+            save_dir = f"results/random_explore/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}"
             if not os.path.exists(save_dir):
                 os.system(f"cp -r {load_dir} {save_dir}")
 
-            # calculate operators for all skills using oracle predicates
-            skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
-            filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
-            skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
-            
+            # invent predicates
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, cfg.env, cfg)
+ 
             # save results of the iteration by overwriting the copied folders
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_dir)
 
@@ -147,22 +180,5 @@ if __name__ == "__main__":
 
     game.environment_game: burger environment used for collecting transitions. default "easy/problems/0/problem"
     """
-    # parser = argparse.ArgumentParser()
-
-    # parser.add_argument("--env", type=str, choices=["dorfl", "spot", "franka", "burger"], default="burger", help="the name of the environment")
-    # parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20'], default='gpt-4o-2024-11-20')
-
-    # parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
-    # parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
-
-    # parser.add_argument("--num_iter", type=int, default=5, help="number of iterations to run")
-    # parser.add_argument("--max_retry_time", type=int, default=3, help="maximum time to generate predicate to distinguish two states.")
-
-    # parser.add_argument("--invent_pred_only", action="store_true", help="Read from existing data and invent predicates.")
-    # parser.add_argument("--skill_seq_only", action="store_true", help="Read from existing data and invent predicates")
-
-    # parser.add_argument("--step_by_step", action="store_true")
-
-    # args = parser.parse_args()
 
     main()

@@ -1,0 +1,19 @@
+defaults:
+  - _self_
+  - game: base_game
+  
+env: burger
+model: gpt-4o-2024-11-20
+run_idx: 0
+num_iter: 5
+max_retry_time: 3
+invent_pred_only: false
+skill_seq_only: false
+iter_idx: null
+step_by_step: true
+method: skillwrapper
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .

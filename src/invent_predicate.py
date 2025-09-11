@@ -437,7 +437,7 @@ def invent_predicates(model: GPT4, lifted_skill: Skill, skill2operator, tasks, g
     # Not flushing tried predicate cache right now
     return skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log
 
-def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_truth_value_log, tasks, pred_type: str, type_dict, threshold:  dict[str, float]) -> bool:
+def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_truth_value_log, tasks, pred_type: str, type_dict, threshold:  dict[str, float]={"precond":0.5, "eff":0.5}) -> bool:
     '''
     New scoring function that use the predicate invention condition
     Calculate hypothetical operators and then check
@@ -479,35 +479,35 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
     logging.info(f"Predicate is {'' if result else 'not '}added. Score = {score/task_num}")
     return result
 
-def score_by_partition_final(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
-    '''
-    Partition by termination and effect and then score the predicates across each partition
+# def score_by_partition_final(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
+#     '''
+#     Partition by termination and effect and then score the predicates across each partition
 
-    Args:
-        skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
-        threshold={"precond":float, "eff":float}
-    '''
-    # 1. find all states after executing the same grounded skill
-    _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
+#     Args:
+#         skill :: grouded skill {"name":"PickUp", "types":["obj"], "params":["Apple"]}
+#         threshold={"precond":float, "eff":float}
+#     '''
+#     # 1. find all states after executing the same grounded skill
+#     _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
 
-    # 2. evaluate the score across all grounded skill of the lifted skill, return true if only one partition makes the score higher than threshold
-    for grounded_skill_outer, partitions in skill2partition.items():
-        for task_step_tuple_list in partitions:
-            for grounded_skill_inner, task2state in skill2task2state.items():
-                if grounded_skill_outer == grounded_skill_inner and grounded_skill_outer.lifted() == lifted_skill:
-                    partitioned_task2state = {task_step_tuple: task2state[task_step_tuple] for task_step_tuple in task_step_tuple_list}
-                    new_pred_grounded = Predicate.ground_with(new_pred_lifted, grounded_skill_inner.params)
-                    t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred_grounded, partitioned_task2state, pred_type)
-                    if pred_type == "precond":
-                        if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
-                            or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
-                            return True
+#     # 2. evaluate the score across all grounded skill of the lifted skill, return true if only one partition makes the score higher than threshold
+#     for grounded_skill_outer, partitions in skill2partition.items():
+#         for task_step_tuple_list in partitions:
+#             for grounded_skill_inner, task2state in skill2task2state.items():
+#                 if grounded_skill_outer == grounded_skill_inner and grounded_skill_outer.lifted() == lifted_skill:
+#                     partitioned_task2state = {task_step_tuple: task2state[task_step_tuple] for task_step_tuple in task_step_tuple_list}
+#                     new_pred_grounded = Predicate.ground_with(new_pred_lifted, grounded_skill_inner.params)
+#                     t_score_t, f_score_t, t_score_f, f_score_f = score(new_pred_grounded, partitioned_task2state, pred_type)
+#                     if pred_type == "precond":
+#                         if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
+#                             or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
+#                             return True
                         
-                    elif pred_type == "eff":
-                        if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
-                            or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
-                            return True
-    return False
+#                     elif pred_type == "eff":
+#                         if (t_score_t > threshold[pred_type] or f_score_t > threshold[pred_type]) \
+#                             or (t_score_f > threshold[pred_type] or f_score_f > threshold[pred_type]):
+#                             return True
+#     return False
 
 def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list:list[Predicate]=None,):
     # partitioning
@@ -518,11 +518,10 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
         for grounded_skill, task2state in skill2task2state.items():
             for task_step_tuple, transition_meta in task2state.items():
                 transition = transition_meta['states']
-                new_transition = [
-                    transition[0].filter_pred_list(filtered_lifted_pred_list),
-                    transition[1].filter_pred_list(filtered_lifted_pred_list)
-                ]
-                transition_meta['states'] = new_transition
+                
+                transition[0].filter_pred_list(filtered_lifted_pred_list),
+                transition[1].filter_pred_list(filtered_lifted_pred_list)
+                # transition_meta['states'] = new_transition
 
     _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
     # 2. create one operator for each partition
@@ -531,7 +530,7 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
 
     return skill2operator
 
-def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounded_predicate_truth_value_log, tasks, threshold={"precond":0.5, "eff":0.5}) -> list[Predicate]:
+def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounded_predicate_truth_value_log, tasks, type_dict, threshold={"precond":0.5, "eff":0.5}) -> list[Predicate]:
     """
     After running all iterations in main function, score all predicates again
     This function will only be called in main.
@@ -540,9 +539,10 @@ def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounde
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, success_only=False)
     for lifted_pred in lifted_pred_list:
         for lifted_skill in skill2operator:
+            if not skill2operator[lifted_skill]: continue
             for pred_type in ['precond', 'eff']:
-                add_new_pred = score_by_partition_final(lifted_pred, lifted_skill, skill2task2state, pred_type, threshold=threshold)
-                if add_new_pred:
+                add_new_pred = score_by_partition(lifted_skill, grounded_predicate_truth_value_log, tasks, pred_type, type_dict, threshold)
+                if add_new_pred and lifted_pred not in filtered_lifted_pred_list:
                     filtered_lifted_pred_list.append(lifted_pred)
     
     return filtered_lifted_pred_list
@@ -598,7 +598,7 @@ def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
         skill2eff2partition[grounded_skill] = eff_partition
     # take intersection of both
     skill2partition: dict[Skill, list[list[tuple]]] = {grounded_skill: apply_both_partition(list(skill2state2partition[grounded_skill].values()), \
-                                                            list(skill2eff2partition[grounded_skill].values()) ) \
+            list(skill2eff2partition[grounded_skill].values()) ) \
                                                             for grounded_skill in skill2eff2partition}
 
     return skill2state2partition, skill2eff2partition, skill2partition

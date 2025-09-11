@@ -10,7 +10,7 @@ All baselines of the paper.
 - expert operators: 
     - Train: PDDL predicates and operators written by experts. 
     - Eval: Takes in observation & goal, grounds them into abstract state, and use a planner to compute the plan.
-    - Relevant files: `expert_pddl.py`, `eval_preds.py`, `plan_with_operators.py`, `eval_plan.py`
+    - Relevant files: oracle operators, predicates, and domain templates, `eval_preds.py`, `plan_with_operators.py`, `eval_plan.py`
 
 - oracle predicates: 
     - Train:  Same transitions as skillwrapper but are directly in abstract state, predicates are provided by burger. Operators are learned using skillwrapper.
