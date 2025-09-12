@@ -11,7 +11,7 @@ invent_pred_only: false
 skill_seq_only: false
 iter_idx: null
 step_by_step: true
-method: skillwrapper
+method: fm_invent
 
 hydra:
   output_subdir: null

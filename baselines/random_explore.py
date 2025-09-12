@@ -23,7 +23,7 @@ from robotouille.run_skill_sequence import exec_and_record
 
 
 from src.utils import save_to_file, load_from_file, setup_logging, get_save_fpath, save_results, load_results, init_new_iter, clean_logging, GPT4
-from src.invent_predicate import calculate_operators_for_all_skill, filter_predicates, calculate_operators_for_all_skill
+from src.invent_predicate import invent_predicates, calculate_operators_for_all_skill, filter_predicates, calculate_operators_for_all_skill
 from src.skill_sequence_proposing import SkillSequenceProposing
 from src.data_structure import Skill, PredicateState, Predicate
 
@@ -84,13 +84,12 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     '''
     for lifted_skill in skill2operator:
         skill2triedpred = defaultdict(list) # reset tried_predicate buffer after each skill
-        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
+        skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
 
     filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
-    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, filtered_lifted_pred_list)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
 
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
-
 
 @hydra.main(version_base=None, config_path="../hydra_conf", config_name="random_explore_config")
 def main(cfg: DictConfig):
@@ -118,7 +117,7 @@ def main(cfg: DictConfig):
             save_dir = init_new_iter(cfg.env, cfg.method, cfg.run_idx)
 
             # propose skill sequence
-            tasks: list[Skill] = propose_and_execute(skill_sequence_proposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg)
+            tasks: list[Skill] = propose_and_execute(cfg, save_dir)
 
         else:
             load_dir = f"results/random_explore/{cfg.env}/runs/{cfg.run_idx}/{iter_idx}_partial/"

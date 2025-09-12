@@ -48,6 +48,8 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
             logging.warning(f"Then, continue from the breakpoint.")
             breakpoint()
 
+        break
+
     task_fpath = os.path.join(save_dir, "transitions", "tasks.yaml")
     tasks = load_from_file(task_fpath)
 
@@ -65,7 +67,7 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
         skill2operator, lifted_pred_list, skill2triedpred, grounded_predicate_truth_value_log = invent_predicates(model, lifted_skill, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, lifted_pred_list, env, skill2triedpred=skill2triedpred, max_t=cfg.max_retry_time)
 
     filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
-    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, filtered_lifted_pred_list)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
 
     return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 

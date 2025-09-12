@@ -468,9 +468,9 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                     if in_alpha(possible_groundings, transition_meta["states"], operator, pred_type, obj2type):
                         state_in_alpha = True
                         break
-                print(task_step_tuple, state_in_alpha, transition_meta['success'])
-                print(transition_meta["states"][0],'\n')
-                print(transition_meta["states"][1],'\n')
+                # print(task_step_tuple, state_in_alpha, transition_meta['success'])
+                # print(transition_meta["states"][0],'\n')
+                # print(transition_meta["states"][1],'\n')
                 # breakpoint()
                 score += 1 if state_in_alpha == transition_meta['success'] else 0
                 task_num += 1
@@ -518,10 +518,8 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
         for grounded_skill, task2state in skill2task2state.items():
             for task_step_tuple, transition_meta in task2state.items():
                 transition = transition_meta['states']
-                
-                transition[0].filter_pred_list(filtered_lifted_pred_list),
+                transition[0].filter_pred_list(filtered_lifted_pred_list)
                 transition[1].filter_pred_list(filtered_lifted_pred_list)
-                # transition_meta['states'] = new_transition
 
     _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
     # 2. create one operator for each partition
@@ -603,7 +601,7 @@ def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
 
     return skill2state2partition, skill2eff2partition, skill2partition
 
-def create_one_operator_from_one_partition(grounded_skill: Skill, task2state, task_step_tuple_list: list[tuple], type_dict) -> LiftedPDDLAction:
+def create_one_operator_from_one_partition(grounded_skill: Skill, task2state, task_step_tuple_list: list[tuple], type_dict: dict) -> LiftedPDDLAction:
     """
     Build operator from one partition using RCR code.
 
