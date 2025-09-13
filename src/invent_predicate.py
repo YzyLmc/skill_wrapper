@@ -11,9 +11,11 @@ Data structures for logging:
 from collections import defaultdict
 from copy import deepcopy
 import itertools
+from itertools import permutations
 import logging
 import random
 from typing import Union
+
 
 from src.utils import GPT4, load_from_file
 from src.data_structure import Skill, Predicate, PredicateState
@@ -544,6 +546,202 @@ def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounde
                     filtered_lifted_pred_list.append(lifted_pred)
     
     return filtered_lifted_pred_list
+
+def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
+    '''
+    Partition the a set of transitions using  their lifted effect set. Will be used again in scoring and final operators learning.
+    Only successful execution will be used for partitioning.
+
+    Args:
+        skill2task2state :: {grounded_skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
+        type_dict :: {str: str} :: {object: type}
+    Returns:
+        skill2partition :: {lifted_skill: [[task_step_tuple, task_step_tuple]]}
+    '''
+    def all_mappings(a , b, dedup: bool = True) -> list[dict[any, any]]:
+        """
+        Return all possible bijective mappings from elements in `a` to elements in `b`.
+        Assumes len(a) == len(b). If `dedup` is True, duplicate maps from
+        values in `b` are removed.
+        """
+        a = list(a)
+        b = list(b)
+        if len(a) != len(b):
+            raise ValueError("Lists must have the same length for bijective mappings.")
+
+        out = []
+        if dedup:
+            seen = set()
+            for perm in permutations(b, len(b)):
+                if perm in seen:
+                    continue
+                seen.add(perm)
+                out.append(dict(zip(a, perm)))
+        else:
+            for perm in permutations(b, len(b)):
+                out.append(dict(zip(a, perm)))
+        return out
+    
+    def beam_grounding(abstract_state_list: list[list[tuple[Predicate, int]]], param, grounding_tuple: tuple[Predicate, int, int], type_list: list[str]) -> list[list[Predicate]]:
+        """
+        Try grounding one parameter of each abstract state, without violating the type constraint and truth value.
+        If there are multiple possible groundings, return all of them, to account for multiple grounded predicates with same lifted form.
+
+        Args:
+            abstract_state_list :: list[list[tuple[Predicate, int]]] :: a list of abstract states in list of predicates, predicates can be partially grounded, truth value can be None
+            grounding_tuple :: tuple[Predicate, int, bool] :: (predicate to ground, index of the parameter to ground, target truth value)
+            type_list :: list[str] :: list of types for the parameter to ground
+        """
+        assert abstract_state_list, "abstract_state_list cannot be empty"
+
+        new_abstract_state_list = []
+        pred_to_ground, param_index, truth_change = grounding_tuple
+
+        for abstract_state in abstract_state_list:
+            new_state = []
+            # if there are multiple predicates with the same lifted form, we create copies and try all of them
+            pred_with_same_lifted_form = []
+            for pred, change in abstract_state:
+                if pred == pred_to_ground:
+                    pred_with_same_lifted_form.append((pred, change))
+                else:
+                    new_state.append((pred, change))
+
+            for pred, change in pred_with_same_lifted_form:
+                # make a copy of the state without the predicate to ground
+                abstract_state_to_ground = deepcopy(new_state)
+
+                # try grounding the predicate
+                # check type
+                required_type = pred.types[param_index]
+                if required_type not in type_list:
+                    continue
+
+                # check truth value
+                if change is not None and change != truth_change:
+                    continue
+
+                # check is passed
+                if not pred.params:
+                    pred.params = [None] * len(pred.types)
+                pred.params[param_index] = param
+                abstract_state_to_ground.append((pred, truth_change))
+                new_abstract_state_list.append(abstract_state_to_ground)
+
+        return new_abstract_state_list
+
+    def equal_lifted_effect(value_tuple_1, value_tuple_2, grounded_skill_1, grounded_skill_2) -> bool:
+        """
+        Check if two value tuples share the same lifted effect.
+        This function considers multi-type objects, multiple same lifted predicates with different parameters.
+        
+        Args:
+            value_tuple_1 :: tuple[Predicate, int]
+            value_tuple_2 :: tuple[Predicate, int]
+        """
+        # check if their effect has same set of lifted predicates
+        if len(value_tuple_1) != len(value_tuple_2):
+            return False
+        
+        lifted_pred_list_1 = [pred.lifted() for pred, change in value_tuple_1]
+        lifted_pred_list_2 = [pred.lifted() for pred, change in value_tuple_2]
+        if set(lifted_pred_list_1) != set(lifted_pred_list_2):
+            return False
+        
+        # build object mapping using groudned skills
+        objects_1 = set(sum([pred.params for pred, change in value_tuple_1], []))
+        objects_2 = set(sum([pred.params for pred, change in value_tuple_2], []))
+
+        if len(objects_1) != len(objects_2): # must have equal number of objects
+            return False
+
+        assert grounded_skill_1.lifted() == grounded_skill_2.lifted(), "Only compare two grounded skills of the same lifted skill"
+
+        # skill parameters always come first
+        obj2idx_1 = {}
+        for i, param in enumerate(grounded_skill_1.params):
+            if len(obj2idx_1) == 0:
+                obj2idx_1[param] = 0
+            elif param not in obj2idx_1:
+                obj2idx_1[param] = len(obj2idx_1)
+        
+        for obj in objects_1:
+            for o in obj:
+                if o not in obj2idx_1:
+                    obj2idx_1[o] = len(obj2idx_1)
+
+        idx2pred_id_truth_list: dict[int, list[tuple]] = defaultdict(list)
+        for pred, change in value_tuple_1:
+            for i, param in enumerate(pred.params):
+                idx2pred_id_truth_list[obj2idx_1[param]].append((pred, i, change))
+
+        
+        # fix obj mapping for the first predicate set, search for match over possible obj mapping for the second predicate set
+        obj2idx_2 = {}
+        for i, param in enumerate(grounded_skill_2.params):
+            if len(obj2idx_2) == 0:
+                obj2idx_2[param] = 0
+            elif param not in obj2idx_2:
+                obj2idx_2[param] = len(obj2idx_2)
+
+        for obj in objects_2:
+            for o in obj:
+                if o not in obj2idx_2:
+                    obj2idx_2[o] = len(obj2idx_2)
+        assert len(obj2idx_1) == len(obj2idx_2), "Two grounded skills must have the same number of parameters"
+
+        idx2obj_2 = {v:k for k,v in obj2idx_2.items()} # reverse mapping
+
+        skill_param_mapping = {i: i for i in range(len(grounded_skill_1.params))}
+
+        # all possible mappings for the rest of the objects
+        rest_index_1 = list(range(len(obj2idx_1), len(grounded_skill_1.params)))
+        rest_index_2 = list(range(len(obj2idx_1), len(grounded_skill_1.params)))
+
+        possible_mappings = all_mappings(rest_index_1, rest_index_2, dedup=True)
+        # loop through all possible mappings, check if there exist one satisfy matches predicate pattern (idx2pred_id_list) and typing of predicates
+        for mapping in possible_mappings:
+            full_mapping = skill_param_mapping | mapping
+            # try creating the same predicate set as value_tuple_1
+            abstract_state_list = [[(pred.lifted(), None) for pred, change in value_tuple_1]] # initially all lifted
+            for param_id, pred_id_truth_list in idx2pred_id_truth_list.items():
+                param_id_2 = full_mapping[param_id]
+                type_list = type_dict[idx2obj_2[param_id_2]]
+                for grounding_tuple in pred_id_truth_list:
+                    predicate_to_ground, param_index, target_truth = grounding_tuple
+                    abstract_state_list = beam_grounding(abstract_state_list, param_id, (predicate_to_ground, param_index, target_truth), type_list)
+                    if not abstract_state_list: # no possible grounding
+                        break
+                if not abstract_state_list: # no possible grounding
+                    break
+            if abstract_state_list:
+                return True
+
+        return False
+
+    skill2eff2task_step: dict[Skill, dict[frozenset, list[tuple]]] = {}
+    
+    for grounded_skill, task2state in skill2task2state.items():
+        eff_partition = defaultdict(list)
+        for task_step_tuple, transition_meta in task2state.items():
+
+            state_0, state_1 = transition_meta["states"]
+            value_tuple: tuple[Predicate, int] = ((pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) for pred in state_0.iter_predicates() \
+                                if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0)
+
+            eff_partition[value_tuple].append(task_step_tuple)
+        skill2eff2task_step[grounded_skill] = eff_partition
+        skill2eff2task_step[grounded_skill.lifted()].append(eff_partition)
+
+    # merge partitions with same lifted effect across same lifted skill
+    skill2partition: dict[Skill, list[list[tuple]]] = defaultdict(list)
+
+    for lifted_skill, eff2task_step_list in skill2eff2task_step.items():
+        for eff2task_step in eff2task_step_list:
+            for value_tuple, task_step_tuple_list in eff2task_step.items():
+                if not skill2partition[lifted_skill]:
+                    skill2partition[lifted_skill].append()
+
 
 def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
     '''
