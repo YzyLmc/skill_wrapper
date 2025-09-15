@@ -135,8 +135,7 @@ class Predicate:
         return grounded_pred
 
     def lifted(self, type_dict=None):
-        if self.types: # if the predicate is parametrized
-            assert self.is_grounded(), "Cannot lift an ungrounded predicate"
+
         if type_dict:
             assert all([type in type_dict[param] for type, param in zip(self.types, self.params)]) or (not self.types)
         
@@ -208,15 +207,31 @@ class PredicateState:
             pred_list = list(set([pred.lifted() for pred in pred_list]))
         return pred_list
     
-    def filter_pred_list(self, keep_list: list[Predicate]):
+    def keep_pred_list(self, keep_list: list[Predicate]):
         '''
-        Removes all predicates from the state except those in keep_list.
+        Removes all predicates from the state except the *lifted* predicatesin keep_list.
         '''
-        keep_set = set(keep_list)
+        keep_set = set([pred.name for pred in keep_list])
         new_pred_dict = {}
 
         for pred in self.pred_dict:
-            if pred.lifted() in keep_set:
+            if pred.name in keep_set:
+                new_pred_dict[pred] = self.pred_dict[pred]
+
+        self.pred_dict = new_pred_dict
+
+    def remove_pred_list(self, remove_list: list[Predicate]):
+        '''
+        Removes predicates in remove_list from the state.
+
+        Args:
+            remove_list: list of *grounded* Predicate objects to be removed.
+        '''
+        remove_set = set(remove_list)
+        new_pred_dict = {}
+
+        for pred in self.pred_dict:
+            if pred not in remove_set:
                 new_pred_dict[pred] = self.pred_dict[pred]
 
         self.pred_dict = new_pred_dict

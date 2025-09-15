@@ -15,15 +15,43 @@ from src.skill_sequence_proposing import SkillSequenceProposing
 from src.invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill, update_empty_predicates, score_by_partition
 
 
-def get_batch_pred(model,  args, prompt_fpath="prompts/fm_invent.yaml") -> list[Predicate]:
-    """
-    Get a batch of predicates all at once from foundation model
-    """
-    def construct_prompt(prompt: str, lifted_skills: list[Skill]):
-        placeholders = ["[SKILL_LIST]", "[OBJECT_LIST]"]
+def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes: list[bool], lifted_pred_list: list[Predicate], pred_type: str, model: GPT4, env, skill2tried_pred={}, prompt_fpath='prompts/predicate_invention.yaml') -> Predicate:
+    '''
+    propose new predicates based on the contrastive pair.
+    '''
+    def construct_prompt(prompt: str, grounded_skills, successes, lifted_pred_list: list[Predicate], tried_pred: list[Predicate]):
+        """
+        replace placeholders in the prompt
+        pred_list :: list of lifted predicates
+        """
+        placeholders = ["[LIFTED_SKILL]", "[PARAMETERS]", "[GROUNDED_SKILL_1]", "[GROUNDED_SKILL_2]", "[SUCCESS_1]", "[SUCCESS_2]", "[PRED_LIST]"]
         while any([p in prompt for p in placeholders]):
-            prompt = prompt.replace()
-    prompt = load_from_file(prompt_fpath)[args.env]
+            prompt = prompt.replace("[LIFTED_SKILL]",  str(grounded_skills[0].lifted()))
+            prompt = prompt.replace("[PARAMETERS]",  str(grounded_skills[0].types))
+            prompt = prompt.replace("[GROUNDED_SKILL_1]",  str(grounded_skills[0]))
+            prompt = prompt.replace("[GROUNDED_SKILL_2]",  str(grounded_skills[1]))
+            prompt = prompt.replace("[SUCCESS_1]",  "succeeded" if bool(successes[0]) else "failed")
+            prompt = prompt.replace("[SUCCESS_2]",  "succeeded" if bool(successes[1]) else "failed")
+            # construct predicate list from pred_dict
+            pred_list_str = '\n'.join([f'{str(pred)}: {pred.semantic}' for pred in lifted_pred_list])
+            prompt = prompt.replace("[PRED_LIST]", pred_list_str)
+            prompt = prompt.replace("[TRIED_PRED]", ", ".join([str(pred) for pred in tried_pred]))
+        return prompt
+
+    tried_pred = skill2tried_pred[grounded_skills[0].lifted()] if skill2tried_pred else []
+    prompt = load_from_file(prompt_fpath)[env][pred_type]
+    prompt = construct_prompt(prompt, grounded_skills, successes, lifted_pred_list, tried_pred)
+    assert len(image_pair)==4 if pred_type=="eff" else len(image_pair)==2, "precondition need 2 images while effect need 4"
+    logging.info('Generating predicate')
+    # resp = model.generate(prompt)[0]
+    resp = model.generate_multimodal(prompt, image_pair)[0]
+    pred, sem = resp.split('\n')[-1].split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
+    # parse the parameters from the output string into predicate parameters
+    # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
+    new_pred = Predicate(pred.split("(")[0], pred.split("(")[1].strip(")").split(", ")) # lifted
+    new_pred.semantic = sem
+
+    return new_pred
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
     """
@@ -78,7 +106,7 @@ def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pr
                     logging.info(f"Predicate {new_lifted_pred} added to predicate set by {pred_type} check")
                     lifted_pred_list.append(new_lifted_pred)
                     grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
-                    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, lifted_pred_list)
+                    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
                     grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
     
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)

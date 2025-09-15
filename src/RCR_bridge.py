@@ -756,11 +756,12 @@ class LiftedPDDLAction(object):
                                 break
 
                     else:
-                        for lr_i in range(len(relation_param_mapping[lr])):
-                            ps = relation_param_mapping[lr][lr_i]
-                            if ps[0] == param_mapping[relation.parameter1] and ps[1] == param_mapping[relation.parameter2]: 
-                                lr_index = lr_i 
-                                break 
+                        lr_index = 0 # <-
+                        # for lr_i in range(len(relation_param_mapping[lr])):
+                        #     ps = relation_param_mapping[lr][lr_i]
+                        #     if ps[0] == param_mapping[relation.parameter1] and ps[1] == param_mapping[relation.parameter2]: 
+                        #         lr_index = lr_i 
+                        #         break 
 
                     if lr_index == -1: 
                         print("It should never come here..")
@@ -965,11 +966,12 @@ class LiftedPDDLAction(object):
                                 break
 
                     else:
-                        for lr_i in range(len(relation_param_mapping[lr])):
-                            ps = relation_param_mapping[lr][lr_i]
-                            if ps[0] == param_mapping[relation.parameter1] and ps[1] == param_mapping[relation.parameter2]: 
-                                lr_index = lr_i 
-                                break 
+                        lr_index = 0 # <-
+                        # for lr_i in range(len(relation_param_mapping[lr])):
+                        #     ps = relation_param_mapping[lr][lr_i]
+                        #     if ps[0] == param_mapping[relation.parameter1] and ps[1] == param_mapping[relation.parameter2]: 
+                        #         lr_index = lr_i 
+                        #         break 
 
                     if lr_index == -1: 
                         print("It should never come here..")
@@ -1232,7 +1234,7 @@ class RCR_bridge:
                 false_set.add(grounded_relation)
         return PDDLState(true_set, false_set)
     
-    def operator_from_transitions(self, transition_tuples: list[list[PredicateState, PredicateState]], skill: Skill, type_dict: dict[str, list[str]], obj2type, flush=False) -> LiftedPDDLAction:
+    def operator_from_transitions(self, transition_tuples: list[list[PredicateState, PredicateState]], flush=False) -> LiftedPDDLAction:
         """
         Convert PredicateState objects with grounded Predicate into PDDLState objects and build operators.
             obj2pid :: mapping of the original grounded parameters to ids of the lifted parameters 
@@ -1250,12 +1252,12 @@ class RCR_bridge:
         obj_id = 0
         if flush:
             self.obj2pid = {}
-        # params in the skill first
-        for i, obj in enumerate(skill.params):
-            if not obj in self.obj2pid:
-                self.obj2pid[obj] = obj_id
-                self.pid2type[obj_id] = skill.types[i]
-                obj_id += 1
+        # # params in the skill first
+        # for i, obj in enumerate(skill.params):
+        #     if not obj in self.obj2pid:
+        #         self.obj2pid[obj] = obj_id
+        #         self.pid2type[obj_id] = skill.types[i]
+        #         obj_id += 1
 
         # other params
         for obj in obj_set:
@@ -1286,10 +1288,10 @@ class RCR_bridge:
         #         for t in transition_tuples
         #                         ]
 
-        # udpate pid2type and obj2type
-        for obj in skill.params:
-            self.pid2type[self.obj2pid[obj]] = obj2type[obj]
-        self.obj2type = obj2type
+        # # udpate pid2type and obj2type
+        # for obj in skill.params:
+        #     self.pid2type[self.obj2pid[obj]] = obj2type[obj]
+        # self.obj2type = obj2type
 
         operator: LiftedPDDLAction = LiftedPDDLAction.get_action_from_cluster(transition_cluster, copy.deepcopy(self.obj2pid))
         return operator
@@ -1432,23 +1434,81 @@ class RCR_bridge:
         # breakpoint()
         return obj2type, unified_pddl_transitions
     
-def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> list[dict[str, int]]:
+def generate_possible_groundings(operator, grounded_skill, skill_param2pid, type_dict: dict[str, list[str]]) -> list[dict[str, int]]:
     """
-    required_types: list of types corresponding to total argument slots
-    type_dict: dict of object -> type
-    fixed_grounding: list of object names fixed at the beginning
+    Generate all possible groundings for a lifted operator.
+
+    Args:
+        obj2pid: mapping of skill parameter to parameter id
+        type_dict: dict of object -> type
     """
-    required_types = [pid2type[i] for i in range(len(pid2type))]
-    if fixed_grounding is None:
-        fixed_grounding = []
+    index_to_type = {param.pid.split("_p")[-1]: param.type for param in operator.parameters if param.type != None}
+    # Validate and invert the fixed mapping to index->object.
+    obj2pid = {grounded_skill.params[i]: pid for i, pid in skill_param2pid.items()}
+    index_fixed_obj = {}
+    for obj, idx in obj2pid.items():
+        index_fixed_obj[idx] = obj
+    
+    domains: dict[int, list[str]] = {}
+    for idx, typ in index_to_type.items():
+        if idx in index_fixed_obj:
+            continue
+        candidates = [o for o, types in type_dict.items() if typ in types]
+        # Remove objects already fixed to some other index.
+        for fixed_obj, fixed_idx in obj2pid.items():
+            if fixed_idx != idx and fixed_obj in candidates:
+                candidates.remove(fixed_obj)
+        if not candidates:
+            return []
+        domains[idx] = candidates
+    
+    # Backtracking with MRV heuristic.
+    fixed_used = set(index_fixed_obj.values())
+    nonfixed_indices = sorted(domains.keys(), key=lambda i: len(domains[i]))
+    solutions = []
+    def backtrack(i: int, partial: dict[int, str], used: set[str]):
+        if i == len(nonfixed_indices):
+            merged = dict(index_fixed_obj)
+            merged.update(partial)
+            solutions.append(merged)
+            return
+        idx = nonfixed_indices[i]
+        for obj in domains[idx]:
+            if obj in used:
+                continue
+            partial[idx] = obj
+            used.add(obj)
+            backtrack(i + 1, partial, used)
+            used.remove(obj)
+            del partial[idx]
+    backtrack(0, {}, set(fixed_used))
+    return solutions
+
+
+def generate_possible_groundings(operator, grounded_skill, skill_param2pid, type_dict: dict[str, list[str]]) -> list[dict[str, int]]:
+    """
+    Generate all possible groundings for a lifted operator.
+
+    Args:
+        obj2pid: mapping of skill parameter to parameter id
+        type_dict: dict of object -> type
+    """
+    pid2type = {int(param.pid.split("_p")[-1]): param.type for param in operator.parameters if param.type != ''}
+    # Validate and invert the fixed mapping to index->object.
+    fixed_grounding = {grounded_skill.params[i]: pid for i, pid in skill_param2pid.items()}
+
+    required_types = list(pid2type.values())
 
     # Step 1: Validate fixed_grounding length
     if len(fixed_grounding) > len(required_types):
         raise ValueError("Fixed grounding has more objects than required types.")
 
     # Step 2: Remove fixed types and objects
-    remaining_types = required_types[len(fixed_grounding):]
-    used_objects = set(fixed_grounding)
+    # remove the elements at indices of fixed_grounding
+    remaining_types = copy.deepcopy(pid2type)
+    for idx in fixed_grounding.values():
+        remaining_types.pop(idx)
+    used_objects = set(grounded_skill.params)
 
     # Step 3: Invert type_dict to type -> [objects]
     type_to_objects = {}
@@ -1459,7 +1519,7 @@ def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> l
 
     # Step 4: Gather object choices for remaining types
     try:
-        object_choices = [type_to_objects[tp] for tp in remaining_types]
+        object_choices = [type_to_objects[tp] for tp in remaining_types.values()]
     except KeyError:
         # One of the remaining types has no available objects
         return []
@@ -1467,12 +1527,58 @@ def generate_possible_groundings(pid2type, type_dict, fixed_grounding=None) -> l
     # Step 5: Generate combinations and filter duplicates
     groundings = []
     for combo in product(*object_choices):
-        full_combo = tuple(fixed_grounding) + combo
+        full_combo = tuple(grounded_skill.params) + combo
         if len(set(full_combo)) == len(full_combo):
-            obj2pid = {obj: i for obj, i in enumerate(full_combo)}
-            groundings.append(obj2pid)
+            # obj2pid = {obj: i for obj, i in zip(full_combo, pid2type.keys())}
+            grounding = {pid: obj for pid, obj in zip(remaining_types.keys(), combo)} | {v:k for k, v in fixed_grounding.items()}
+            groundings.append(grounding)
 
     return groundings
+
+def unify_transition(transition: list[PredicateState, PredicateState], grounded_skill: Skill, type_dict: dict[str, list[str]]):
+    """
+    Unify the parameter types in a transition according to the lowest hierarchy type of each parameter.
+    The lowest hierarchy type is determined by both the skill and the predicates in the effect.
+    1. If a parameter appears in the skill, its type in the skill is used.
+    2. If a parameter appears in effect predicates, the lowest hierarchy type among all its appearances is used.
+    3. Otherwise, the type in the predicate is used.
+    return:
+        unified_transition :: original transition with parameter types replaced by common lowest hierarchy type
+    """
+
+    skill_param2type = {obj: t for obj, t in zip(grounded_skill.params, grounded_skill.types)}
+
+    param2lowest_type = {}
+
+    state_0, state_1 = transition
+    value_tuple: tuple[Predicate, int] = tuple([(pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) \
+                                                for pred in state_0.iter_predicates() if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0])
+    
+    for pred, change in value_tuple:
+        for obj, t in zip(pred.params, pred.types):
+
+            if obj in param2lowest_type:
+                if type_dict[obj].index(t) > type_dict[obj].index(param2lowest_type[obj]):
+                    param2lowest_type[obj] = t
+            elif obj in skill_param2type:
+                param2lowest_type[obj] = skill_param2type[obj]
+            elif obj not in param2lowest_type:
+                param2lowest_type[obj] = t
+
+    unified_transition = []
+    for state in transition:
+        predicate_state = PredicateState([])
+        for grounded_pred, truth_value in state.pred_dict.items():
+            types_list = []
+            for idx, obj in enumerate(grounded_pred.params):
+                if obj in param2lowest_type:
+                    types_list.append(param2lowest_type[obj])
+                else: 
+                    types_list.append(grounded_pred.types[idx])
+            new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
+            predicate_state.pred_dict[new_grounded_pred] = truth_value
+        unified_transition.append(predicate_state)
+    return unified_transition, param2lowest_type
 
 if __name__ == "__main__":
     # test data structures

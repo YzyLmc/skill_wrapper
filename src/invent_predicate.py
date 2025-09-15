@@ -11,15 +11,16 @@ Data structures for logging:
 from collections import defaultdict
 from copy import deepcopy
 import itertools
-from itertools import permutations
+from itertools import permutations, product
 import logging
 import random
 from typing import Union
-
+import sys
+sys.path.append('.')
 
 from src.utils import GPT4, load_from_file
 from src.data_structure import Skill, Predicate, PredicateState
-from src.RCR_bridge import PDDLState, LiftedPDDLAction, Parameter, RCR_bridge, generate_possible_groundings
+from src.RCR_bridge import PDDLState, LiftedPDDLAction, Parameter, RCR_bridge, generate_possible_groundings, unify_transition
 
 def possible_grounded_preds(lifted_pred_list: list[Predicate], type_dict: dict[str, list[str] ]) -> list[Predicate]:
     """
@@ -246,28 +247,47 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                 last_state = deepcopy(state)
     return skill2task2state
 
-def in_alpha(possible_groundings, transition: list[PredicateState, PredicateState], operator, pred_type: str, obj2type: dict[str, str]) -> bool:
+def in_alpha(possible_groundings, transition: list[PredicateState, PredicateState], grounded_skill, operator, type_dict, pred_type: str) -> bool:
     """
-    Util function for detect_mismatch and score_by_partition
+    Util function for detect_mismatch and score_by_partition:
     There exist a grounding such that the grounded state agree with the operator's precondition/effect
     """
+    # also index all other objects if any
+    obj_set = set()
+    for state in transition:
+        for pred in state.iter_predicates():
+            obj_set.update(pred.params)
+    remaining_obj_set = obj_set - set(possible_groundings[0].keys())
+    if remaining_obj_set:
+        # all possible order of remaining object lists
+        remaining_obj_permutations = list(permutations(remaining_obj_set, len(remaining_obj_set)))
+        starting_idx = len(possible_groundings[0])
+        additional_possible_groundings = []
+        for perm in remaining_obj_permutations:
+            additional_possible_grounding = {i: obj for i, obj in zip(range(starting_idx, starting_idx + len(perm)), perm)}
+            additional_possible_groundings.append(additional_possible_grounding)
+        # cartesian product of possible_groundings and additional_possible_groundings
+        possible_groundings = [{**pg, **apg} for pg, apg in product(possible_groundings, additional_possible_groundings[:1])]
+    # breakpoint()
     for grounding in possible_groundings:
         bridge = RCR_bridge()
 
-        # also construct these pddl state with obj2type
-        unified_transition = []
-        for state in transition:
-            predicate_state = PredicateState([])
-            for grounded_pred, truth_value in state.pred_dict.items():
-                types_list = []
-                for idx, obj in enumerate(grounded_pred.params):
-                    if obj in obj2type:
-                        types_list.append(obj2type[obj])
-                    else:
-                        types_list.append(grounded_pred.types[idx])
-                new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
-                predicate_state.pred_dict[new_grounded_pred] = truth_value
-            unified_transition.append(predicate_state)
+        # # also construct these pddl state with obj2type
+        # unified_transition = []
+        # for state in transition:
+        #     predicate_state = PredicateState([])
+        #     for grounded_pred, truth_value in state.pred_dict.items():
+        #         types_list = []
+        #         for idx, obj in enumerate(grounded_pred.params):
+        #             if obj in obj2type:
+        #                 types_list.append(obj2type[obj])
+        #             else:
+        #                 types_list.append(grounded_pred.types[idx])
+        #         new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
+        #         predicate_state.pred_dict[new_grounded_pred] = truth_value
+        #     unified_transition.append(predicate_state)
+
+        unified_transition, _ = unify_transition(transition, grounded_skill, type_dict)
 
         # map objects to lifted parameters
         pddl_state_list = [bridge.predicatestate_to_pddlstate(state, grounding) for state in unified_transition]
@@ -322,9 +342,9 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
                     state_in_alpha = True
 
                 else:
-                    for operator, pid2type, obj2type in skill2operator[lifted_skill]:
-                        possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
-                        if in_alpha(possible_groundings, transition_meta["states"], operator, pred_type, obj2type):
+                    for operator, skill_param2pid in skill2operator[lifted_skill]:
+                        possible_groundings = generate_possible_groundings(operator, grounded_skill, skill_param2pid, type_dict)
+                        if in_alpha(possible_groundings, transition_meta["states"], grounded_skill, operator, type_dict, pred_type):
                             state_in_alpha = True
                             break
 
@@ -447,12 +467,14 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
     This function is largely taken from detect mismatch
     '''
     # calculate hypotehtical operators
+    hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, success_only=False)
     hypothetical_skill2task2state_success = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, success_only=True)
-    _, _, skill2partition = partition_by_termination_n_eff(hypothetical_skill2task2state_success)
-    hypothetical_operators = create_operators_from_partitions(lifted_skill, hypothetical_skill2task2state_success, skill2partition, type_dict)
+    skill2partition = partition_by_lifted_effect(hypothetical_skill2task2state_success, type_dict)
+
+    hypothetical_operators = create_operators_from_partitions(lifted_skill, hypothetical_skill2task2state_success, hypothetical_skill2task2state, skill2partition, type_dict)
 
     # if the new operators can make sure fail execution outside alpha and successful execution inside alpha
-    hypothetical_skill2task2state = grounded_pred_log_to_skill2task2state(hypothetical_grounded_predicate_truth_value_log, tasks, success_only=False)
+
     task_num = 0
     score = 0
 
@@ -465,9 +487,10 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                 state_in_alpha = False
                 # first iteration when no operators set to true so we invent
                 assert hypothetical_operators, "There must be at least one operator learned"
-                for operator, pid2type, obj2type in hypothetical_operators:
-                    possible_groundings = generate_possible_groundings(pid2type, type_dict, fixed_grounding=grounded_skill.params)
-                    if in_alpha(possible_groundings, transition_meta["states"], operator, pred_type, obj2type):
+                for operator, skill_param2pid in hypothetical_operators:
+                    possible_groundings = generate_possible_groundings(operator, grounded_skill, skill_param2pid, type_dict)
+                    # breakpoint()
+                    if in_alpha(possible_groundings, transition_meta["states"], grounded_skill, operator, type_dict, pred_type):
                         state_in_alpha = True
                         break
                 # print(task_step_tuple, state_in_alpha, transition_meta['success'])
@@ -478,7 +501,7 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                 task_num += 1
 
     result = True if score/task_num > threshold[pred_type] else False
-    logging.info(f"Predicate is {'' if result else 'not '}added. Score = {score/task_num}")
+    logging.info(f"Predicate is {'' if result else 'not '}added for {pred_type}. Score = {score/task_num}")
     return result
 
 # def score_by_partition_final(new_pred_lifted: Predicate, lifted_skill: Skill, skill2task2state, pred_type: str, threshold: dict[str, float]) -> bool:
@@ -515,18 +538,27 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
     # partitioning
     # 1. partition by different termination and effect, success task only
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, success_only=True)
-    
+
+    skill2task2state_all = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, success_only=False)
+
     if filtered_lifted_pred_list: # when we perform final filtering after all iterations
         for grounded_skill, task2state in skill2task2state.items():
             for task_step_tuple, transition_meta in task2state.items():
                 transition = transition_meta['states']
-                transition[0].filter_pred_list(filtered_lifted_pred_list)
-                transition[1].filter_pred_list(filtered_lifted_pred_list)
+                transition[0].keep_pred_list(filtered_lifted_pred_list)
+                transition[1].keep_pred_list(filtered_lifted_pred_list)
 
-    _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
+        for grounded_skill, task2state in skill2task2state_all.items():
+            for task_step_tuple, transition_meta in task2state.items():
+                transition = transition_meta['states']
+                transition[0].keep_pred_list(filtered_lifted_pred_list)
+                transition[1].keep_pred_list(filtered_lifted_pred_list)
+
+    # _, _, skill2partition = partition_by_termination_n_eff(skill2task2state)
+    skill2partition = partition_by_lifted_effect(skill2task2state, type_dict)
     # 2. create one operator for each partition
     for lifted_skill in skill2operator:
-        skill2operator[lifted_skill] = create_operators_from_partitions(lifted_skill, skill2task2state, skill2partition, type_dict)
+        skill2operator[lifted_skill] = create_operators_from_partitions(lifted_skill, skill2task2state, skill2task2state_all, skill2partition, type_dict)
 
     return skill2operator
 
@@ -536,7 +568,6 @@ def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounde
     This function will only be called in main.
     """
     filtered_lifted_pred_list = []
-    skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks, success_only=False)
     for lifted_pred in lifted_pred_list:
         for lifted_skill in skill2operator:
             if not skill2operator[lifted_skill]: continue
@@ -581,8 +612,8 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
             for perm in permutations(b, len(b)):
                 out.append(dict(zip(a, perm)))
         return out
-    
-    def beam_grounding(abstract_state_list: list[list[tuple[Predicate, int]]], param, grounding_tuple: tuple[Predicate, int, int], type_list: list[str]) -> list[list[Predicate]]:
+
+    def beam_grounding(abstract_state_list: list[list[tuple[Predicate, int]]], param, grounding_tuple: tuple[Predicate, int, int], obj_type: str) -> list[list[Predicate]]:
         """
         Try grounding one parameter of each abstract state, without violating the type constraint and truth value.
         If there are multiple possible groundings, return all of them, to account for multiple grounded predicates with same lifted form.
@@ -602,32 +633,42 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
             # if there are multiple predicates with the same lifted form, we create copies and try all of them
             pred_with_same_lifted_form = []
             for pred, change in abstract_state:
-                if pred == pred_to_ground:
+                if pred.name == pred_to_ground.name:
                     pred_with_same_lifted_form.append((pred, change))
                 else:
                     new_state.append((pred, change))
 
-            for pred, change in pred_with_same_lifted_form:
+            for i, (pred, change) in enumerate(pred_with_same_lifted_form):
                 # make a copy of the state without the predicate to ground
                 abstract_state_to_ground = deepcopy(new_state)
-
+                pred_copy = deepcopy(pred)
                 # try grounding the predicate
                 # check type
-                required_type = pred.types[param_index]
-                if required_type not in type_list:
+                required_type = pred_copy.types[param_index]
+                if not required_type == obj_type:
+                    continue
+
+                # check if pred's param is already grounded
+                if not pred_copy.params:
+                    pred_copy.params = [None] * len(pred_copy.types)
+
+                if pred_copy.params[param_index] is not None and pred_copy.params[param_index] != param:
                     continue
 
                 # check truth value
                 if change is not None and change != truth_change:
                     continue
 
-                # check is passed
-                if not pred.params:
-                    pred.params = [None] * len(pred.types)
-                pred.params[param_index] = param
-                abstract_state_to_ground.append((pred, truth_change))
-                new_abstract_state_list.append(abstract_state_to_ground)
+                # check is passed, ground this specific predicate, leave all other predicates unchanged
 
+                pred_copy.params[param_index] = param
+                abstract_state_to_ground.append((pred_copy, truth_change))
+
+                # add back all other predicates in pred_with_same_lifted_form
+                for j, (other_pred, other_change) in enumerate(pred_with_same_lifted_form):
+                    if j != i:
+                        abstract_state_to_ground.append((other_pred, other_change))
+                new_abstract_state_list.append(abstract_state_to_ground)
         return new_abstract_state_list
 
     def equal_lifted_effect(value_tuple_1, value_tuple_2, grounded_skill_1, grounded_skill_2) -> bool:
@@ -639,8 +680,19 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
             value_tuple_1 :: tuple[Predicate, int]
             value_tuple_2 :: tuple[Predicate, int]
         """
+        # print("skill 1:", grounded_skill)
+        # print("eff 1:")
+        # for t in value_tuple:
+        #     print(f"{t[0]} : {t[1]}")
+        # print("\n")
+        # print("skill 2:", existing_eff[1])
+        # print("eff 2:")
+        # for (pred, change) in existing_eff[0]:
+        #     print(f"{pred} : {change}")
+        # print("----")
+
         # check if their effect has same set of lifted predicates
-        if len(value_tuple_1) != len(value_tuple_2):
+        if len(list(value_tuple_1)) != len(list(value_tuple_2)):
             return False
         
         lifted_pred_list_1 = [pred.lifted() for pred, change in value_tuple_1]
@@ -649,8 +701,8 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
             return False
         
         # build object mapping using groudned skills
-        objects_1 = set(sum([pred.params for pred, change in value_tuple_1], []))
-        objects_2 = set(sum([pred.params for pred, change in value_tuple_2], []))
+        objects_1 = set(sum([list(pred.params) for pred, change in value_tuple_1], []))
+        objects_2 = set(sum([list(pred.params) for pred, change in value_tuple_2], []))
 
         if len(objects_1) != len(objects_2): # must have equal number of objects
             return False
@@ -664,16 +716,15 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
                 obj2idx_1[param] = 0
             elif param not in obj2idx_1:
                 obj2idx_1[param] = len(obj2idx_1)
-        
+
         for obj in objects_1:
-            for o in obj:
-                if o not in obj2idx_1:
-                    obj2idx_1[o] = len(obj2idx_1)
+            if obj not in obj2idx_1:
+                obj2idx_1[obj] = len(obj2idx_1)
 
         idx2pred_id_truth_list: dict[int, list[tuple]] = defaultdict(list)
         for pred, change in value_tuple_1:
             for i, param in enumerate(pred.params):
-                idx2pred_id_truth_list[obj2idx_1[param]].append((pred, i, change))
+                idx2pred_id_truth_list[obj2idx_1[param]].append((pred.lifted(), i, change))
 
         
         # fix obj mapping for the first predicate set, search for match over possible obj mapping for the second predicate set
@@ -685,169 +736,221 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
                 obj2idx_2[param] = len(obj2idx_2)
 
         for obj in objects_2:
-            for o in obj:
-                if o not in obj2idx_2:
-                    obj2idx_2[o] = len(obj2idx_2)
+            if obj not in obj2idx_2:
+                obj2idx_2[obj] = len(obj2idx_2)
+
         assert len(obj2idx_1) == len(obj2idx_2), "Two grounded skills must have the same number of parameters"
 
         idx2obj_2 = {v:k for k,v in obj2idx_2.items()} # reverse mapping
 
         skill_param_mapping = {i: i for i in range(len(grounded_skill_1.params))}
 
+        # type of each object in value_dict_2
+        skill_param2type = {obj: t for obj, t in zip(grounded_skill_2.params, grounded_skill.types)}
+
+        param2lowest_type = {}
+
+        for pred, change in value_tuple_2:
+            for obj, t in zip(pred.params, pred.types):
+                if obj in skill_param2type:
+                    param2lowest_type[obj] = skill_param2type[obj]
+                elif obj in param2lowest_type:
+                    if type_dict[obj].index(t) > type_dict[obj].index(param2lowest_type[obj]):
+                        param2lowest_type[obj] = t
+                else:
+                    param2lowest_type[obj] = t
+
+
         # all possible mappings for the rest of the objects
-        rest_index_1 = list(range(len(obj2idx_1), len(grounded_skill_1.params)))
-        rest_index_2 = list(range(len(obj2idx_1), len(grounded_skill_1.params)))
+        rest_index_1 = list(range(len(grounded_skill_1.params), len(obj2idx_1)))
+        rest_index_2 = list(range(len(grounded_skill_2.params), len(obj2idx_2)))
 
         possible_mappings = all_mappings(rest_index_1, rest_index_2, dedup=True)
         # loop through all possible mappings, check if there exist one satisfy matches predicate pattern (idx2pred_id_list) and typing of predicates
         for mapping in possible_mappings:
             full_mapping = skill_param_mapping | mapping
+
             # try creating the same predicate set as value_tuple_1
             abstract_state_list = [[(pred.lifted(), None) for pred, change in value_tuple_1]] # initially all lifted
             for param_id, pred_id_truth_list in idx2pred_id_truth_list.items():
                 param_id_2 = full_mapping[param_id]
-                type_list = type_dict[idx2obj_2[param_id_2]]
+                # type_list = type_dict[idx2obj_2[param_id_2]]
+                obj_type = param2lowest_type[idx2obj_2[param_id_2]]
                 for grounding_tuple in pred_id_truth_list:
                     predicate_to_ground, param_index, target_truth = grounding_tuple
-                    abstract_state_list = beam_grounding(abstract_state_list, param_id, (predicate_to_ground, param_index, target_truth), type_list)
+                    abstract_state_list = beam_grounding(abstract_state_list, param_id, (predicate_to_ground, param_index, target_truth), obj_type)
                     if not abstract_state_list: # no possible grounding
                         break
                 if not abstract_state_list: # no possible grounding
                     break
             if abstract_state_list:
                 return True
-
         return False
 
-    skill2eff2task_step: dict[Skill, dict[frozenset, list[tuple]]] = {}
+    # dict[lifted skill, dict[ tuple[value_tuple, grounded_skill], list[task_step_tuple]]]
+    skill2eff2task_step: dict[Skill, dict[ tuple, list[tuple]]] = defaultdict(lambda: defaultdict(list))
     
     for grounded_skill, task2state in skill2task2state.items():
-        eff_partition = defaultdict(list)
         for task_step_tuple, transition_meta in task2state.items():
 
-            state_0, state_1 = transition_meta["states"]
-            value_tuple: tuple[Predicate, int] = ((pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) for pred in state_0.iter_predicates() \
-                                if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0)
+            transition, _ = unify_transition(transition_meta["states"], grounded_skill, type_dict)
+            state_0, state_1 = transition
+            value_tuple: tuple[Predicate, int] = tuple([(pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) \
+                                                        for pred in state_0.iter_predicates() if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0])
+            eff = (value_tuple, grounded_skill)
 
-            eff_partition[value_tuple].append(task_step_tuple)
-        skill2eff2task_step[grounded_skill] = eff_partition
-        skill2eff2task_step[grounded_skill.lifted()].append(eff_partition)
+            if not skill2eff2task_step[grounded_skill.lifted()]:
+                skill2eff2task_step[grounded_skill.lifted()][eff].append(task_step_tuple)
+            else:
+                found_match = False
+                for existing_eff, task_step_tuple_list in skill2eff2task_step[grounded_skill.lifted()].items():
+                    if equal_lifted_effect(value_tuple, existing_eff[0], grounded_skill, existing_eff[1]):
+                        skill2eff2task_step[grounded_skill.lifted()][existing_eff].append(task_step_tuple)
+                        found_match = True
+
+                        break
+                
+                if not found_match:
+                    skill2eff2task_step[grounded_skill.lifted()][eff].append(task_step_tuple)
 
     # merge partitions with same lifted effect across same lifted skill
     skill2partition: dict[Skill, list[list[tuple]]] = defaultdict(list)
 
     for lifted_skill, eff2task_step_list in skill2eff2task_step.items():
-        for eff2task_step in eff2task_step_list:
-            for value_tuple, task_step_tuple_list in eff2task_step.items():
-                if not skill2partition[lifted_skill]:
-                    skill2partition[lifted_skill].append()
+        skill2partition[lifted_skill] = [task_step_tuple_list for eff, task_step_tuple_list in eff2task_step_list.items()]
 
+    return skill2partition
 
-def partition_by_termination_n_eff(skill2task2state) -> Union[dict, dict]:
-    '''
-    Partition the a set of transitions using termination set. Will be used again in scoring and final operators learning.
-    Only successful execution will be used for partitioning.
+# def create_one_operator_from_one_partition(grounded_skill: Skill, task2state, task_step_tuple_list: list[tuple], type_dict: dict) -> LiftedPDDLAction:
+#     """
+#     Build operator from one partition using RCR code.
 
-    Args:
-        skill2task2state :: {Skill: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}}
-    Returns:
-        {grounded_skill: [{PredicateState: [task_step_tuple]} , ...]}
-    '''
-    def apply_both_partition(partition_1, partition_2):
-        "Find the intersection of applying termination and eff partition"
-        # Map each item to its group index in both groupings
-        partition_1_map = {}
-        for i, g in enumerate(partition_1):
-            for item in g:
-                partition_1_map[item] = i
-        
-        partition_2_map = {}
-        for i, g in enumerate(partition_2):
-            for item in g:
-                partition_2_map[item] = i
-        
-        # Use a dict to collect items that share the same (group_1_index, group_2_index)
-        combined_partitions = {}
-        for item in set(partition_1_map) & set(partition_2_map):  # In case not all items are covered
-            key = (partition_1_map[item], partition_2_map[item])
-            combined_partitions.setdefault(key, []).append(item)
-        
-        return list(combined_partitions.values())
+#     Args:
+#         task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
+#         task_tuple_list: list of tuple of task_name and step number.
+#     """
+#     # no failure cases in the task2state partition
+#     assert all([task2state[task_step_tuple]["success"] for task_step_tuple in task_step_tuple_list])
 
-    skill2state2partition: dict[Skill, dict[PredicateState, list[tuple]]] = {}
-    skill2eff2partition: dict[Skill, dict[dict, list[tuple]]] = {}
+#     bridge = RCR_bridge()
+#     transitions = [task2state[task_step_tuple]["states"] for task_step_tuple in task_step_tuple_list]
+#     obj2type, _ = bridge.unify_obj_type(transitions, grounded_skill, type_dict)
+#     unified_transitions = []
+#     for t in transitions:
+#         unified_transition = []
+#         for state in t:
+#             predicate_state = PredicateState([])
+#             for grounded_pred, truth_value in state.pred_dict.items():
+#                 types_list = []
+#                 for idx, obj in enumerate(grounded_pred.params):
+#                     if obj in obj2type:
+#                         types_list.append(obj2type[obj])
+#                     else:
+#                         types_list.append(grounded_pred.types[idx])
+#                 new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
+#                 predicate_state.pred_dict[new_grounded_pred] = truth_value
+#             unified_transition.append(predicate_state)
+#         unified_transitions.append(unified_transition)
+#     return bridge.operator_from_transitions(unified_transitions, grounded_skill, type_dict, obj2type, flush=True), bridge.get_pid_to_type(), obj2type
 
-    for grounded_skill, task2state in skill2task2state.items():
-        termination_partition = defaultdict(list) # {task_step}
-        eff_partition = defaultdict(list)
-        for task_step_tuple, transition_meta in task2state.items():
-
-            state_0, state_1 = transition_meta["states"]
-            value_tuple = ((pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) for pred in state_0.iter_predicates() \
-                                if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0)
-            
-            termination_partition[state_1].append(task_step_tuple)
-            # value_dict is not hashable so 
-            eff_partition[value_tuple].append(task_step_tuple)
-
-        skill2state2partition[grounded_skill] = termination_partition
-        skill2eff2partition[grounded_skill] = eff_partition
-    # take intersection of both
-    skill2partition: dict[Skill, list[list[tuple]]] = {grounded_skill: apply_both_partition(list(skill2state2partition[grounded_skill].values()), \
-            list(skill2eff2partition[grounded_skill].values()) ) \
-                                                            for grounded_skill in skill2eff2partition}
-
-    return skill2state2partition, skill2eff2partition, skill2partition
-
-def create_one_operator_from_one_partition(grounded_skill: Skill, task2state, task_step_tuple_list: list[tuple], type_dict: dict) -> LiftedPDDLAction:
+def create_one_operator_from_one_partition(task2state, task_step_tuple_list: list[tuple], tautology_preds: list[Predicate]=False) -> LiftedPDDLAction:
     """
     Build operator from one partition using RCR code.
 
     Args:
         task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
-        task_tuple_list: list of tuple of task_name and step number.
+        task_step_tuple_list: list of tuple of task_name and step number.
+        tautology_preds: list of predicates to remove that are always true or always false
     """
-    # no failure cases in the task2state partition
-    assert all([task2state[task_step_tuple]["success"] for task_step_tuple in task_step_tuple_list])
 
     bridge = RCR_bridge()
-    transitions = [task2state[task_step_tuple]["states"] for task_step_tuple in task_step_tuple_list]
-    obj2type, _ = bridge.unify_obj_type(transitions, grounded_skill, type_dict)
-    unified_transitions = []
-    for t in transitions:
-        unified_transition = []
-        for state in t:
-            predicate_state = PredicateState([])
-            for grounded_pred, truth_value in state.pred_dict.items():
-                types_list = []
-                for idx, obj in enumerate(grounded_pred.params):
-                    if obj in obj2type:
-                        types_list.append(obj2type[obj])
-                    else:
-                        types_list.append(grounded_pred.types[idx])
-                new_grounded_pred = Predicate(grounded_pred.name, types_list, grounded_pred.params)
-                predicate_state.pred_dict[new_grounded_pred] = truth_value
-            unified_transition.append(predicate_state)
-        unified_transitions.append(unified_transition)
-    return bridge.operator_from_transitions(unified_transitions, grounded_skill, type_dict, obj2type, flush=True), bridge.get_pid_to_type(), obj2type
+    transitions = []
+    for task_step_tuple in task_step_tuple_list:
+        transition = deepcopy(task2state[task_step_tuple]["states"])
+        if tautology_preds:
+            transition[0].remove_pred_list(tautology_preds)
+            transition[1].remove_pred_list(tautology_preds)
+        transitions.append(transition)
+        # breakpoint()
 
-def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skill2partition, type_dict):
+    return bridge.operator_from_transitions(transitions), bridge.obj2pid
+
+def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skill2task2state_all, skill2partition, type_dict):
     """
     Calculate operators for one skill using the partitions by termination set.
+
+    Args:
+        lifted_skill :: Skill
+        skill2task2state: only successful tasks
+        skill2task2state_all: both successful and failed tasks
+        skill2partition :: {lifted_skill: [[task_step_tuple, task_step_tuple]]}
 
     Returns:
         operators :: [(LiftedPDDLAction, {pid: int: type: str})]
     """
-    seen_operators = set()
+
     operators = []
-    # create operators for each grounded skill
+    # # create operators for each grounded skill
+    # for grounded_skill, task2state in skill2task2state.items():
+    #     if grounded_skill.lifted() == lifted_skill:
+    #         for partition in skill2partition[grounded_skill]:
+    #             operator, pid2type, obj2type = create_one_operator_from_one_partition(grounded_skill, task2state, partition, type_dict)
+    #             if not operator in seen_operators:
+    #                 seen_operators.add(operator)
+    #                 operators.append((operator, pid2type, obj2type))
+
+    # merge the first level of the dict by lifting the grounded skills, add grounded skills to the lowest level
+    lifted_skill2task2state_skill = {}
     for grounded_skill, task2state in skill2task2state.items():
         if grounded_skill.lifted() == lifted_skill:
-            for partition in skill2partition[grounded_skill]:
-                operator ,pid2type, obj2type = create_one_operator_from_one_partition(grounded_skill, task2state, partition, type_dict)
-                if not operator in seen_operators:
-                    seen_operators.add(operator)
-                    operators.append((operator, pid2type, obj2type))
+            task2state_skill = {}
+            for task_step_tuple, transition_meta in task2state.items():
+                task2state_skill[task_step_tuple] = {'states': transition_meta['states'], 'success': transition_meta['success'], 'grounded_skill': grounded_skill}
+            
+            if grounded_skill.lifted() in lifted_skill2task2state_skill:
+                lifted_skill2task2state_skill[grounded_skill.lifted()].update(task2state_skill)
+            else:
+                lifted_skill2task2state_skill[grounded_skill.lifted()] = task2state_skill
+    
+
+    # calculate unnecessary predicates and remove them
+    # Unnecessary predicates: 
+    # 1. tautologies: always true or always false no matter success or failure
+    # 2. ones that care about even lower level typing of the objects NOTE: not implemented yet
+
+    all_transitions = []
+    for skill, task2state in skill2task2state_all.items():
+        if skill.lifted() == lifted_skill:
+            all_transitions += [transition_meta['states'] for transition_meta in task2state.values()]
+
+    tautology_preds_set = set([(pred, value) for pred, value in all_transitions[0][0].pred_dict.items()]).intersection( \
+                            set([(pred, value) for pred, value in all_transitions[0][1].pred_dict.items()]))
+
+    for transition_i in all_transitions:
+        state_preds_set_i = set([(pred, value) for pred, value in transition_i[0].pred_dict.items()]).intersection( \
+                            set([(pred, value) for pred, value in transition_i[1].pred_dict.items()]))
+        tautology_preds_set = tautology_preds_set.intersection(state_preds_set_i)
+
+    tautology_preds = [pred for pred, value in tautology_preds_set]
+    # print("Tautology preds:", [str(p) for p in tautology_preds])
+
+    # create operators for each partition
+    # print(lifted_skill)
+
+    partitions = skill2partition[lifted_skill]
+    # print(partitions)
+    for partition in partitions:
+            
+        operator, obj2pid = create_one_operator_from_one_partition(lifted_skill2task2state_skill[lifted_skill], partition, tautology_preds)
+        first_grounded_skill = lifted_skill2task2state_skill[lifted_skill][partition[0]]['grounded_skill']
+        skill_param2pid = {}
+        for i, param in enumerate(first_grounded_skill.params):
+            if param in obj2pid:
+                skill_param2pid[i] = obj2pid[param]
+        # print(operator)
+        
+        operators.append((operator, skill_param2pid))
+    # breakpoint()
     return operators
 
 def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:
@@ -916,24 +1019,47 @@ def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:
     print(t_score_t, f_score_t, t_score_f, f_score_f)
     return t_score_t, f_score_t, t_score_f, f_score_f
 
+def defaultdict_to_dict(d):
+    if isinstance(d, defaultdict):
+        return {k: defaultdict_to_dict(v) for k, v in d.items()}
+    else:
+        return d
+
 if __name__ == '__main__':
     model = GPT4(engine='gpt-4o-2024-11-20')
     
-    type_dict = {'PeanutButter': ['openable', 'pickupable'], 'Knife': ['pickupable', 'utensil'], 'Bread': ['food'], 'Cup': ['receptacle'], 'Table': ['location'], 'Shelf': ['location'], 'Robot': ['robot']}
-    lifted_skill = Skill("PickLeft", ["pickupable"])
-    threshold={"precond":0.5, "eff":0.5}
-    grounded_predicate_truth_value_log = load_from_file("hypo_test.yaml")
-    from utils import load_tasks
-    task_config = load_from_file("task_config/dorfl.yaml")
-    tasks = load_tasks("test_tasks/dorfl/", task_config)
-    # value = score_by_partition(lifted_skill, grounded_predicate_truth_value_log, tasks, pred_type, type_dict, threshold=threshold)
-    # breakpoint()
-    bridge = RCR_bridge(obj2pid={'PeanutButter': 0, 'Knife': 1, 'Robot': 2, None: -1})
-    test_pred_1 = Predicate('EnclosedByGripper', ['pickupable'], ['PeanutButter'])
-    test_pred_2 = Predicate('EnclosedByGripper', ['pickupable'], ['Knife'])
-    test_ps = PredicateState([test_pred_1, test_pred_2])
-    test_ps.set_pred_value(test_pred_1, False)
-    test_ps.set_pred_value(test_pred_2, False)
-    pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
-
+    # type_dict = {'PeanutButter': ['openable', 'pickupable'], 'Knife': ['pickupable', 'utensil'], 'Bread': ['food'], 'Cup': ['receptacle'], 'Table': ['location'], 'Shelf': ['location'], 'Robot': ['robot']}
+    # lifted_skill = Skill("PickLeft", ["pickupable"])
+    # threshold={"precond":0.5, "eff":0.5}
+    # grounded_predicate_truth_value_log = load_from_file("hypo_test.yaml")
+    # from utils import load_tasks
+    # task_config = load_from_file("task_config/dorfl.yaml")
+    # tasks = load_tasks("test_tasks/dorfl/", task_config)
+    # # value = score_by_partition(lifted_skill, grounded_predicate_truth_value_log, tasks, pred_type, type_dict, threshold=threshold)
+    # # breakpoint()
+    # bridge = RCR_bridge(obj2pid={'PeanutButter': 0, 'Knife': 1, 'Robot': 2, None: -1})
+    # test_pred_1 = Predicate('EnclosedByGripper', ['pickupable'], ['PeanutButter'])
+    # test_pred_2 = Predicate('EnclosedByGripper', ['pickupable'], ['Knife'])
+    # test_ps = PredicateState([test_pred_1, test_pred_2])
+    # test_ps.set_pred_value(test_pred_1, False)
+    # test_ps.set_pred_value(test_pred_2, False)
+    # pddl_state = bridge.predicatestate_to_pddlstate(test_ps)
+    def defaultdict_to_dict(d):
+        if isinstance(d, defaultdict):
+            return {k: defaultdict_to_dict(v) for k, v in d.items()}
+        else:
+            return d
+    type_dict = {'Robot': ['robot'], 'Lettuce': ['pickupable', 'cuttable'], 'TopBun': ['pickupable'], 'BottomBun': ['pickupable'], 'Patty': ['pickupable', 'cookable'], 'Stove': ['station', 'cooker'], 'CuttingBoard': ['station', 'cuttingboard']}
+    from src.utils import load_from_file
+    skill2task2state = load_from_file("test_skill2task2state.yaml")
+    tasks = load_from_file("results/oracle_predicates/burger/runs/0/0_partial/transitions/tasks.yaml")
+    _,_,skill2partition = partition_by_lifted_effect(skill2task2state, type_dict)
+    for skill, partition in skill2partition:
+        print(skill)
+        for task_steps in partition:
+            print("Partition:")
+            for task_step in task_steps:
+                task, step = task_step
+                print(tasks[task][str(step)], str(tasks[task][str(step)]['skill']))
+        print('\n')
     breakpoint()
