@@ -21,7 +21,7 @@ from robotouille.run_skill_sequence import exec_and_record
 from src.utils import GPT4, load_from_file, save_to_file, setup_logging, get_save_fpath
 from src.data_structure import Skill
 
-@hydra.main(version_base=None, config_path="../robotouille/conf", config_name="test_config")
+@hydra.main(version_base=None, config_path="../hydra_conf", config_name="vila_config")
 def main(cfg: DictConfig):
     model = GPT4(engine=cfg.model)
     prompt = load_from_file("prompts/vila_prompt.yaml")[cfg.env]
@@ -82,9 +82,11 @@ def main(cfg: DictConfig):
                 new_prompt = str(prompt)
 
                 if len(plan):
-                    new_prompt += f" Your last set of actions were:\n"
+                    new_prompt += f" \nHere is the sequence of actions you have tried to execute:\n"
                     for y in range(len(plan)):
                         new_prompt += f"{y+1}. {plan[y]}\n"
+                    new_prompt += f"If you see repeatitive patterns, or you just tried the same action as the first action of your plan about to be generated, it indicates that you are stuck. You should try to propose a different skill.\n"
+                    new_prompt += "Generate the step-by-step reasoning in one paragraph and the plan from current state to the goal state:"
                 resp = model.generate_multimodal(new_prompt, imgs=[current_img, goal_img])
                 logging.info(resp[0])
 
@@ -118,12 +120,16 @@ def main(cfg: DictConfig):
                     logging.info("Type mismatch. Try again.")
                     continue
                 
-                plan.append(proposed_skill)
+                # try executing
+                new_plan = plan + [proposed_skill]
 
                 if cfg.env == "burger":
-                    last_img_path = run_burger(environment_name, plan, cfg, **kwcfg)
+                    last_img_path, suc = run_burger(environment_name, new_plan, cfg, **kwcfg)
                     # find the last image in the tmp_dir
                     next_img = last_img_path
+                    if suc:
+                        plan = new_plan
+
                 else:
                     next_img = input("Enter path to the current image (or type 'done' to finish): ").strip()
 
@@ -134,12 +140,12 @@ def main(cfg: DictConfig):
 
                 current_img = next_img
                 logging.info(f"Current plan:\n{[str(s) for s in plan]}")
-
+                breakpoint()
             os.makedirs(save_path, exist_ok=True)
             results = {
                 "env": cfg.env,
                 "plan_method": "vila",
-                "0": {"all_parsed_plans": plan} 
+                "0": {"all_parsed_plans": [plan]} 
                 }
             save_to_file(results, os.path.join(save_path, "plan.yaml"))
     # delete the cached images in tmp_dir
@@ -149,7 +155,15 @@ def main(cfg: DictConfig):
 def run_burger(environment_name, plan, cfg, **kwcfg):
     "Take in skill sequence and execute them, save files to tmp_dir"
     img_save_path = robotouille.run_skill_sequence.exec_and_record(environment_name, plan, cfg.tmp_dir, **kwcfg)
-    return img_save_path
+    # split each level of the path
+    img_save_path_components = img_save_path.split(os.sep)
+    task_name = img_save_path_components[1]
+    tasks = load_from_file(os.path.join(cfg.tmp_dir, "tasks.yaml"))
+    task = tasks[task_name]
+    # find the max step number in the task
+    max_step_num = max([int(i) for i in task.keys()])
+    suc = task[str(max_step_num)]["success"]
+    return img_save_path, suc
 
 def get_save_path(save_fpath, problem_name):
     save_path = os.path.join(save_fpath, problem_name)

@@ -9,7 +9,7 @@ model: gpt-4o
 max_steps: 10
 init_img: null
 goal_img: null
-tmp_dir: tmp/
+tmp_dir: tmp
 
 hydra:
   run:

@@ -179,9 +179,8 @@ def run_trials(
     os.makedirs(save_dir, exist_ok=True)
     save_to_file(data_per_trial, save_fpath)
     print(f"Saved plans to {save_fpath}")
-    # json.dump(data_per_trial, open(save_fpath, "w"), indent=4)
 
-def postprocess_plans(plans: list[str], yaml_data: dict):
+def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator):
     all_processed_plans = []
 
     skills = yaml_data['skills']
@@ -197,14 +196,24 @@ def postprocess_plans(plans: list[str], yaml_data: dict):
                 if action_parts[0].startswith(S_name.lower()):
                     skill = S
 
-            for x in range(1, len(action_parts)):
-                for O in objects:
-                    if action_parts[x].startswith(O.lower()):
-                        action_parts[x] = O
+            if skill2operator and skill.lifted() in skill2operator:
+                object_parts = action_parts[1:]
+                operator_tuple = [op for op in skill2operator[skill.lifted()] if op.action_id == action_parts[0]][0]
+                _, skill_param2pid = operator_tuple
+                pid2skill_param = {v: k for k, v in skill_param2pid.items()}
+                params = [None] * len(pid2skill_param)
+                for k,v in pid2skill_param.items():
+                    params[k] = object_parts[v]
 
-            grounded_skill = skill.ground_with(action_parts[1:])
+            else:
+                for x in range(1, len(action_parts)):
+                    for O in objects:
+                        if action_parts[x].startswith(O.lower()):
+                            action_parts[x] = O
+                params = action_parts[1:]
+
+            grounded_skill = skill.ground_with(params)
             processed_plan.append(
-                # f"{action_parts[0]}({', '.join([x for x in action_parts[1:]])})"
                 grounded_skill
             )
 
@@ -327,6 +336,11 @@ def main():
     # load operators
     op_fpath = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/{args.iter_idx}/operators/operators.yaml"
     data_operators = load_from_file(op_fpath)
+    skill2operator_pkl = f"results/{args.baseline}/{args.env}/runs/{args.run_idx}/{args.iter_idx}/operators/skill2operator.pkl"
+    if os.path.exists(skill2operator_pkl):
+        skill2operator = load_from_file(skill2operator_pkl)
+    else:
+        skill2operator = None
     print(f"Loaded operators from {op_fpath}")
 
     # load task config

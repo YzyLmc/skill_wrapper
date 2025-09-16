@@ -1,10 +1,19 @@
-# Ablation baseline: VLM propose set of predicates and we use the same operator construction method
+
+"""
+VLM propose set of predicates and we use the same operator construction method
+
+Example command:
+    python baselines/fm_invent.py ++invent_pred_only=True
+"""
 import logging
 from collections import defaultdict
 from copy import deepcopy
 import os
 import sys
 sys.path.append(f".") 
+from datetime import datetime
+import re
+
 import hydra
 from omegaconf import DictConfig, OmegaConf
 from robotouille.run_skill_sequence import exec_and_record
@@ -15,43 +24,95 @@ from src.skill_sequence_proposing import SkillSequenceProposing
 from src.invent_predicate import invent_predicates, filter_predicates, calculate_operators_for_all_skill, update_empty_predicates, score_by_partition
 
 
-def generate_pred(image_pair: list[str], grounded_skills: list[Skill], successes: list[bool], lifted_pred_list: list[Predicate], pred_type: str, model: GPT4, env, skill2tried_pred={}, prompt_fpath='prompts/predicate_invention.yaml') -> Predicate:
+def generate_pred_pool(tasks, task_config, lifted_pred_list: list[Predicate], model: GPT4, env, prompt_fpath='prompts/fm_invent.yaml') -> list[Predicate]:
     '''
-    propose new predicates based on the contrastive pair.
+    Find the latest skill sequence, build the prompt with transitions and task config, and corresponding images and generate a pool of predicates.
     '''
-    def construct_prompt(prompt: str, grounded_skills, successes, lifted_pred_list: list[Predicate], tried_pred: list[Predicate]):
+    def get_latest_time(times: list[str]) -> str:
+        # Parse each string into datetime
+        parsed_times = [
+            datetime.strptime(t, "%Y-%m-%d-%H-%M-%S") for t in times
+        ]
+        # Find the maximum datetime
+        latest_time = max(parsed_times)
+        # Return it in the same string format
+        return latest_time.strftime("%Y-%-m-%-d-%-H-%-M-%-S")
+    
+    def construct_prompt(prompt: str, transition, skills, objects, lifted_pred_list: list[Predicate]):
         """
         replace placeholders in the prompt
         pred_list :: list of lifted predicates
         """
-        placeholders = ["[LIFTED_SKILL]", "[PARAMETERS]", "[GROUNDED_SKILL_1]", "[GROUNDED_SKILL_2]", "[SUCCESS_1]", "[SUCCESS_2]", "[PRED_LIST]"]
+        placeholders = ["[SKILL_SET]", "[OBJECT_SET]", "[TRANSITIONS]", "[PRED_LIST]"]
         while any([p in prompt for p in placeholders]):
-            prompt = prompt.replace("[LIFTED_SKILL]",  str(grounded_skills[0].lifted()))
-            prompt = prompt.replace("[PARAMETERS]",  str(grounded_skills[0].types))
-            prompt = prompt.replace("[GROUNDED_SKILL_1]",  str(grounded_skills[0]))
-            prompt = prompt.replace("[GROUNDED_SKILL_2]",  str(grounded_skills[1]))
-            prompt = prompt.replace("[SUCCESS_1]",  "succeeded" if bool(successes[0]) else "failed")
-            prompt = prompt.replace("[SUCCESS_2]",  "succeeded" if bool(successes[1]) else "failed")
+            prompt = prompt.replace("[SKILL_SET]",  '\n'.join(skills))
+            prompt = prompt.replace("[OBJECT_SET]",  '\n'.join(objects))
+            prompt = prompt.replace("[TRANSITIONS]",  '\n'.join(transition))
             # construct predicate list from pred_dict
-            pred_list_str = '\n'.join([f'{str(pred)}: {pred.semantic}' for pred in lifted_pred_list])
-            prompt = prompt.replace("[PRED_LIST]", pred_list_str)
-            prompt = prompt.replace("[TRIED_PRED]", ", ".join([str(pred) for pred in tried_pred]))
+            if lifted_pred_list:
+                pred_list_str = "\nAlso, you should avoid any synonyms or antonyms of the existing predicates. The existing predicates are:"
+                pred_list_str += '\n'.join([f'{str(pred)}: {pred.semantic}' for pred in lifted_pred_list])
+                pred_list_str += "\n"
+                prompt = prompt.replace("[PRED_LIST]", pred_list_str)
+            else:
+                prompt = prompt.replace("[PRED_LIST]", "")
         return prompt
+    
+    # get latest skill sequence
+    latest_sequence_key = get_latest_time(list(tasks.keys()))
+    latest_sequence = tasks[latest_sequence_key]
 
-    tried_pred = skill2tried_pred[grounded_skills[0].lifted()] if skill2tried_pred else []
-    prompt = load_from_file(prompt_fpath)[env][pred_type]
-    prompt = construct_prompt(prompt, grounded_skills, successes, lifted_pred_list, tried_pred)
-    assert len(image_pair)==4 if pred_type=="eff" else len(image_pair)==2, "precondition need 2 images while effect need 4"
-    logging.info('Generating predicate')
+    skills = task_config["skills"]
+    skills_str = [str(skills[P]) for P in skills]
+    skills_str: list[str] = [f"{sk+1}. {skills_str[sk]}" for sk in range(len(skills_str))]
+
+    objects = task_config["objects"]
+    objects_str: list[str] = [f"- {O}: {objects[O]['types']}" for O in objects]
+
+    # transition description and images
+    transition_str = [f"{i+1}: {latest_sequence[i]['skill']} (Success: {latest_sequence[i]['success']})" for i in range(1,len(latest_sequence))]
+    transition_img_list = [latest_sequence[i]["image"] for i in range(len(latest_sequence))]
+
+    prompt = load_from_file(prompt_fpath)[env]
+    prompt = construct_prompt(prompt, transition_str, skills_str, objects_str, lifted_pred_list)
+    logging.info('Generating predicate pool')
     # resp = model.generate(prompt)[0]
-    resp = model.generate_multimodal(prompt, image_pair)[0]
-    pred, sem = resp.split('\n')[-1].split(': ', 1)[0].strip('`'), resp.split(': ', 1)[1].strip()
+    resp = model.generate_multimodal(prompt, transition_img_list)[0]
+    text = resp.split("Predicates:")[1]
+    lines = [line.strip() for line in text.strip().split("\n") if line.strip()]
+    new_pred_list = []
+    i = 0 
+    while i < len(lines):
+        line = lines[i]
+        
+        # A predicate line should not start with "types:" or "semantics:"
+        if not line.startswith(("types:", "semantics:")):
+            name = line
+            types = []
+            semantic = ""
+            
+            # Look ahead for types and semantics
+            if i + 1 < len(lines) and lines[i+1].startswith("types:"):
+                types_line = lines[i+1]
+                # extract inside braces { ... }
+                types_match = re.search(r"\{(.*?)\}", types_line)
+                if types_match:
+                    types = [t.strip() for t in types_match.group(1).split(",")]
+                i += 1
+            
+            if i + 1 < len(lines) and lines[i+1].startswith("semantics:"):
+                semantic = lines[i+1].replace("semantics:", "").strip()
+                i += 1
+            
+            new_pred_list.append(
+                Predicate(name=name, types=types, semantic=semantic)
+            )
+        
+        i += 1
     # parse the parameters from the output string into predicate parameters
     # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
-    new_pred = Predicate(pred.split("(")[0], pred.split("(")[1].strip(")").split(", ")) # lifted
-    new_pred.semantic = sem
-
-    return new_pred
+    [print(p, p.semantic) for p in new_pred_list]
+    return new_pred_list
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
     """
@@ -75,18 +136,20 @@ def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks,
             kwargs = OmegaConf.to_container(cfg.game, resolve=True)
             environment_name = kwargs.pop('environment_name')
             exec_and_record(environment_name, chosen_skill_sequence, os.path.join(save_dir, "transitions"))
+            break
 
         else:
             logging.warning(f"Execute the plan and collect data on {cfg.env} and save it as (or add to) {os.path.join(save_dir, 'transitions/tasks.yaml')}.")
             logging.warning(f"Then, continue from the breakpoint.")
             breakpoint()
+            break
 
     task_fpath = os.path.join(save_dir, "transitions", "tasks.yaml")
     tasks = load_from_file(task_fpath)
 
     return tasks
 
-def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, env: str, cfg):
+def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, env: str):
     '''
     run one iteration of refinement and proposal
     pred_dict, skill2operator and skill2tasks are from refinement. 
@@ -94,20 +157,17 @@ def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pr
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
     for lifted_skill in skill2operator:
-        for pred_type in {"precond", "eff"}:
-            grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
-            for new_lifted_pred in pred_pool:
-                hypothetical_pred_list = deepcopy(lifted_pred_list)
-                hypothetical_pred_list.append(new_lifted_pred)
-                hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
-                hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
-                add_new_pred = score_by_partition(lifted_skill, hypothetical_grounded_predicate_truth_value_log, tasks, pred_type, type_dict)
-                if add_new_pred:
-                    logging.info(f"Predicate {new_lifted_pred} added to predicate set by {pred_type} check")
-                    lifted_pred_list.append(new_lifted_pred)
-                    grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
-                    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
-                    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
+        grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
+        for new_lifted_pred in pred_pool:
+            hypothetical_pred_list = deepcopy(lifted_pred_list)
+            hypothetical_pred_list.append(new_lifted_pred)
+            hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
+            hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
+            if True: # Add predicate directly
+                lifted_pred_list.append(new_lifted_pred)
+                grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
+                skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
+                grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
     
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
 
@@ -160,7 +220,8 @@ def main(cfg: DictConfig):
                 os.system(f"cp -r {load_dir} {save_dir}")
 
             # invent predicates
-            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, cfg.env, cfg)
+            pred_pool = generate_pred_pool(tasks, task_config, lifted_pred_list, model, cfg.env)
+            skill2operator, lifted_pred_list, grounded_predicate_truth_value_log = invent_predicates_for_all_skill(pred_pool, model, lifted_pred_list, skill2operator, tasks, grounded_predicate_truth_value_log, type_dict, cfg.env)
  
             # save results of the iteration by overwriting the copied folders
             save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_dir)

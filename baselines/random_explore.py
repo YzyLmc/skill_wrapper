@@ -1,5 +1,5 @@
 """
-Use priviledged predicates from burger simulator to learn operators.
+Use random skill sequence from burger simulator to learn operators.
 Propose skill sequence as SkillWrapper, get predicate state directly without classification.
 
 Example command:

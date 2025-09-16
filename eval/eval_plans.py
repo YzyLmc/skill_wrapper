@@ -32,21 +32,31 @@ def main(cfg: DictConfig):
             env = create_robotouille_env(environment_name, cfg.game.seed)
             plan_dir = os.path.join("results", cfg.baseline, cfg.env, "plans", cfg.dataset, d)
             # List all files under plan_dir
-            file_list = os.listdir(plan_dir)
-            results[d] = {"suc": {}}
-            for f in file_list:
-                plan_fpath = os.path.join(plan_dir, f)
-                plan = load_from_file(plan_fpath)["plan"]
-                suc = get_successfulness(env, plan)
-                results[d]["suc"][f] = suc
+            try:
+                f = os.listdir(plan_dir)[0]
+            except:
+                continue
+            results[d] = {"suc": []}
+            plan_fpath = os.path.join(plan_dir, f)
+            plans = load_from_file(plan_fpath)[0]["all_parsed_plans"] # 0 is meaningless here since we only run one trial
 
-            if any(results[d]["suc"].values()):
+            for plan in plans:
+                if not plan: 
+                    continue # no plan found
+                suc = get_successfulness(env, plan)
+                results[d]["suc"].append(suc)
+
+            if any(results[d]["suc"]):
                 results[d]["solved"] = True
                 # planning budget is the index of first successful plan
-                results[d]["planning_budget"] = min(i for i, suc in enumerate(results[d]["suc"].values()) if suc)
+                results[d]["planning_budget"] = min(i for i, suc in enumerate(results[d]["suc"]) if suc)
             else:
                 results[d]["solved"] = False
                 results[d]["planning_budget"] = len(results[d]["suc"])
+            # if d == 0:
+            #     breakpoint()
+            # except: # no plan found
+            #     results[d] = {"suc": [], "solved": False, "planning_budget": 0}
 
     assert results, "No results found!"
 

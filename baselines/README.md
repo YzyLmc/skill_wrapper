@@ -20,7 +20,7 @@ All baselines of the paper.
 - random explore:
     - Train: Transitions collected randomly, predicates invented by skillwrapper, operators learned using skillwrapper.
     - Eval: Takes in observation & goal, grounds them into abstract state, and use a planner to compute the plan.
-    - Relevant files: `random_explore_data_gen.py`, `eval_preds.py`, `random_explore_exec.py`, `plan_with_operators.py`, `eval_plan.py`
+    - Relevant files: `random_explore.py`, `eval_preds.py`, `plan_with_operators.py`, `eval_plan.py`
 
 - FM Invent:
     - Train: Transition using skillwrapper, predicates invented by foundation model in one-shot, oeprators learned using skillwrapper.
