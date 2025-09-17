@@ -20,7 +20,7 @@ def eval_all_predicates(model: GPT4, lifted_pred_list: list[Predicate], type_dic
     grounded_preds = possible_grounded_preds(lifted_pred_list, type_dict)
     predicate_state = PredicateState(grounded_preds)
     for i, grounded_pred in enumerate(grounded_preds):
-        truth_value = eval_pred(fpath, grounded_pred, model, env, input_modality)
+        truth_value = eval_pred(fpath, grounded_pred, model, env, input_modality, log=True)
         predicate_state.set_pred_value(grounded_pred, truth_value)
         logging.info(f'Evaluating predicate {grounded_pred} to be {truth_value}')
         logging.info(f'{i+1}/{len(grounded_preds)} is done')
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3'], default='gpt-4o-2024-11-20')
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
-    parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
+    parser.add_argument("--baseline", type=str, choices=["fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
     parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
 

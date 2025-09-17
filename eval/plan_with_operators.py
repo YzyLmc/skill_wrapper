@@ -108,6 +108,7 @@ def run_trials(
     problem_dir: str,
     num_trials: int = 10,
     method: str = 'fd',
+    skill2operator = None,
 ):
 
     # -- count the number of successful plans were found:
@@ -147,6 +148,7 @@ def run_trials(
             data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
                 plans=[solution], 
                 yaml_data=yaml_data, 
+                skill2operator=skill2operator
             )
 
         elif method == 'kstar':
@@ -378,13 +380,14 @@ def main():
                 problem_dir=os.path.join(root, d),
                 num_trials=args.ntrials,
                 method=args.planner,
+                skill2operator=skill2operator,
             )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
-    parser.add_argument("--baseline", type=str, choices=["FMinvent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
+    parser.add_argument("--baseline", type=str, choices=["fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
     parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")

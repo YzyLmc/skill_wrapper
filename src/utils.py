@@ -163,7 +163,7 @@ class GPT4:
         return responses
     
     # @retry(wait_fixed=15000, stop_max_attempt_number=5)
-    def generate_multimodal(self, query_prompt, imgs, max_tokens=500, logprobs=False, temp = None):
+    def generate_multimodal(self, query_prompt, imgs, max_tokens=1500, logprobs=False, temp = None):
         '''separate function on purpose to call multimodal API. It will have the function to have mixed but ordered img & text input'''
         complete = False
         ntries = 0

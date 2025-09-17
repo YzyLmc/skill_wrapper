@@ -96,8 +96,8 @@ def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, input_m
     result = True if "True" in resp.split('\n')[-1] else False
 
     if log:
-        print(f'Prompt:\n{prompt}')
-        print(f'Model response: {resp}')
+        logging.info(f'Prompt:\n{prompt}')
+        logging.info(f'Model response: {resp}')
 
     logging.info(f'{grounded_pred} evaluated to `{result}` in {img}')
     return result
@@ -184,7 +184,7 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
             # assuming the skill execution can only change the predicates with parameters overlapping with the skill
             pred_to_update = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds() if step == 0 \
                 else calculate_pred_to_update(grounded_pred_list, state["skill"])
-            # print(f'step {step}, skill {str(state["skill"])}') # TODO: remove these loggings
+            # print(f'step {step}, skill {str(state["skill"])}')
             # print(f"task success: {state['success']}")
             # [print(p, grounded_predicate_truth_value_log[task_id][step].get_pred_value(p)) for p in pred_to_update]
             # print('\n')
@@ -266,7 +266,7 @@ def in_alpha(possible_groundings, transition: list[PredicateState, PredicateStat
         for perm in remaining_obj_permutations:
             additional_possible_grounding = {i: obj for i, obj in zip(range(starting_idx, starting_idx + len(perm)), perm)}
             additional_possible_groundings.append(additional_possible_grounding)
-        # cartesian product of possible_groundings and additional_possible_groundings
+        # cartesian product of possible_groundings and additional_possible_groundings NOTE: now only one additional grounding is required
         possible_groundings = [{**pg, **apg} for pg, apg in product(possible_groundings, additional_possible_groundings[:1])]
     # breakpoint()
     for grounding in possible_groundings:
@@ -942,15 +942,14 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
     for partition in partitions:
             
         operator, obj2pid = create_one_operator_from_one_partition(lifted_skill2task2state_skill[lifted_skill], partition, tautology_preds)
+        operator.action_id = lifted_skill.name + "_" + str(operator.action_id)
         first_grounded_skill = lifted_skill2task2state_skill[lifted_skill][partition[0]]['grounded_skill']
         skill_param2pid = {}
         for i, param in enumerate(first_grounded_skill.params):
             if param in obj2pid:
                 skill_param2pid[i] = obj2pid[param]
-        # print(operator)
         
         operators.append((operator, skill_param2pid))
-    # breakpoint()
     return operators
 
 def score(pred, task2state, pred_type) -> tuple[float, float, float, float]:

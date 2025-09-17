@@ -159,15 +159,16 @@ def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pr
     for lifted_skill in skill2operator:
         grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
         for new_lifted_pred in pred_pool:
-            hypothetical_pred_list = deepcopy(lifted_pred_list)
-            hypothetical_pred_list.append(new_lifted_pred)
-            hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
-            hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
-            if True: # Add predicate directly
-                lifted_pred_list.append(new_lifted_pred)
-                grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
-                skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
-                grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
+            if not new_lifted_pred in lifted_pred_list:
+                hypothetical_pred_list = deepcopy(lifted_pred_list)
+                hypothetical_pred_list.append(new_lifted_pred)
+                hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
+                hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
+                if True: # Add predicate directly
+                    lifted_pred_list.append(new_lifted_pred)
+                    grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
+                    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
+                    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
     
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
 

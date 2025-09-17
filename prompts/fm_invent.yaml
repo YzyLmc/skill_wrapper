@@ -1,20 +1,26 @@
 # Prompts for predicate invention ablation: prompt foundation model for a batch of predicates
 ---
 burger: |
+  You are a robotic vision system whose job is to output a structured set of predicates useful for describing important concepts in the following demonstration of a task. You will be provided with a list of actions used during the task, as well as images of states before and after every action execution. 
   A robot with two arm is attempting to learn the preconditions and effects for a finite set of skills by executing exploratory skill sequences and exploring the environment.
 
   Given the current skill set:
   [SKILL_SET]
 
   Object and their types:
-  [OBJECT_DICT]
+  [OBJECT_SET]
 
-  Reason about what predicates do we need to describe each skill's precondition set and effect set. And list them in the format below:
+  We observe a skill sequence executed as follows:
+  [TRANSITIONS]
 
-  Predicates:
-  - Predicate1(param_type1, param_type2, ...)
-  - Predicate2(param_type1, param_type2, ...)
+  Given the images before and after each transitions, reason about what predicates do we need to describe each skill's precondition set and effect set. And list them in the format below:
 
+  predicate_name
+  types: {type1, type2, ...}
+  semantics: {semantic description of the predicate}
+  [PRED_LIST]
+  Give your reasoning step by step in one paragraph starting with the heading `Reasoning:`, and then list five to ten predicates in separate lines with the heading `Predicates:` but without any additional formatting.
+  
 franka: |
   A robot with two arm is attempting to learn the preconditions and effects for a finite set of skills by executing exploratory skill sequences and exploring the environment.
 

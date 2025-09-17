@@ -1088,7 +1088,7 @@ class LiftedPDDLAction(object):
         return LiftedPDDLAction(LiftedPDDLAction.action_id, sorted(list(param_set)), preconditions, effects)
     
     def __str__(self):
-        s = "(:action a{} \n".format(self.action_id)
+        s = "(:action {} \n".format(self.action_id)
         param_string = ""
         for param in self.parameters:
             param_string += " ?{} - {} ".format(param.pid,param.type) if param.type else ""
