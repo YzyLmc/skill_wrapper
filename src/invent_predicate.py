@@ -42,6 +42,8 @@ def possible_grounded_preds(lifted_pred_list: list[Predicate], type_dict: dict[s
     grounded_predicates = []
     for pred in lifted_pred_list:
         for params in itertools.product(*[type_dict_inv[p] for p in pred.types]):
+            if not len(set(params)) == len(params):  # no duplicate params
+                continue
             grounded_predicates.append(pred.ground_with(params, type_dict))
     return grounded_predicates
 

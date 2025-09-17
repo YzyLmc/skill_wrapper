@@ -107,7 +107,7 @@ def run_trials(
     goal_state: PredicateState,
     problem_dir: str,
     num_trials: int = 10,
-    method: str = 'fd',
+    method: str = 'kstar',
     skill2operator = None,
 ):
 
@@ -148,7 +148,8 @@ def run_trials(
             data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
                 plans=[solution], 
                 yaml_data=yaml_data, 
-                skill2operator=skill2operator
+                skill2operator=skill2operator,
+                method=method
             )
 
         elif method == 'kstar':
@@ -173,6 +174,8 @@ def run_trials(
             data_per_trial[T]['all_parsed_plans'] = postprocess_plans(
                 plans=solutions, 
                 yaml_data=yaml_data, 
+                skill2operator=skill2operator,
+                method=method,
             )
     # lowest level directory of problem_dir
     problem_num = problem_dir.split('/')[-1]
@@ -182,7 +185,7 @@ def run_trials(
     save_to_file(data_per_trial, save_fpath)
     print(f"Saved plans to {save_fpath}")
 
-def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator):
+def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator, method):
     all_processed_plans = []
 
     skills = yaml_data['skills']
@@ -190,13 +193,17 @@ def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator):
 
     for plan in plans:
         processed_plan = []
+        if method == 'kstar':
+            plan = plan['actions']
         for action in plan:
             action_parts = action.replace("(", "").replace(")", "").split(" ")
 
             # -- we will replace any auxiliary expert-defined skills with those of the basic ones in the YAML:
+            skill = None
             for S_name, S in skills.items():
                 if action_parts[0].startswith(S_name.lower()):
                     skill = S
+            assert skill is not None, f"Skill {action_parts[0]} not found in yaml file."
 
             if skill2operator and skill.lifted() in skill2operator:
                 object_parts = action_parts[1:]

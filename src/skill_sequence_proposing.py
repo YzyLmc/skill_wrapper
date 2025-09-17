@@ -54,15 +54,22 @@ class SkillSequenceProposing():
         self.curr_shannon_entropy = 0.0
 
         #LLM hyperparameters: GPT4O
+        # self.task_generation_args = {
+        #     'temperature': 0.6,
+        #     'presence_penalty': 0.3,
+        #     'frequency_penalty': 0.35,
+        #     'top_p': 1.0,
+        #     'max_tokens':550,
+        #     'engine': 'gpt-',
+        #     # 'engine': 'o3-mini',
+        #     'stop': ''
+        # }
+
+        # GPT-5
         self.task_generation_args = {
-            'temperature': 0.6,
-            'presence_penalty': 0.3,
-            'frequency_penalty': 0.35,
             'top_p': 1.0,
-            'max_tokens':550,
-            'engine': 'gpt-4o',
-            # 'engine': 'o3-mini',
-            'stop': ''
+            'max_completion_tokens':550,
+            'engine': 'gpt-5',
         }
 
         #GPT4O model to query for new proposed tasks
@@ -317,7 +324,9 @@ class SkillSequenceProposing():
 
         encoded_images = load_image(image_paths)
         messages = create_payload(prompt_context, prompt, encoded_images)
-        response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
+        response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, top_p=self.task_generation_args['top_p'])
+        # GPT-4o
+        # response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, temperature=self.task_generation_args['temperature'], presence_penalty=self.task_generation_args['presence_penalty'], frequency_penalty=self.task_generation_args['frequency_penalty'], top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'], max_tokens=self.task_generation_args['max_tokens'])
         # response = self.model.chat.completions.create(model=self.task_generation_args['engine'], messages=messages, top_p=self.task_generation_args['top_p'], stop=self.task_generation_args['stop'],)
         response = response.choices[0].message.content
         return response

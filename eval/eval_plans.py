@@ -88,7 +88,7 @@ def get_successfulness(env, plan, impossible=False) -> bool:
 if __name__ == "__main__":
     """
     Arguments & Default values:
-    baseline: Name of the baseline {"FMinvent", "oracle", "expert", "random_explore", "vila", "skillwrapper"}
+    baseline: Name of the baseline {"fm_invent", "oracle", "expert", "random_explore", "vila", "skillwrapper"}
     dataset: ["test", "seen", "unseen"]
     env: Name of the environment. For now only burger is supported.
     """

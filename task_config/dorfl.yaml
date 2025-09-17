@@ -4,69 +4,73 @@ env: dorfl
 
 skills:
   Pick: !Skill
-    name: Pick
+    name: LeftArmPick
     types:
+      - robot
       - pickupable
-      - arm
     params: !!python/tuple []
     semantics:
+      robot: the robot that performs the pick action with its left arm.
       pickupable: the object to be picked up.
-      arm: the robot arm for grasping
+
+  Pick: !Skill
+    name: RightArmPick
+    types:
+      - robot
+      - pickupable
+    params: !!python/tuple []
+    semantics:
+      robot: the robot that performs the pick action with its right arm.
+      pickupable: the object to be picked up.
 
   Place: !Skill
-    name: Place
+    name: Drop
     types:
-      - pickupable
-      - arm
-      - location
+      - robot
+      - utensil
     params: !!python/tuple []
     semantics:
-      pickupable: the object to be dropped.
-      arm: the robot arm for grasping
-      location: the receptacle onto which object is dropped.
+      robot: the robot that performs the drop action.
+      utensil: the utensil to be dropped.
 
   Open: !Skill
     name: Open
     types:
+      - robot
       - openable
     params: !!python/tuple []
     semantics:
+      robot: the robot that performs the open action.
       openable: the container that can be opened.
 
   Scoop: !Skill
     name: Scoop
     types:
-    - utensil
-    - openable
-    - spreadable
+      - robot
+      - utensil
+      - openable
     params: !!python/tuple []
     semantics:
+      robot: the robot that performs the scoop action.
       utensil: the utensil used to scoop from a container.
       openable: the container that can be opened to be scooped from.
-      spreadable: the ingredient that is being scooped
 
   Spread: !Skill
     name: Spread
     types:
+      - robot
       - utensil
-      - arm
-      - spreadable
       - food
     params: !!python/tuple []
     semantics:
-      spreadable: the ingredient being spread on food.
-      food: the food that need ingredients to be spread on.
-      arm: the robot arm for grasping
+      robot: the robot that performs the spread action.
       utensil: the utensil used to spread ingredients on food.
+      food: the food that need ingredients to be spread on.
 
 objects:
-  Jar:
+  PeanutButterJar:
     types:
-      - pickupable
       - openable
-  PeanutButter:
-    types:
-      - spreadable
   Knife:
     types:
       - pickupable
@@ -74,17 +78,12 @@ objects:
   Bread:
     types:
       - food
-  Table:
+  
+  Robot:
     types:
-      - location
-  LeftGripper:
-    types:
-      - arm
-  RightGripper:
-    types:
-      - arm
+      - robot
 
-Env_description: 'Peanut butter is on the shelf, bread is on the plate, and knife is in the cup on the right.'
+Env_description: 'A peanut butter jar, a knife, and a slice of bread are on the manipulation platform. The peanut butter jar is closed.'
 
 Initial_observation:
   img_fpath:
