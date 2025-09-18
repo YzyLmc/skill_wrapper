@@ -10,13 +10,14 @@
 
 (:init
 	(hand_empty Robot)
-	(is_empty Mug)
+	(plate_empty Plate)
 )
 
 (:goal (and
 	(hand_empty Robot)
 	(is_clean Plate)
 	(is_on_top Teapot Plate)
+	(container_filled Mug)
 ))
 
 )

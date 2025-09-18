@@ -6,28 +6,8 @@ plan_method: fd
       name: Pick
       params:
       - Robot
-      - Teapot
-      semantics: &id001 {}
-      types:
-      - robot
-      - pickupable
-    - !Skill
-      name: Stack
-      params:
-      - Robot
-      - Teapot
-      - Plate
-      semantics: *id001
-      types:
-      - robot
-      - pickupable
-      - plate
-    - !Skill
-      name: Pick
-      params:
-      - Robot
       - Sponge
-      semantics: *id001
+      semantics: &id001 {}
       types:
       - robot
       - pickupable
@@ -43,10 +23,39 @@ plan_method: fd
       - sponge
       - plate
     - !Skill
-      name: Stack
+      name: Place
       params:
       - Robot
       - Sponge
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Teapot
       - Plate
       semantics: *id001
       types:
@@ -54,8 +63,9 @@ plan_method: fd
       - pickupable
       - plate
   all_plans:
-  - - (pick robot teapot)
-    - (stack robot teapot plate)
-    - (pick robot sponge)
+  - - (pick robot sponge)
     - (wipe robot sponge plate)
-    - (stack robot sponge plate)
+    - (place robot sponge)
+    - (pick robot teapot)
+    - (pour robot teapot mug)
+    - (stack robot teapot plate)

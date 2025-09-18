@@ -73,10 +73,19 @@ predicates:
   truth_value: false
 
 - predicate: !Predicate
-    name: is_empty
+    name: container_filled
     params: !!python/tuple
     - Mug
-    semantic: A `container` has nothing inside of it.
+    semantic: A `container` has something inside of it.
     types: !!python/tuple
     - container
+  truth_value: false
+
+- predicate: !Predicate
+    name: plate_empty
+    params: !!python/tuple
+    - Plate
+    semantic: A `plate` has nothing on top of it.
+    types: !!python/tuple
+    - plate
   truth_value: true
