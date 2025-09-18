@@ -94,6 +94,7 @@ def eval_pred(img: str, grounded_pred: Predicate, model: GPT4, env: str, input_m
     prompt = load_from_file(prompt_fpath)[env]
     prompt = construct_prompt(prompt, grounded_pred)
 
+    model.engine = "gpt-5-nano"
     resp = model.generate_multimodal(prompt, [img])[0]
     result = True if "True" in resp.split('\n')[-1] else False
 
@@ -242,7 +243,7 @@ def grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, ta
                     grounded_skill = tasks[task_name][step]["skill"]
                     task_step_tuple: tuple[str, int] = (task_name, step)
                     if success_only and tasks[task_name][step]['success']:
-                            skill2task2state[grounded_skill][task_step_tuple] = {'states':[last_state, state], 'success': tasks[task_name][step]['success']}
+                        skill2task2state[grounded_skill][task_step_tuple] = {'states':[last_state, state], 'success': tasks[task_name][step]['success']}
                     elif not success_only:
                         skill2task2state[grounded_skill][task_step_tuple] = {'states':[last_state, state], 'success': tasks[task_name][step]['success']}
 
@@ -323,7 +324,6 @@ def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_trut
     Returns:
         mismatch_pairs :: [[task_step_tuple, task_step_tuple]...]
     """
-   
     skill2task2state = grounded_pred_log_to_skill2task2state(grounded_predicate_truth_value_log, tasks)
     # All grounded skills
     task2in_alpha: dict[str, bool] = {} # alpha is the union of grounding of precondition or effect of operators corresponding to one skill
@@ -921,19 +921,33 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
     # 2. ones that care about even lower level typing of the objects NOTE: not implemented yet
 
     all_transitions = []
+    has_success = False
+    has_failure = False
     for skill, task2state in skill2task2state_all.items():
         if skill.lifted() == lifted_skill:
             all_transitions += [transition_meta['states'] for transition_meta in task2state.values()]
+            if any([transition_meta['success'] for transition_meta in task2state.values()]):
+                has_success = True
+            if any([not transition_meta['success'] for transition_meta in task2state.values()]):
+                has_failure = True 
 
-    tautology_preds_set = set([(pred, value) for pred, value in all_transitions[0][0].pred_dict.items()]).intersection( \
-                            set([(pred, value) for pred, value in all_transitions[0][1].pred_dict.items()]))
+    if all_transitions:
+        tautology_preds_set = set([(pred, value) for pred, value in all_transitions[0][0].pred_dict.items()]).intersection( \
+                                set([(pred, value) for pred, value in all_transitions[0][1].pred_dict.items()]))
 
-    for transition_i in all_transitions:
-        state_preds_set_i = set([(pred, value) for pred, value in transition_i[0].pred_dict.items()]).intersection( \
-                            set([(pred, value) for pred, value in transition_i[1].pred_dict.items()]))
-        tautology_preds_set = tautology_preds_set.intersection(state_preds_set_i)
+        for transition_i in all_transitions:
+            state_preds_set_i = set([(pred, value) for pred, value in transition_i[0].pred_dict.items()]).intersection( \
+                                set([(pred, value) for pred, value in transition_i[1].pred_dict.items()]))
+            tautology_preds_set = tautology_preds_set.intersection(state_preds_set_i)
 
-    tautology_preds = [pred for pred, value in tautology_preds_set]
+        tautology_preds = [pred for pred, value in tautology_preds_set]
+    else:
+        tautology_preds = []
+
+    if not (has_success and has_failure):
+        tautology_preds = [] # if all tasks are successful or failed, do not remove any predicates  
+
+
     # print("Tautology preds:", [str(p) for p in tautology_preds])
 
     # create operators for each partition
@@ -942,7 +956,6 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
     partitions = skill2partition[lifted_skill]
     # print(partitions)
     for partition in partitions:
-            
         operator, obj2pid = create_one_operator_from_one_partition(lifted_skill2task2state_skill[lifted_skill], partition, tautology_preds)
         operator.action_id = lifted_skill.name + "_" + str(operator.action_id)
         first_grounded_skill = lifted_skill2task2state_skill[lifted_skill][partition[0]]['grounded_skill']
@@ -950,7 +963,7 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
         for i, param in enumerate(first_grounded_skill.params):
             if param in obj2pid:
                 skill_param2pid[i] = obj2pid[param]
-        
+
         operators.append((operator, skill_param2pid))
     return operators
 

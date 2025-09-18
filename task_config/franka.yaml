@@ -10,17 +10,17 @@ skills:
       - pickupable
     params: !!python/tuple []
     semantics: 
-      robot: robot that executing this skill.
+      robot: robot that executes this skill.
       pickupable: the object to be picked up.
 
-  PlaceBack: !Skill
-    name: PlaceBack
+  Place: !Skill
+    name: Place
     types:
       - robot
       - pickupable
     params: !!python/tuple []
     semantics:
-      robot: robot that executing this skill.
+      robot: robot that executes this skill.
       pickupable: the object to be placed back.
 
   Pour: !Skill
@@ -31,7 +31,7 @@ skills:
       - container
     params: !!python/tuple []
     semantics:
-      robot: robot that executing this skill.
+      robot: robot that executes this skill.
       pourable: the object to pour liquid from.
       container: the container to pour liquid to.
 
@@ -39,13 +39,13 @@ skills:
     name: Stack
     types:
       - robot
-      - bowl
+      - pickupable
       - plate
     params: !!python/tuple []
     semantics:
-      robot: robot that executing this skill.
-      bowl: a smaller bowl that can be stack on a plate.
-      plate: the plate that the bowl can be stacked on.
+      robot: robot that executes this skill.
+      pickupable: the pickupable object that can be stacked on a plate.
+      plate: the plate that the pickupable object can be stacked on.
 
   Wipe: !Skill
     name: Wipe
@@ -83,7 +83,6 @@ objects:
   Bowl:
     types:
       - pickupable
-      - bowl
   
   Robot:
     types:

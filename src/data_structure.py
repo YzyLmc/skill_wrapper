@@ -148,6 +148,33 @@ class Predicate:
         )
 
         return lifted_pred
+    
+    def from_string(pred_str: str, lifted=False, type_dict=None):
+        """
+        Create a Skill object from its string representation.
+        Example input: "PickUp(Apple, Table)" or "PickUp(object, location)"
+        """
+        if '(' not in pred_str or ')' not in pred_str:
+            raise ValueError(f"Invalid predicate string format {pred_str}. Expected 'PredicateName(param1, param2, ...)'")
+
+        name_part, params_part = pred_str.split('(', 1)
+        name = name_part.strip()
+        params_str = params_part.rstrip(')').strip()
+        
+        if params_str:
+            params = [param.strip() for param in params_str.split(',')]
+        else:
+            params = []
+        
+        if lifted:
+            types = params
+            return Predicate(name=name, types=types, params=[])
+        elif type_dict:
+            # if type_dict is provided, use the top level type for each param
+            return Predicate(name=name, types=[type_dict[param][0] for param in params], params=params)
+        else: 
+            # empty type
+            return Predicate(name=name, types=[], params=params)
 
 class PredicateState:
     def __init__(self, predicates):
@@ -174,7 +201,7 @@ class PredicateState:
         if pred_obj in self.pred_dict:
             self.pred_dict[pred_obj] = value
         else:
-            raise Exception("Predicate {pred_obj} not found!")
+            raise Exception(f"Predicate {str(pred_obj)} not found!")
 
     def get_pred_value(self, pred_obj):
         return self.pred_dict.get(pred_obj, None)

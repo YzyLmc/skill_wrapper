@@ -1499,32 +1499,33 @@ def generate_possible_groundings(operator, grounded_skill, skill_param2pid, type
 
     required_types = list(pid2type.values())
 
-    # Step 1: Validate fixed_grounding length
-    if len(fixed_grounding) > len(required_types):
-        raise ValueError("Fixed grounding has more objects than required types.")
-
-    # Step 2: Remove fixed types and objects
+    # Step 1: Remove fixed types and objects
     # remove the elements at indices of fixed_grounding
-    remaining_types = copy.deepcopy(pid2type)
-    for idx in fixed_grounding.values():
-        remaining_types.pop(idx)
-    used_objects = set(grounded_skill.params)
+    try:
+        remaining_types = copy.deepcopy(pid2type)
+        for idx in fixed_grounding.values():
+            # if the skill params not in the operator, skip
+            if idx in remaining_types: 
+                remaining_types.pop(idx)
+        used_objects = set(grounded_skill.params)
+    except:
+        breakpoint()
 
-    # Step 3: Invert type_dict to type -> [objects]
+    # Step 2: Invert type_dict to type -> [objects]
     type_to_objects = {}
     for obj, tp_list in type_dict.items():
         for tp in tp_list:
             if obj not in used_objects:
                 type_to_objects.setdefault(tp, []).append(obj)
 
-    # Step 4: Gather object choices for remaining types
+    # Step 3: Gather object choices for remaining types
     try:
         object_choices = [type_to_objects[tp] for tp in remaining_types.values()]
     except KeyError:
         # One of the remaining types has no available objects
         return []
 
-    # Step 5: Generate combinations and filter duplicates
+    # Step 4: Generate combinations and filter duplicates
     groundings = []
     for combo in product(*object_choices):
         full_combo = tuple(grounded_skill.params) + combo

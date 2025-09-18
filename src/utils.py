@@ -71,6 +71,37 @@ def save_to_file(data, fpth, mode=None):
 #   with open(image_path, "rb") as image_file:
 #     return base64.b64encode(image_file.read()).decode('utf-8')
 
+def raw_prompt(prompt, img_path_list=[], model="gpt-5"):
+    api_key=os.getenv("OPENAI_API_KEY")
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))  
+
+    content = [{"type": "text", "text": prompt}]
+
+    for image_path in img_path_list:
+        with open(image_path, "rb") as f:
+            image_bytes = f.read()
+        base64_image = base64.b64encode(image_bytes).decode("utf-8")
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{base64_image}"
+                },
+            }
+        )
+
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+                {
+                    "role": "user",
+                    "content": content
+                }
+            ],
+        )
+    
+    return response.choices[0].message.content
+
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
@@ -100,7 +131,7 @@ def prompt2msg(query_prompt, vision=False):
     return msg
 
 class GPT4:
-    def __init__(self, engine="gpt-4o", temp=0, max_tokens=500, n=1, stop=['\n\n\n']):
+    def __init__(self, engine="gpt-5-nano", temp=0, max_tokens=500, n=1, stop=['\n\n\n']):
         self.engine = engine
         self.temp = temp
         self.max_tokens = max_tokens
@@ -349,6 +380,7 @@ def load_results(load_fpath, task_config):
         grounded_predicate_truth_value_log = {}
     
     # TODO: add logging when loading data
+    logging.info(f"loaded results from {load_fpath}")
     
     return tasks, skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
 
