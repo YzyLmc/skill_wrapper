@@ -55,7 +55,7 @@ skills:
       - plate
     params: !!python/tuple []
     semantics:
-      robot: robot that executing this skill.
+      robot: robot that executes this skill.
       sponge: sponge object used to wipe the plate.
       plate: the dirty plate need to be wiped.
 
