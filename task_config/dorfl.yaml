@@ -3,7 +3,7 @@
 env: dorfl
 
 skills:
-  Pick: !Skill
+  LeftArmPick: !Skill
     name: LeftArmPick
     types:
       - robot
@@ -13,7 +13,7 @@ skills:
       robot: the robot that performs the pick action with its left arm.
       pickupable: the object to be picked up.
 
-  Pick: !Skill
+  RightArmPick: !Skill
     name: RightArmPick
     types:
       - robot
@@ -23,7 +23,7 @@ skills:
       robot: the robot that performs the pick action with its right arm.
       pickupable: the object to be picked up.
 
-  Place: !Skill
+  Drop: !Skill
     name: Drop
     types:
       - robot
