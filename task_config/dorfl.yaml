@@ -7,21 +7,21 @@ skills:
     name: LeftArmPick
     types:
       - robot
-      - pickupable
+      - openable
     params: !!python/tuple []
     semantics:
       robot: the robot that performs the pick action with its left arm.
-      pickupable: the object to be picked up.
+      openable: the openable object to be picked up.
 
   RightArmPick: !Skill
     name: RightArmPick
     types:
       - robot
-      - pickupable
+      - utensil
     params: !!python/tuple []
     semantics:
       robot: the robot that performs the pick action with its right arm.
-      pickupable: the object to be picked up.
+      utensil: the utensil to be picked up.
 
   Drop: !Skill
     name: Drop
@@ -83,7 +83,7 @@ objects:
     types:
       - robot
 
-Env_description: 'A peanut butter jar, a knife, and a slice of bread are on the manipulation platform. The peanut butter jar is closed.'
+Env_description: 'A peanut butter jar is close to the left gripper, a knife is close to the right gripper, and a slice of bread are on the manipulation platform. The peanut butter jar is closed.'
 
 Initial_observation:
   img_fpath:
