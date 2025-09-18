@@ -3,20 +3,20 @@
 	(:requirements :adl :typing :equality :conditional-effects)
 
 	(:types
+		Teapot - pickupable
+		Mug - container
+		pickupable - object
+		Sponge - pickupable
+		Bowl - pickupable
+		robot - object
+		Plate - plate
+		plate - object
+		Robot - robot
+		Teapot - pourable
 		pourable - object
 		container - object
-		Teapot - pickupable
-		plate - object
-		Bowl - pickupable
-		Sponge - pickupable
-		Teapot - pourable
-		Mug - container
-		Plate - plate
-		robot - object
-		Robot - robot
-		sponge - object
 		Sponge - sponge
-		pickupable - object
+		sponge - object
 	)
 
 	(:predicates

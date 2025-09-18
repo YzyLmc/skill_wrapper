@@ -1,0 +1,101 @@
+env: franka
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Place
+      params:
+      - Robot
+      - Bowl
+      semantics: &id001 {}
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Wipe
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - sponge
+      - plate
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Bowl
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+  all_plans:
+  - - (place robot bowl)
+    - (pick robot sponge)
+    - (wipe robot sponge plate)
+    - (place robot sponge)
+    - (pick robot bowl)
+    - (stack robot bowl plate)
+    - (pick robot teapot)
+    - (pour robot teapot mug)
+    - (place robot teapot)

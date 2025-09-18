@@ -1,0 +1,91 @@
+!PredicateState
+predicates:
+- predicate: !Predicate
+    name: hand_empty
+    params: !!python/tuple
+      - Robot
+    semantic: The `robot` is not holding anything in its gripper.
+    types: !!python/tuple
+    - robot
+  truth_value: true
+
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - Robot
+    - Sponge
+    semantic: The `robot` is holding a `pickupable` object in its gripper.
+    types: &id002 !!python/tuple
+    - robot
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - Robot
+    - Bowl
+    semantic: The `robot` is holding a `pickupable` object in its gripper.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - Robot
+    - Teapot
+    semantic: The `robot` is holding a `pickupable` object in its gripper.
+    types: *id002
+  truth_value: false
+
+- predicate: !Predicate
+    name: is_clean
+    params: !!python/tuple
+    - Plate
+    semantic: The `plate` object is cleaned after wiping.
+    types: &id003 !!python/tuple
+    - plate
+  truth_value: false
+
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Teapot
+    - Plate
+    semantic: A `pickupable` object is on top of a `plate` object.
+    types: &id004 !!python/tuple
+    - pickupable
+    - plate
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Sponge
+    - Plate
+    semantic: A `pickupable` object is on top of a `plate` object.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Bowl
+    - Plate
+    semantic: A `pickupable` object is on top of a `plate` object.
+    types: *id004
+  truth_value: true
+
+- predicate: !Predicate
+    name: container_filled
+    params: !!python/tuple
+    - Mug
+    semantic: A `container` has something inside of it.
+    types: !!python/tuple
+    - container
+  truth_value: false
+
+- predicate: !Predicate
+    name: plate_empty
+    params: !!python/tuple
+    - Plate
+    semantic: A `plate` has nothing on top of it.
+    types: !!python/tuple
+    - plate
+  truth_value: false
