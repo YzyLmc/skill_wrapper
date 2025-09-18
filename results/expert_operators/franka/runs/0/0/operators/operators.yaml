@@ -1,0 +1,110 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    pickupable: the object to be picked up.
+  types:
+  - robot
+  - pickupable
+: - "(:action Pick\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty ?robot)\
+    \ \n\t\t\t(not (is_holding ?robot ?pickupable))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty ?robot))\
+    \ \n\t\t\t(is_holding ?robot ?pickupable)\
+    \ \n\t\t)\ 
+    \ \n\t)"
+
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    pickupable: the object to be placed back.
+  types:
+  - robot
+  - pickupable
+: - "(:action Place\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(not (hand_empty ?robot))\
+    \ \n\t\t\t(is_holding ?robot ?pickupable)\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(hand_empty ?robot)\
+    \ \n\t\t\t(not (is_holding ?robot ?pickupable))\
+    \ \n\t\t)\ 
+    \ \n\t)"
+
+? !Skill
+  name: Pour
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    pourable: the object to pour liquid from.
+    container: the container to pour liquid to.
+  types:
+  - robot
+  - pourable
+  - container
+: - "(:action Pour\n\
+    \ \t\t:parameters (?robot - robot ?pourable - pourable ?container - container)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?robot ?pourable)\
+    \ \n\t\t\t(is_empty ?container)\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (is_empty ?container))\
+    \ \n\t\t)\ 
+    \ \n\t)"
+
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    pickupable: the pickupable object that can be stacked on a plate.
+    plate: the plate that the pickupable object can be stacked on.
+  types:
+  - robot
+  - pickupable
+  - plate
+: - "(:action Stack\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable ?plate - plate)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(not (hand_empty ?robot))\
+    \ \n\t\t\t(is_holding ?robot ?pickupable)\
+    \ \n\t\t\t(not (is_on_top ?pickupable ?plate))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(hand_empty ?robot)\
+    \ \n\t\t\t(not (is_holding ?robot ?pickupable))\
+    \ \n\t\t\t(is_on_top ?pickupable ?plate)\
+    \ \n\t\t)\ 
+    \ \n\t)"
+
+? !Skill
+  name: Wipe
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    sponge: sponge object used to wipe the plate.
+    plate: the dirty plate need to be wiped.
+  types:
+  - robot
+  - sponge
+  - plate
+: - "(:action Wipe\n\
+    \ \t\t:parameters (?robot - robot ?sponge - sponge ?plate - plate)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?robot ?sponge)\
+    \ \n\t\t\t(not (is_clean ?plate))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_clean ?plate)\
+    \ \n\t\t)\ 
+    \ \n\t)"

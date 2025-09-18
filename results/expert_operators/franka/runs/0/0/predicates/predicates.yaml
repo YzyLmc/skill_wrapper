@@ -1,0 +1,36 @@
+- !Predicate
+  name: hand_empty
+  params: !!python/tuple []
+  semantic: "The `robot` is not holding anything in its gripper."
+  types: !!python/tuple
+  - robot
+
+- !Predicate
+  name: is_holding
+  params: !!python/tuple []
+  semantic: "The `robot` is holding a `pickupable` object in its gripper."
+  types: !!python/tuple
+  - robot
+  - pickupable
+
+- !Predicate
+  name: is_clean
+  params: !!python/tuple []
+  semantic: "The `plate` object is cleaned after wiping."
+  types: !!python/tuple
+  - plate
+
+- !Predicate
+  name: is_on_top
+  params: !!python/tuple []
+  semantic: "A `pickupable` object is on top of a `plate` object."
+  types: !!python/tuple
+  - pickupable
+  - plate
+
+- !Predicate
+  name: is_empty
+  params: !!python/tuple []
+  semantic: "A `container` has nothing inside of it."
+  types: !!python/tuple
+  - container
