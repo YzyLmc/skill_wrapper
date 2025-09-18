@@ -27,6 +27,9 @@ from src.data_structure import PredicateState, Skill
 
 planner_path = '/home/ziyi/git/downward/fast-downward.py'
 
+if os.environ["FD_PATH"]:
+    planner_path = os.environ["FD_PATH"]
+
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]
 
@@ -302,10 +305,9 @@ def create_problem_file(
             init_state_strs.append(parse_predicate(pred, is_domain=False))
 
     # -- generating the goal state for problem file:
-
     for pred in goal_state.iter_predicates():
         if goal_state.get_pred_value(pred):
-                goal_state_strs.append(parse_predicate(pred, is_domain=False))
+            goal_state_strs.append(parse_predicate(pred, is_domain=False))
 
     init_state_strs = list(filter(None, init_state_strs))
     goal_state_strs = list(filter(None, goal_state_strs))
