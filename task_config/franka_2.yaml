@@ -1,0 +1,87 @@
+# This yaml file contains meta data for a test task.
+---
+env: franka
+
+skills:
+  Pick: !Skill
+    name: Pick
+    types:
+      - robot
+      - pickupable
+    params: !!python/tuple []
+    semantics: 
+      robot: robot that executes this skill.
+      pickupable: the object to be picked up.
+
+  Place: !Skill
+    name: Place
+    types:
+      - robot
+      - pickupable
+    params: !!python/tuple []
+    semantics:
+      robot: robot that executes this skill.
+      pickupable: the object to be placed back.
+
+  Pour: !Skill
+    name: Pour
+    types:
+      - robot
+      - pourable
+      - container
+    params: !!python/tuple []
+    semantics:
+      robot: robot that executes this skill.
+      pourable: the object to pour liquid from.
+      container: the container to pour liquid to.
+
+  Stack: !Skill
+    name: Stack
+    types:
+      - robot
+      - pickupable
+      - plate
+    params: !!python/tuple []
+    semantics:
+      robot: robot that executes this skill.
+      pickupable: the pickupable object that can be stacked on a plate.
+      plate: the plate that the pickupable object can be stacked on.
+
+  Wipe: !Skill
+    name: Wipe
+    types:
+      - robot
+      - sponge
+      - plate
+    params: !!python/tuple []
+    semantics:
+      robot: robot that executes this skill.
+      sponge: sponge object used to wipe the plate.
+      plate: the dirty plate need to be wiped.
+
+
+    
+objects:
+  Teapot:
+    types:
+      - pickupable
+      - pourable
+  
+  Sponge:
+    types:
+      - pickupable
+      - sponge
+  
+  Plate:
+    types:
+      - plate
+  
+  Robot:
+    types:
+      - robot
+
+Env_description: 'The robot arm is set up on the table. The teapot, sponge, and plate are all on the table.'
+
+Initial_observation:
+  img_fpath: 
+    - 'test_tasks/test_imgs/init_state/dorfl.png'

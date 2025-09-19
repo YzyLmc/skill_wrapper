@@ -210,9 +210,12 @@ class PredicateState:
         """
         Adds new Predicate objects to the state if they don't already exist.
         """
+        new_pred_added = []
         for pred in new_pred_list:
             if pred not in self.pred_dict:
                 self.pred_dict[pred] = None
+                new_pred_added.append(pred)
+        return new_pred_added
 
     def get_unevaluated_preds(self):
         return [pred for pred, value in self.pred_dict.items() if value is None]

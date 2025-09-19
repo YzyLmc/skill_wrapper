@@ -173,10 +173,14 @@ class SkillSequenceProposing():
         return np.array(skill_sequence_entropy_gains), skill_sequence_skill_counts
 
     def get_least_explored_skills(self, k=5):
+        # make a copy
+        attempted_skill_pair_count_copy = copy.deepcopy(self.attempted_skill_pair_count)
+        # make the diagonal infinity so that we don't pick same skill pairs
+        np.fill_diagonal(attempted_skill_pair_count_copy, float('inf'))
         # Find the minimum value in the matrix
-        min_value = np.min(self.attempted_skill_pair_count)
+        min_value = np.min(attempted_skill_pair_count_copy)
         # Find all indices where the value equals the minimum
-        min_indices = np.argwhere(self.attempted_skill_pair_count == min_value)
+        min_indices = np.argwhere(attempted_skill_pair_count_copy == min_value)
         # If there are more than k minimum entries, randomly select k of them
         if len(min_indices) > k:
             selected_indices = min_indices[np.random.choice(len(min_indices), size=k, replace=False)]
@@ -292,8 +296,8 @@ class SkillSequenceProposing():
                 max_score_idx = k
 
         #find the task with the maximum combined score + set the current skill count to that task's skill count + set the current task execution matrix counts
-        self.curr_skill_count += len(skill_sequences[max_score_idx])
-        self.attempted_skill_pair_count = task_skill_counts[max_score_idx] # this should be calculated only when updating the tasks, together with skill_count
+        # self.curr_skill_count += len(skill_sequences[max_score_idx])
+        # self.attempted_skill_pair_count = task_skill_counts[max_score_idx] # this should be calculated only when updating the tasks, together with skill_count
         return skill_sequences[max_score_idx]
     
     '''
@@ -419,7 +423,7 @@ class SkillSequenceProposing():
 
         #Step 4: generate scores + combine for pareto optimal way for coverage and chainability for all tasks + choose the best most pareto-optimal sequence to run
         chosen_skill_sequence = self.generate_scores_and_choose_skill_sequence(skill_sequences)
-
+        breakpoint()
         return chosen_skill_sequence
     
 if __name__ == '__main__':

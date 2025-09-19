@@ -107,9 +107,8 @@ def main(cfg: DictConfig):
             skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
             filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
             skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
-            
             # save results of the iteration by overwriting the copied folders
-            save_results(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, save_dir)
+            save_results(skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log, save_dir)
 
             # log results
             operator_string_lists = [[f"Skill:{str(lifted_skill)}\nOperator{str(operator_tuple[0])}\n" for operator_tuple in operator_tuples if operator_tuple] for lifted_skill, operator_tuples in skill2operator.items()]
