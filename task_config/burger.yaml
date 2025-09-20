@@ -6,45 +6,55 @@ skills:
   Pick: !Skill
     name: Pick
     types:
+      - robot
       - pickupable
     params: !!python/tuple []
     semantics:
+      robot: robot that executes the pick skill.
       pickupable: the object to be picked up.
 
   Place: !Skill
     name: Place
     types:
+      - robot
       - pickupable
       - station
     params: !!python/tuple []
     semantics:
+      robot: robot that executes the place skill.
       pickupable: the object to be dropped.
       station: the receptacle onto which object is dropped.
 
   Stack: !Skill
     name: Stack
     types:
+      - robot
       - pickupable
       - pickupable
     params: !!python/tuple []
     semantics:
+      robot: robot that executes the stack skill.
       pickupable: The first object to put on the other.
       pickupable: The second object to be underneath the first one.
 
   Cut: !Skill
     name: Cut
     types:
+      - robot
       - cuttable
     params: !!python/tuple []
     semantics:
+      robot: robot that executes the cut skill.
       cuttable: the object that is being cut.
 
   Cook: !Skill
     name: Cook
     types:
+      - robot
       - cookable
     params: !!python/tuple []
     semantics:
+      robot: robot that executes the cook skill.
       cookable: the object that is being cooked.
 
 
@@ -79,4 +89,4 @@ Env_description: 'There is a robot in the kitchen. The robot can pick up, place,
 
 Initial_observation:
   img_fpath:
-    - 'test_tasks/test_imgs/init_state/burger.png'
+    - 'test_tasks/test_imgs/init_state/0.jpg'

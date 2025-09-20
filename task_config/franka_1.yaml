@@ -23,18 +23,6 @@ skills:
       robot: robot that executes this skill.
       pickupable: the object to be placed back.
 
-  Pour: !Skill
-    name: Pour
-    types:
-      - robot
-      - pourable
-      - container
-    params: !!python/tuple []
-    semantics:
-      robot: robot that executes this skill.
-      pourable: the object to pour liquid from.
-      container: the container to pour liquid to.
-
   Stack: !Skill
     name: Stack
     types:
@@ -46,18 +34,6 @@ skills:
       robot: robot that executes this skill.
       pickupable: the pickupable object that can be stacked on a plate.
       plate: the plate that the pickupable object can be stacked on.
-
-  Wipe: !Skill
-    name: Wipe
-    types:
-      - robot
-      - sponge
-      - plate
-    params: !!python/tuple []
-    semantics:
-      robot: robot that executes this skill.
-      sponge: sponge object used to wipe the plate.
-      plate: the dirty plate need to be wiped.
 
 
     

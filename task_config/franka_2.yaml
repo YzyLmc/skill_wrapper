@@ -23,18 +23,6 @@ skills:
       robot: robot that executes this skill.
       pickupable: the object to be placed back.
 
-  Pour: !Skill
-    name: Pour
-    types:
-      - robot
-      - pourable
-      - container
-    params: !!python/tuple []
-    semantics:
-      robot: robot that executes this skill.
-      pourable: the object to pour liquid from.
-      container: the container to pour liquid to.
-
   Stack: !Skill
     name: Stack
     types:
