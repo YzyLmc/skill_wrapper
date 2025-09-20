@@ -106,8 +106,9 @@ class DorflEnv(Env):
         reward = 1.0 if success else 0.0
         
         # Check if episode is terminated (goal reached: bread has pb)
-        terminated = (self.state[0] == 1) or (self.state[2] == 2)  # bread has pb or knife dropped
-        
+        #terminated = (self.state[0] == 1) or (self.state[2] == 2)  # bread has pb or knife dropped
+        terminated = False # disable termination for data collection
+
         # Truncated is False for this environment (no time limits)
         truncated = False
         

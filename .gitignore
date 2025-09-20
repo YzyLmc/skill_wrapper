@@ -4,3 +4,7 @@ Editor/
 tasks/
 outputs/
 omnigibson/
+dorfl_env/output_trajs/
+
+**/__pycache__/
+**/*.pyc

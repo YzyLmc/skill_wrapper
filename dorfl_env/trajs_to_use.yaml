@@ -1,0 +1,2 @@
+traj_1:
+  seq: ['RightArmPick(Robot, Knife)', 'Spread(Robot, Knife, Bread)', 'Open(Robot, PeanutButterJar)', 'LeftArmPick(Robot, PeanutButterJar)', 'Spread(Robot, Knife, Bread)', 'Scoop(Robot, Knife, PeanutButterJar)', 'Spread(Robot, Knife, Bread)', 'Spread(Robot, Knife, Bread)', 'RightArmPick(Robot, Knife)', 'Drop(Robot, Knife)', 'Open(Robot, PeanutButterJar)', 'Scoop(Robot, Knife, PeanutButterJar)',  'Spread(Robot, Knife, Bread)', 'Drop(Robot, Knife)']
