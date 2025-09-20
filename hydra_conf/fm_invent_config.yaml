@@ -5,7 +5,7 @@ defaults:
 env: burger
 model: gpt-4o-2024-11-20
 run_idx: 0
-num_iter: 5
+num_iter: 1
 max_retry_time: 3
 invent_pred_only: false
 skill_seq_only: false

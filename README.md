@@ -1,4 +1,4 @@
-# SkillWrapper: Autonomously Learning Interpretable Skill Abstractions with Foundation Models
+# SkillWrapper: Generative Predicate Invention For Skill Abstraction
 
 ## Installation
 This codebase relies on `openai`, `pytorch`, and `sentence_transformer`. Try installing them by:

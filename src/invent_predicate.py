@@ -231,67 +231,136 @@ def update_empty_predicates(model, tasks: dict, lifted_pred_list: list[Predicate
     grounded_pred_list = possible_grounded_preds(lifted_pred_list, type_dict)
     # update if there are new tasks
     for task_id, steps in tasks.items():
-        new_task = False
         if task_id not in grounded_predicate_truth_value_log:
             new_task = True
             grounded_predicate_truth_value_log[task_id] = {}
             for step in steps:
                 grounded_predicate_truth_value_log[task_id][step] = PredicateState(grounded_pred_list)
-
-        # for each step, iterate through all steps and find empty predicates and update them
-        # calculate predicates to update based on the last action every step after init
-
-        # update predicates for all states 
-        for step, state in steps.items():
-            new_pred_added: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].add_pred_list(grounded_pred_list)
-            # breakpoint()
-            # if no new predicates, skip
-            if not new_pred_added:
-                continue
-            
-            # union set of types that the newly added predicates have
-            new_types = set(sum([pred.types for pred in new_pred_added], []))
-            # if the skill doesn't have any of the new types, skip
-            if not step == 0:
-                if skill and not (new_types & set(skill.types)):
-                    continue
-
-            if not step == 0 and state["success"] == False:
-                # copy and paste from last step if the skill failed
-                grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
-                logging.info(f'Skill {str(state["skill"])} failed, copy the predicate state from last step')
-                continue
-
-            # 1. find states need to be eval or re-eval
-            # At init step only evaluate empty ones
-            # assuming the skill execution can only change the predicates with parameters overlapping with the skill
-            pred_to_update = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds() if step == 0 \
-                else calculate_pred_to_update(grounded_pred_list, state["skill"])
-
-            if pred_to_update:
+        
+        if new_task:
+            for step, state in steps.items():
                 pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
                 grounded_predicate_truth_value_log[task_id][step] = pred_state
+
+        elif not new_task: # updating existing task
+            new_pred_added: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].add_pred_list(grounded_pred_list)
+            if not skill:
+
+                # union set of types that the newly added predicates have
+                new_types = set(sum([pred.types for pred in new_pred_added], []))
+                nullary_pred_list = [pred for pred in new_pred_added if not pred.types]
+                # if the skill doesn't have any of the new types, skip
+
+                if not step == 0:
+                    if skill and not (new_types & set(skill.types)):
+                        # grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
+                        continue
+                    
+                if new_pred_added: # new predicates added
+
+                    for step, state in steps.items():
+
+                        if step == 0: # must evaluate first step
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+                        elif not state["success"]: # failed exec, copy from last step
+                            grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
+                            logging.info(f'Skill {str(state["skill"])} failed, copy the predicate state from last step')
+                        
+                        elif state["success"]: # 1+ step, sucess exec, eval
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+
+                elif not new_pred_added: # no new predicate added, could only happen when copying from a hypothetical grounded pred value dict with missing values
+                    
+                    # only need to update missing predicates
+                    for step, state in steps.items():
+                        pred_to_update = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
+                        if pred_to_update and step == 0: # must eval init step
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+                        elif not state["success"]: # failed exec, copy from last step
+                            grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
+                            logging.info(f'Skill {str(state["skill"])} failed, copy the predicate state from last step')
+                        elif pred_to_update and state["success"]: # 1+ step, sucess exec, eval
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+
+            elif skill: # for a specific skill, only update state before and after the skill execution
+                new_pred_added: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].add_pred_list(grounded_pred_list)
+
+                if new_pred_added: # new predicates added
+                    for step, state in steps.items():
+                        if step == 0: # must evaluate first step
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+                        elif state["skill"] == skill: # eval before and after the skill execution
+                            last_state = steps[step-1]
+                            last_pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, last_state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = last_pred_state
+
+                            pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+                            grounded_predicate_truth_value_log[task_id][step] = pred_state
+                            
+                else:
+                    raise Exception("This shouldn't happen.")
+
+        # # for each step, iterate through all steps and find empty predicates and update them
+        # # calculate predicates to update based on the last action every step after init
+
+        # # update predicates for all states 
+        # for step, state in steps.items():
+        #     new_pred_added: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].add_pred_list(grounded_pred_list)
+
+        #     # if no new predicates, skip
+        #     if not new_pred_added:
+        #         continue
             
-            # # 2. re-eval grounded predicates
-            # for grounded_pred in pred_to_update:
-            #     # only update empty predicates
-            #     if grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None:
+        #     # union set of types that the newly added predicates have
+        #     new_types = set(sum([pred.types for pred in new_pred_added], []))
+        #     nullary_pred_list = [pred for pred in new_pred_added if not pred.types]
+        #     # if the skill doesn't have any of the new types, skip
+        #     if not step == 0:
+        #         if skill and not (new_types & set(skill.types)):
+        #             # grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
+        #             continue
 
-            #         truth_value = eval_pred(state["image"], grounded_pred, model, env)
-            #         grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
-            # # 3.copy all empty predicates from previous state
-            #     elif not step == 0: # if is a non-init state, update the predicates
-            #         if (new_task) or (not new_task and grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None):
-            #             truth_value = eval_pred(state["image"], grounded_pred, model, env)
-            #             grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+        #     if not step == 0 and state["success"] == False:
+        #         # copy and paste from last step if the skill failed
+        #         grounded_predicate_truth_value_log[task_id][step] = deepcopy(grounded_predicate_truth_value_log[task_id][step-1])
+        #         logging.info(f'Skill {str(state["skill"])} failed, copy the predicate state from last step')
+        #         continue
 
-            # unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
-            # # if not skill:
-            # #     assert (unevaluated_pred==[]) if (step==0) else True, "Step 0 shouldn't have any predicate unevaluated"
-            # for grounded_pred in unevaluated_pred:
-            #     # fetch truth value from last state
-            #     truth_value = grounded_predicate_truth_value_log[task_id][step-1].get_pred_value(grounded_pred)
-            #     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+        #     # 1. find states need to be eval or re-eval
+        #     # At init step only evaluate empty ones
+        #     # assuming the skill execution can only change the predicates with parameters overlapping with the skill
+        #     pred_to_update = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds() if step == 0 \
+        #         else calculate_pred_to_update(grounded_pred_list, state["skill"])
+
+        #     if pred_to_update:
+        #         pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, state["image"], env, batched=True)
+        #         grounded_predicate_truth_value_log[task_id][step] = pred_state
+            
+        #     # # 2. re-eval grounded predicates
+        #     # for grounded_pred in pred_to_update:
+        #     #     # only update empty predicates
+        #     #     if grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None:
+
+        #     #         truth_value = eval_pred(state["image"], grounded_pred, model, env)
+        #     #         grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+        #     # # 3.copy all empty predicates from previous state
+        #     #     elif not step == 0: # if is a non-init state, update the predicates
+        #     #         if (new_task) or (not new_task and grounded_predicate_truth_value_log[task_id][step].get_pred_value(grounded_pred) == None):
+        #     #             truth_value = eval_pred(state["image"], grounded_pred, model, env)
+        #     #             grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
+
+        #     # unevaluated_pred: list[Predicate] = grounded_predicate_truth_value_log[task_id][step].get_unevaluated_preds()
+        #     # # if not skill:
+        #     # #     assert (unevaluated_pred==[]) if (step==0) else True, "Step 0 shouldn't have any predicate unevaluated"
+        #     # for grounded_pred in unevaluated_pred:
+        #     #     # fetch truth value from last state
+        #     #     truth_value = grounded_predicate_truth_value_log[task_id][step-1].get_pred_value(grounded_pred)
+        #     #     grounded_predicate_truth_value_log[task_id][step].set_pred_value(grounded_pred, truth_value)
 
     return grounded_predicate_truth_value_log
 
@@ -572,9 +641,9 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
                     if in_alpha(possible_groundings, transition_meta["states"], grounded_skill, operator, type_dict, pred_type):
                         state_in_alpha = True
                         break
-                print(task_step_tuple, state_in_alpha, transition_meta['success'])
-                print(transition_meta["states"][0],'\n')
-                print(transition_meta["states"][1],'\n')
+                # print(task_step_tuple, state_in_alpha, transition_meta['success'])
+                # print(transition_meta["states"][0],'\n')
+                # print(transition_meta["states"][1],'\n')
                 # breakpoint()
                 score += 1 if state_in_alpha == transition_meta['success'] else 0
                 task_num += 1
@@ -637,6 +706,8 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
     skill2partition = partition_by_lifted_effect(skill2task2state, type_dict)
     # 2. create one operator for each partition
     for lifted_skill in skill2operator:
+        # if "Pick" in str(lifted_skill):
+        #     breakpoint()
         skill2operator[lifted_skill] = create_operators_from_partitions(lifted_skill, skill2task2state, skill2task2state_all, skill2partition, type_dict)
 
     return skill2operator
@@ -874,13 +945,14 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
     
     for grounded_skill, task2state in skill2task2state.items():
         for task_step_tuple, transition_meta in task2state.items():
-            # transition = transition_meta['states']
+
             transition, _ = unify_transition(transition_meta["states"], grounded_skill, type_dict)
             state_0, state_1 = transition
             value_tuple: tuple[Predicate, int] = tuple([(pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) \
                                                         for pred in state_0.iter_predicates() if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0])
             eff = (value_tuple, grounded_skill)
-
+            # if grounded_skill.name == "Pick":
+            #     print({str(p): change for p, change in value_tuple})
             if not skill2eff2task_step[grounded_skill.lifted()]:
                 skill2eff2task_step[grounded_skill.lifted()][eff].append(task_step_tuple)
             else:
@@ -902,7 +974,7 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
         skill2partition[lifted_skill] = [task_step_tuple_list for eff, task_step_tuple_list in eff2task_step_list.items()]
         # filter out partitions with few elements
         num_parts = len(sum(skill2partition[lifted_skill], []))
-        skill2partition[lifted_skill] = [part for part in skill2partition[lifted_skill] if len(part) > min(3, num_parts * 0.2)] # each partition must contain at least 3 tasks
+        # skill2partition[lifted_skill] = [part for part in skill2partition[lifted_skill] if len(part) > min(3, num_parts * 0.2)] # NOTE: each partition must contain at least 3 tasks
 
     return skill2partition
 
@@ -938,12 +1010,12 @@ def partition_by_lifted_effect(skill2task2state, type_dict) -> dict:
 #         unified_transitions.append(unified_transition)
 #     return bridge.operator_from_transitions(unified_transitions, grounded_skill, type_dict, obj2type, flush=True), bridge.get_pid_to_type(), obj2type
 
-def create_one_operator_from_one_partition(task2state, task_step_tuple_list: list[tuple], tautology_preds: list[Predicate]=False) -> LiftedPDDLAction:
+def create_one_operator_from_one_partition(task2state_skill, task_step_tuple_list: list[tuple], tautology_preds: list[Predicate]=False) -> LiftedPDDLAction:
     """
     Build operator from one partition using RCR code.
 
     Args:
-        task2state :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool}}
+        task2state_skill :: {task_step_tuple: {"states": [PredicateState, PredicateState], "success": bool, "skill": grounded_skill}}
         task_step_tuple_list: list of tuple of task_name and step number.
         tautology_preds: list of predicates to remove that are always true or always false
     """
@@ -951,11 +1023,28 @@ def create_one_operator_from_one_partition(task2state, task_step_tuple_list: lis
     bridge = RCR_bridge()
     transitions = []
     for task_step_tuple in task_step_tuple_list:
-        transition = deepcopy(task2state[task_step_tuple]["states"])
+        transition = deepcopy(task2state_skill[task_step_tuple]["states"])
+        state_0, state_1 = transition
+        # remove tautology preds
         if tautology_preds:
-            transition[0].remove_pred_list(tautology_preds)
-            transition[1].remove_pred_list(tautology_preds)
-        transitions.append(transition)
+            state_0.remove_pred_list(tautology_preds)
+            state_1.remove_pred_list(tautology_preds)
+
+        # remove predicates that doesn't have skill arguments or effect arguments
+        skill_params = set(task2state_skill[task_step_tuple]["grounded_skill"].params)
+        effect = tuple([(pred, state_1.get_pred_value(pred) - state_0.get_pred_value(pred)) \
+                                                        for pred in state_0.iter_predicates() if state_1.get_pred_value(pred) - state_0.get_pred_value(pred) != 0])
+        effect_params = set(sum([list(pred.params) for pred, change in effect], []))
+        relevant_params = set(skill_params).union(effect_params)
+
+        irrelevant_preds = []
+        for pred in state_0.pred_dict.keys():
+            if not set(pred.params).intersection(relevant_params):
+                irrelevant_preds.append(pred)
+        state_0.remove_pred_list(irrelevant_preds)
+        state_1.remove_pred_list(irrelevant_preds)
+
+        transitions.append([state_0, state_1])
         # breakpoint()
 
     return bridge.operator_from_transitions(transitions), bridge.obj2pid
@@ -1034,8 +1123,6 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
     # print("Tautology preds:", [str(p) for p in tautology_preds])
 
     # create operators for each partition
-    # print(lifted_skill)
-
     partitions = skill2partition[lifted_skill]
     # print(partitions)
     for partition in partitions:
@@ -1043,6 +1130,7 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
         operator.action_id = lifted_skill.name + "_" + str(operator.action_id)
         # remove higher level type parameters from the operator if exists
         params = {}
+        # post process operators to remove duplicate parameters with higher level types
         for i, p in enumerate(operator.parameters):
             if str(p) not in params:
                 params[str(p)] = (p, i)
@@ -1053,16 +1141,24 @@ def create_operators_from_partitions(lifted_skill: Skill, skill2task2state, skil
                         # Compare positions
                         remove_idx = params[str(p)][1] if types.index(str(p.type)) > types.index(params[str(p)][0].type) else i
                         operator.parameters.pop(remove_idx)
-                # else:
-                #     logging.info("Something wrong")
-                #     breakpoint()
-
+        # find param mapping and add skill argument if it is not in the operator parameters
         first_grounded_skill = lifted_skill2task2state_skill[lifted_skill][partition[0]]['grounded_skill']
         skill_param2pid = {}
+        remaining_params = {}
         for i, param in enumerate(first_grounded_skill.params):
             if param in obj2pid:
                 skill_param2pid[i] = obj2pid[param]
-
+            else:
+                remaining_params[i] = first_grounded_skill.types[i]
+        # largest pid in the operator parameters
+        largest_pid = max(obj2pid.values(), default=0)
+        for remaining_idx, remaining_type in remaining_params.items():
+            largest_pid += 1
+            # create a new parameter
+            new_param = Parameter(name=remaining_type, type=remaining_type, pid=largest_pid)
+            operator.parameters.append(new_param)
+            skill_param2pid[remaining_idx] = largest_pid
+            
         operators.append((operator, skill_param2pid))
     return operators
 
