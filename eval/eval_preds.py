@@ -89,6 +89,11 @@ def main():
     problem_dir = f"eval/data/{args.env}/{args.dataset}/problems/"
     for root, dirs, files in os.walk(problem_dir):
         for d in dirs:
+            save_dir = f"results/{args.baseline}/{args.env}/pred_state/{args.dataset}/{d}"
+            if os.path.exists(save_dir):
+                logging.info(f"Problem {d} already has predicate states at {save_dir}, skipping...")
+                continue
+            os.makedirs(save_dir, exist_ok=True)
             logging.info(f"Processing problem {d} in {root}...")
             if args.input_modality == "image":
                 init_state_fpath = os.path.join(root, d, "init_state.jpg")
@@ -101,19 +106,18 @@ def main():
             init_pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, init_state_fpath, args.env, args.input_modality, batched=True)
             goal_pred_state = eval_all_predicates(model, lifted_pred_list, type_dict, goal_state_fpath, args.env, args.input_modality, batched=True)
 
-            save_dir = f"results/{args.baseline}/{args.env}/pred_state/{args.dataset}/{d}"
-            os.makedirs(save_dir, exist_ok=True)
+            
             save_to_file(init_pred_state, f"{save_dir}/init_state_{args.input_modality}.yaml")
             save_to_file(goal_pred_state, f"{save_dir}/goal_state_{args.input_modality}.yaml")
             logging.info(f"Saved predicate states to {save_dir}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3', 'gpt-5'], default='gpt-4o-2024-11-20')
+    parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3', 'gpt-5'], default='gpt-5')
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
     parser.add_argument("--baseline", type=str, choices=["fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
-    parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
+    parser.add_argument("--dataset", type=str, choices=["test", "test1", "easy_0", "easy_1", "easy_2", "easy_3", "hard_0", "hard_1", "hard_2", "hard_3", "impossible_0", "impossible_1"], help="the name of the dataset")
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
 
     parser.add_argument("--input_modality", type=str, choices=["image", "text"], default="image", help="the input modality of the state")

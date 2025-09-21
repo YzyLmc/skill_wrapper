@@ -38,7 +38,10 @@ def main(cfg: DictConfig):
                 continue
             results[d] = {"suc": []}
             plan_fpath = os.path.join(plan_dir, f)
-            plans = load_from_file(plan_fpath)[0]["all_parsed_plans"] # 0 is meaningless here since we only run one trial
+            try:
+                plans = load_from_file(plan_fpath)[0]["all_parsed_plans"] # 0 is meaningless here since we only run one trial
+            except:
+                plans = load_from_file(plan_fpath)["0"]["all_parsed_plans"] # stupid fix
 
             for plan in plans:
                 if not plan: 

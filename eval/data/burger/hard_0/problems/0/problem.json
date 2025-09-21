@@ -1,0 +1,113 @@
+{
+    "version": "1.0.0",
+    "width": 6,
+    "height": 6,
+    "config": {
+        "num_cuts": {
+            "lettuce": 3,
+            "default": 3
+        },
+        "cook_time": {
+            "patty": 3,
+            "default": 3
+        }
+    },
+    "ground": [
+        "CCCCCC",
+        "CCCCCC",
+        "CCWWWW",
+        "CCWWCW",
+        "CCWWWW",
+        "CCCCCC"],
+    "stations": [
+        {
+            "name": "table",
+            "x": 3,
+            "y": 4
+        },
+        {
+            "name": "table",
+            "x": 3,
+            "y": 3
+        },
+        {
+            "name": "table",
+            "x": 3,
+            "y": 5
+        },
+        {
+            "name": "table",
+            "x": 3,
+            "y": 1
+        },
+        {
+            "name": "table",
+            "x": 3,
+            "y": 2
+        },
+        {
+            "name": "board",
+            "x": 0,
+            "y": 5
+        },
+        {
+            "name": "stove",
+            "x": 5,
+            "y": 0
+        }
+    ],
+    "items": [
+        {
+            "name": "patty",
+            "x": 3,
+            "y": 1,
+            "stack-level": 0,
+            "predicates": ["iscookable"]
+        },
+        {
+            "name": "lettuce",
+            "x": 3,
+            "y": 3,
+            "stack-level": 0,
+            "predicates": ["iscuttable"]
+        },
+        {
+            "name": "bottombun",
+            "x": 3,
+            "y": 4,
+            "stack-level": 0
+        },
+        {
+            "name": "topbun",
+            "x": 3,
+            "y": 2,
+            "stack-level": 0
+        }
+    ],
+    "players": [
+        {
+            "name": "robot",
+            "x": 4,
+            "y": 0,
+            "direction": [1, 0]
+        }
+    ],
+    "goal_description": "Make a burger without meat",
+    "goal": [
+        {
+            "predicate": "atop",
+            "args": ["topbun", "lettuce"],
+            "ids": [2, 1]
+        },
+        {
+            "predicate": "iscut",
+            "args": ["lettuce"],
+            "ids": [1]
+        },
+        {
+            "predicate": "atop",
+            "args": ["lettuce", "bottombun"],
+            "ids": [1, 4]
+        }
+    ]
+}

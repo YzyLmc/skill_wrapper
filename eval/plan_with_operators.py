@@ -2,7 +2,7 @@
 Load preadicate states of init state and goal state of each problem, learned operators & predicates, and plan with K star or FD.
 
 Example usage:
-    python eval/plan_with_operators.py --baseline expert_operators --dataset test
+    python eval/plan_with_operators.py --baseline expert_operators --dataset easy_0 --planner kstar
 """
 import os
 import sys
@@ -27,8 +27,8 @@ from src.data_structure import PredicateState, Skill
 
 planner_path = '/home/ziyi/git/downward/fast-downward.py'
 
-if os.environ["FD_PATH"]:
-    planner_path = os.environ["FD_PATH"]
+# if os.environ["FD_PATH"]:
+#     planner_path = os.environ["FD_PATH"]
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]
@@ -208,14 +208,20 @@ def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator, method)
                     skill = S
             assert skill is not None, f"Skill {action_parts[0]} not found in yaml file."
 
-            if skill2operator and skill.lifted() in skill2operator:
+            if skill2operator and skill in skill2operator:
                 object_parts = action_parts[1:]
-                operator_tuple = [op for op in skill2operator[skill.lifted()] if op.action_id == action_parts[0]][0]
-                _, skill_param2pid = operator_tuple
-                pid2skill_param = {v: k for k, v in skill_param2pid.items()}
-                params = [None] * len(pid2skill_param)
-                for k,v in pid2skill_param.items():
-                    params[k] = object_parts[v]
+                operator_tuple = [(op, skill_param2pid) for op, skill_param2pid in skill2operator[skill] if op.action_id.lower().split('_')[0] == action_parts[0].lower().split('_')[0]][0] # ugly, i know
+                operator, skill_param2pid = operator_tuple
+                param_list: list = operator.parameters
+                param_list = [p for p in param_list if not p.type == ""]
+                pid2idx = {int(str(p).split('_p')[-1]): i for i, p in enumerate(param_list)}
+                params = [None] * len(skill_param2pid)
+                # breakpoint()
+                try:
+                    for k,v in skill_param2pid.items():
+                        params[k] = object_parts[pid2idx[v]]
+                except:
+                    breakpoint()
 
             else:
                 for x in range(1, len(action_parts)):
@@ -360,12 +366,12 @@ def main():
 
     # create domain file
     yaml_data = {
-        "operators": [O.pop() for _, O in data_operators.items()],   
+        "operators": sum([O for _, O in data_operators.items()], []),   
         "predicates": [parse_predicate(P) for P in data_predicates],
         "objects": data_objects['objects'],
         "skills": data_objects['skills'],
     }
-
+    # breakpoint()
     domain_fpath = create_domain_file(
                 method='skillwrapper',
                 yaml_data=yaml_data,
@@ -397,7 +403,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
     parser.add_argument("--baseline", type=str, choices=["fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
-    parser.add_argument("--dataset", type=str, choices=["test", "unseen", "easy", "hard"], help="the name of the dataset")
+    parser.add_argument("--dataset", type=str, choices=["test1", "easy_0", "easy_1", "easy_2", "easy_3", "hard_0", "hard_1", "hard_2", "hard_3", "impossible_0", "impossible_1"], help="the name of the dataset")
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
     parser.add_argument("--input_modality", type=str, choices=["image", "text"], default="image", help="the input modality of the state")
