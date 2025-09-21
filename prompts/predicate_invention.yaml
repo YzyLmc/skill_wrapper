@@ -168,37 +168,34 @@ spot:
     One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
 
 burger:
-  precond: |
-    A kitchen robot with a torso and an arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen, and overlapping objects means the objects are stacked together (higher objects in the stack will occlude lower objects for visualization purpose). Each object has annotation of its name that does not cause any obstruction. 
+  precond_cache: |
+    You are a robotic vision system whose job is to output predicates useful for describing important concepts in the following demonstration of a task.
+    The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2].
     
-    The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the preconditions for successful execution of this skill.
+    Format your output as follows:
+    `predicate_name(arg1, arg2,...)`: semantic_meaning.
+    [PRED_LIST]
+    Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    Your task is to propose a single new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+  precond: |
+    You are an expert in accurately writing PDDL language. Your task is to propose a new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+    A kitchen robot agent with one arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen. The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. This suggests that the existing predicate set is insufficient to capture the preconditions of this skill.
 
     Predicates should meet these criteria:
-
     - The predicate must be grounded in visual state only (e.g., “the object is cooked” “robot is holding object”).
     - Describe object state or spatial relations relevant to task success.
-    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.), alignment, or success likelihood that are vaguely defined and cannot be determined with from the raw images.
-    - The predicates must be binary, unary, or nullary, i.e., have at most two parameters (e.g., predicate(robot), predicate(obj1, obj2), predicate()), where robot must be included for any robot-object relation.
-    - The parameters of the predicate must be subset of the parameters of the skill.
+    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.)
+    - The predicates must be binary, unary, or nullary.
+    - The semantic meaning of the predicate should be as specific as possible to avoid ambiguity, e.g., no disjunctive statements ("or") are allowed, and no ambiguise terms like "part of", "close to", etc.
 
     Format your output as follows:
     `predicate_name(parameters)`: semantic_meaning.
-
-    for example:
-    `CloseTo(robot, location)`: the robot is close to the location.
-
-    Current predicates: 
     [PRED_LIST]
-    
-    Previously proposed but rejected predicates: 
     [TRIED_PRED]
-
     Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
-    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
-  eff: |
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL] (Using only these parameter types: [PARAMETERS]):
+  eff_cache: |
     A kitchen robot with a torso and an arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen, and overlapping objects means the objects are stacked together (higher objects in the stack will occlude lower objects for visualization purpose). Each object has annotation of its name that does not cause any obstruction. 
   
     The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution shown in the first image (before) and the second (after), the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution shown in the third image (before) and the fourth (after), [GROUNDED_SKILL_2] [SUCCESS_2]. The difference in outcomes suggests that the existing predicate set is insufficient to fully capture the effects for successful execution of this skill.
@@ -231,3 +228,22 @@ burger:
     Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
     
     One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] ( Don't use any parameter other than [PARAMETERS] ):
+
+  eff: |
+    You are an expert in accurately writing PDDL language. Your task is to propose a new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+    A kitchen robot agent with one arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen. The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. This suggests that the existing predicate set is insufficient to capture the effect of this skill.
+
+    Predicates should meet these criteria:
+    - The predicate must be grounded in visual state only (e.g., “the object is cooked” “robot is holding object”).
+    - Describe object state or spatial relations relevant to task success.
+    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.)
+    - The predicates must be binary, unary, or nullary.
+    - The semantic meaning of the predicate should be as specific as possible to avoid ambiguity, e.g., no disjunctive statements ("or") are allowed, and no ambiguise terms like "part of", "close to", etc.
+
+    Format your output as follows:
+    `predicate_name(parameters)`: semantic_meaning.
+    [PRED_LIST]
+    [TRIED_PRED]
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] (Using only these parameter types: [PARAMETERS]):

@@ -12,12 +12,12 @@ dorfl: |
   Use "Done" in the skill list to indicate the task is complete, and report if the task is impossible to solve by simply returning "Impossible".
 
 burger: |
-  You are <robot_description>. As a robot, you are able to execute the following skills:
+  You are <robot_description>. As a robot, you are able to execute the following skills (pay attention to the required types of each skill!):
   <skills>
 
   Here are the objects and their types that are compatible with your skills:
   <objects>
 
-  You are given two images: The first one captures your current observation, and the second one specifies your goal. Given both images, your job is to generate a plan starting from the *current state* to the goal state. You should first reason about the goal of the task and how the skills can be chained to solve it in the first paragraph. After the reasoning, return the plan from the current state in a new paragraph by listing skills in separate lines with no additional explaination, header, or numbering.
+  You are given two images: The first one captures your current observation, and the second one specifies your goal. Given both images, your job is to generate a plan starting from the *current state* to the goal state. Notice that the goal is not always to build a burger, but to reach the same state as the goal image. You should first reason about the goal of the task and how the skills can be chained to solve it in the first paragraph. After the reasoning, return the plan from the current state in a new paragraph by listing skills in separate lines with no additional explaination, header, or numbering.
 
-  Use "Done" in the skill list to indicate the task is complete, and report if the task is impossible to solve by simply returning "Impossible".
+  Use "Done" in the skill list to indicate the task is complete, and report if the task is impossible to solve by simply returning "Impossible". You must pick objects or robots (first char uppercased) whose type list contains the required type of the skill!

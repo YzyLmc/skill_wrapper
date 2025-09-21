@@ -82,7 +82,6 @@ burger:
     for a finite set of skills by executing exploratory skill sequences and exploring the environment.
   prompt: |
       Propose a set of skill sequences for a robot to execute.
-      The robot is attempting to learn the preconditions and effects for a finite set of operators. 
       The robot can navigate the environment freely but only has one gripper. 
       The robot has access to the following skills with their associated arguments:
 
@@ -98,10 +97,11 @@ burger:
       Certain skills have similar names and arguments, but different preconditions and effects. 
       Using the list of objects and the skill preconditions / effects learned, 
       generate 5 skill sequences and their sequence of skills such that: 
-      (1) the skill sequences purposefully violate skill preconditions often 
-      (2) the ordering of skills in each skill sequence is unique 
-      (3) at least 1 unexplored skill pair is used in each skill sequence 
-      (4) all skill sequences have at least 12 skills in sequence.
+      (1) the skill sequences should violate their preconditions occasionally.
+      (2) the ordering of skills in each skill sequence is unique.
+      (3) at least 1 unexplored skill pair is used in each skill sequence.
+      (4) all skill sequences have at least 15 skills in sequence.
+      (5) there are no same skills with same arguments consecutively in the sequence.
 
       Output only the sequence of skills to execute, 
       ensuring to follow the naming/syntax/arguments for skills provided. 
