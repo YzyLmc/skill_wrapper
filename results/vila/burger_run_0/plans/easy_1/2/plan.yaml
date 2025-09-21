@@ -1,0 +1,11 @@
+'0':
+  all_parsed_plans:
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: {}
+      types: []
+env: burger
+plan_method: vila

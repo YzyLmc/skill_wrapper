@@ -14,21 +14,21 @@
 - !Predicate
   name: obj_free
   params: !!python/tuple []
-  semantic: "A `pickupable` object is free for picking."
+  semantic: "A `pickupable` object has nothing on top."
   types: !!python/tuple
   - pickupable
 
 - !Predicate
   name: station_free
   params: !!python/tuple []
-  semantic: "A `station` is free for cooking ingredients."
+  semantic: "A `station` is free and has nothing on top."
   types: !!python/tuple
   - station
 
 - !Predicate
   name: is_on_top
   params: !!python/tuple []
-  semantic: "A `pickupable` object is on top of another `pickupable` object."
+  semantic: "The first `pickupable` object is right on top of the second `pickupable` object with nothing in between."
   types: !!python/tuple
   - pickupable
   - pickupable

@@ -1,0 +1,71 @@
+{
+    "0": {
+        "planning_budget": 0,
+        "solved": false,
+        "suc": []
+    },
+    "1": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        ]
+    },
+    "2": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        ]
+    },
+    "3": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        ]
+    },
+    "4": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    }
+}

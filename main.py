@@ -70,7 +70,7 @@ def invent_predicates_for_all_skill(model, lifted_pred_list, skill2operator, tas
     filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
 
-    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+    return skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log
 
 @hydra.main(version_base=None, config_path="hydra_conf", config_name="skillwrapper_config")
 def main(cfg: DictConfig):

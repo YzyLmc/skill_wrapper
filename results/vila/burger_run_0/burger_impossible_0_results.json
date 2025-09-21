@@ -1,0 +1,37 @@
+{
+    "0": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "1": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true
+        ]
+    },
+    "2": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true
+        ]
+    },
+    "3": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "4": {
+        "planning_budget": 1,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    }
+}

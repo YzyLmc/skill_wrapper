@@ -1,0 +1,5 @@
+'0':
+  all_parsed_plans:
+  - - impossible
+env: burger
+plan_method: vila

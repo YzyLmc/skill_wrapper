@@ -6,7 +6,7 @@
   types:
   - pickupable
 : - "(:action Pick\n\
-    \ \t\t:parameters (?pickupable - pickupable)\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(obj_free ?pickupable)\
@@ -28,7 +28,7 @@
   - pickupable
   - pickupable
 : - "(:action PickFromStack\n\
-    \ \t\t:parameters (?top - pickupable ?bot - pickupable)\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - pickupable)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(not (is_holding ?top))\
@@ -52,7 +52,7 @@
   - pickupable
   - station
 : - "(:action PickFromStation\n\
-    \ \t\t:parameters (?top - pickupable ?bot - station)\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - station)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(not (is_holding ?top))\
@@ -76,7 +76,7 @@
   - pickupable
   - station
 : - "(:action Place\n\
-    \ \t\t:parameters (?pickupable - pickupable ?station - station)\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable ?station - station)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(is_holding ?pickupable)\ 
     \ \n\t\t\t(station_free ?station)\
@@ -99,7 +99,7 @@
   - pickupable
   - pickupable
 : - "(:action Stack\n\
-    \ \t\t:parameters (?top - pickupable ?bot - pickupable)\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - pickupable)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(is_holding ?top)\
     \ \n\t\t\t(obj_free ?bot)\
@@ -122,7 +122,7 @@
   - cuttable
   - cuttingboard
 : - "(:action Cut\n\
-    \ \t:parameters (?cuttable - cuttable ?board - cuttingboard)\
+    \ \t:parameters (?robot - robot ?cuttable - cuttable ?board - cuttingboard)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(obj_free ?cuttable)\
@@ -141,7 +141,7 @@
   types:
   - cookable
 : - "(:action Cook\n\
-    \ \t:parameters (?cookable - cookable ?cooker - cooker)\
+    \ \t:parameters (?robot - robot ?cookable - cookable ?cooker - cooker)\
     \ \n\t\t:precondition (and\
     \ \n\t\t\t(hand_empty)\
     \ \n\t\t\t(obj_free ?cookable)\

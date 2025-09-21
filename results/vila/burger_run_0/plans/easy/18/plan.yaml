@@ -1,0 +1,137 @@
+plan:
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: &id001 {}
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - BottomBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - BottomBun
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - BottomBun
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Pick
+  params:
+  - Lettuce
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []
+- !Skill
+  name: Place
+  params:
+  - Lettuce
+  - CuttingBoard
+  semantics: *id001
+  types: []

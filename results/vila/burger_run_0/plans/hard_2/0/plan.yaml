@@ -1,0 +1,26 @@
+'0':
+  all_parsed_plans:
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: &id001 {}
+      types: []
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - CuttingBoard
+      semantics: *id001
+      types: []
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id001
+      types: []
+env: burger
+plan_method: vila
