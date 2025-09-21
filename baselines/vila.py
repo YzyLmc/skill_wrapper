@@ -140,12 +140,12 @@ def main(cfg: DictConfig):
 
                 current_img = next_img
                 logging.info(f"Current plan:\n{[str(s) for s in plan]}")
-                breakpoint()
+                # breakpoint()
             os.makedirs(save_path, exist_ok=True)
             results = {
                 "env": cfg.env,
                 "plan_method": "vila",
-                "0": {"all_parsed_plans": [plan]} 
+                0: {"all_parsed_plans": [plan]} 
                 }
             save_to_file(results, os.path.join(save_path, "plan.yaml"))
     # delete the cached images in tmp_dir
@@ -154,7 +154,7 @@ def main(cfg: DictConfig):
 
 def run_burger(environment_name, plan, cfg, **kwcfg):
     "Take in skill sequence and execute them, save files to tmp_dir"
-    img_save_path = robotouille.run_skill_sequence.exec_and_record(environment_name, plan, cfg.tmp_dir, **kwcfg)
+    img_save_path = robotouille.run_skill_sequence.exec_and_record(environment_name, plan, cfg.tmp_dir, eval=True, **kwcfg)
     # split each level of the path
     img_save_path_components = img_save_path.split(os.sep)
     task_name = img_save_path_components[1]

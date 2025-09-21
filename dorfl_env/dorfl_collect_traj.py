@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import sys
+import argparse
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
@@ -75,19 +76,22 @@ class DorflTrajectoryCollector:
         Returns:
             Dict containing trajectory data in the format expected by convert_dorfl_data.py
         """
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        time_now = datetime.now()
+        timestamp = str(time_now.year) + "-" + str(time_now.month) + "-" + str(time_now.day) + "-" + str(time_now.hour) + "-" + str(time_now.minute) + "-" + str(time_now.second)
+        # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         data_folder = "output_trajs"
-        if traj_name:
-            output_dir = f"{data_folder}/{traj_name}"
-        else:
-            output_dir = f"{data_folder}/{timestamp}"
+        # if traj_name:
+        #     output_dir = f"{data_folder}/{traj_name}"
+        # else:
+        #     output_dir = f"{data_folder}/{timestamp}"
+        output_dir = f"{data_folder}/{timestamp}"
         os.makedirs(output_dir, exist_ok=True)
         
         # Reset environment and get initial state
         obs, info = self.env.reset()
         
         trajectory_data = {
-            "time_stamp": output_dir,
+            "time_stamp": timestamp,
             "seq": []
         }
         
@@ -132,14 +136,14 @@ class DorflTrajectoryCollector:
                 print(f"Episode terminated at step {i+1}")
                 break
         
-        # Save trajectory data as JSON
-        traj_json_path = os.path.join(output_dir, "traj.json")
-        with open(traj_json_path, 'w') as f:
-            json.dump(trajectory_data, f, indent=2)
+        # # Save trajectory data as JSON
+        # traj_json_path = os.path.join(output_dir, "traj.json")
+        # with open(traj_json_path, 'w') as f:
+        #     json.dump(trajectory_data, f, indent=2)
         
         # Generate skill wrapper format YAML
         skill_wrapper_data = self.convert_to_skill_wrapper_format(trajectory_data, output_dir)
-        
+        breakpoint()
         # Save skill wrapper YAML
         yaml_path = os.path.join(data_folder, "tasks.yaml")
         if os.path.exists(yaml_path):
@@ -178,7 +182,7 @@ class DorflTrajectoryCollector:
         
         # Initial state (step 0)
         skill_wrapper_result[0] = {
-            "image": f"dorfl/transitions/{timestamp}/0.png",
+            "image": f"transitions/{timestamp}/0.png",
             "skill": None,
             "success": None
         }
@@ -195,7 +199,7 @@ class DorflTrajectoryCollector:
             
             skill_wrapper_result[i + 1] = {
                 "skill": skill,
-                "image": f"dorfl/transitions/{timestamp}/{i+1}.png", 
+                "image": f"transitions/{timestamp}/{i+1}.png", 
                 "success": traj["success"]
             }
         
@@ -218,8 +222,8 @@ class DorflTrajectoryCollector:
         """
         Load trajectories from trajs_to_use.yaml and collect data for each one
         """
-        trajectories = self.load_trajectories_from_yaml()
-        
+        trajectories = self.load_trajectories_from_yaml(args.traj_yaml)
+        breakpoint()
         all_results = {}
         
         for traj_name, traj_data in trajectories.items():
@@ -268,4 +272,8 @@ def main():
 
 
 if __name__ == "__main__":
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--traj_yaml", type=str, default="trajs_to_use.yaml")
+    argparser.add_argument("--output_dir", type=str, default="output")
+    args = argparser.parse_args()
     main()
