@@ -74,7 +74,6 @@ objects:
   Knife:
     types:
       - utensil
-
   Bread:
     types:
       - food

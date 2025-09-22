@@ -35,8 +35,9 @@
   types: !!python/tuple
   - plate
 
+
 - !Predicate
-  name: container_filled
+  name: is_filled
   params: !!python/tuple []
   semantic: "A `container` has something inside of it."
   types: !!python/tuple

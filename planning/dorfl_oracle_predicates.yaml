@@ -1,52 +1,32 @@
 - !Predicate
-  name: hand_empty
+  name: lefthand_empty
   params: !!python/tuple []
-  semantic: "The robot's gripper (either its left or right gripper) is empty, and it is not\
-    \ holding anything."
+  semantic: "The `robot` is not holding anything in its left hand."
   types: !!python/tuple
-  - arm
+  - robot
 
 - !Predicate
-  name: on_location
+  name: righthand_empty
   params: !!python/tuple []
-  semantic: "A `pickupable` object is placed on top of a `location` object."
+  semantic: "The `robot` is not holding anything in its right hand."
   types: !!python/tuple
-  - pickupable
-  - location
+  - robot
 
 - !Predicate
-  name: contains
+  name: in_lefthand
   params: !!python/tuple []
-  semantic: "The `pickupable` object contains a `spreadable` object (typically some ingredient) on it."
+  semantic: "The `robot` is holding an `openable` object in its left hand."
   types: !!python/tuple
+  - robot
   - openable
-  - spreadable
 
 - !Predicate
-  name: is_graspable
+  name: in_righthand
   params: !!python/tuple []
-  semantic: "The object `pickupable` is in a position and orientation that allows\
-    \ the `robot` to successfully grasp it with either its left or right gripper."
+  semantic: "The `robot` is holding an `utensil` object in its left hand."
   types: !!python/tuple
-  - pickupable
-  - arm
-
-- !Predicate
-  name: is_holding
-  params: !!python/tuple []
-  semantic: "The robot is holding a `pickupable` object in either its left or right gripper."
-  types: !!python/tuple
-  - arm
-  - pickupable
-
-- !Predicate
-  name: is_spread
-  params: !!python/tuple []
-  semantic: "The `food` object contains a `spreadable` object (typically some ingredient)\
-    \ spread on top of it."
-  types: !!python/tuple
-  - spreadable
-  - food
+  - robot
+  - utensil
 
 - !Predicate
   name: is_opened
@@ -54,3 +34,25 @@
   semantic: "An `openable` object (such as a jar) is opened."
   types: !!python/tuple
   - openable
+
+- !Predicate
+  name: is_clean
+  params: !!python/tuple []
+  semantic: "A `utensil` object (such as a knife) is clean."
+  types: !!python/tuple
+  - utensil
+
+- !Predicate
+  name: contains_ingredient
+  params: !!python/tuple []
+  semantic: "A `utensil` object contains a spreadable ingredient."
+  types: !!python/tuple
+  - utensil
+
+- !Predicate
+  name: spread_on_top
+  params: !!python/tuple []
+  semantic: "The `food` object contains a spreadable ingredient on top of it."
+  types: !!python/tuple
+  - food
+
