@@ -1,0 +1,98 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    robot: robot that executes the pick skill.
+  types:
+  - robot
+  - pickupable
+: - "(:action Pick_103 \n:parameters ( ?pickupable_p1 - pickupable  ?pickupable_p3\
+    \ - pickupable  ?robot_p4 - robot )\n:precondition (and \n\t(not (= ?pickupable_p1\
+    \ ?pickupable_p3))\n\t(clear ?pickupable_p1 )\n\t(nothing ?robot_p4 )\n\t(not\
+    \ (has_item ?robot_p4 ?pickupable_p1))\n\t(not (has_item ?robot_p4 ?pickupable_p3))\n\
+    ) \n:effect (and \n \t(has_item ?robot_p4 ?pickupable_p1) \n\t(not (clear ?pickupable_p1\
+    \ ))\n\t(not (nothing ?robot_p4 ))\n ) \n)\n"
+  - "(:action Pick_104 \n:parameters ( ?pickupable_p1 - pickupable  ?pickupable_p2\
+    \ - pickupable  ?pickupable_p5 - pickupable  ?robot_p4 - robot )\n:precondition\
+    \ (and \n\t(not (= ?pickupable_p1 ?pickupable_p2))\n\t(not (= ?pickupable_p1 ?pickupable_p5))\n\
+    \t(not (= ?pickupable_p2 ?pickupable_p5))\n\t(atop ?pickupable_p1 ?pickupable_p2)\n\
+    \t(nothing ?robot_p4 )\n\t(not (atop ?pickupable_p5 ?pickupable_p1))\n\t(not (clear\
+    \ ?pickupable_p2 ))\n\t(not (has_item ?robot_p4 ?pickupable_p1))\n\t(not (has_item\
+    \ ?robot_p4 ?pickupable_p2))\n\t(not (has_item ?robot_p4 ?pickupable_p5))\n) \n\
+    :effect (and \n \t(clear ?pickupable_p2 ) \n\t(has_item ?robot_p4 ?pickupable_p1)\
+    \ \n\t(not (atop ?pickupable_p1 ?pickupable_p2))\n\t(not (clear ?pickupable_p1\
+    \ ))\n\t(not (nothing ?robot_p4 ))\n ) \n)\n"
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be dropped.
+    robot: robot that executes the place skill.
+    station: the receptacle onto which object is dropped.
+  types:
+  - robot
+  - pickupable
+  - station
+: - "(:action Place_105 \n:parameters ( ?pickupable_p1 - pickupable  ?robot_p4 - robot\
+    \  ?station_p6 - station )\n:precondition (and \n\t(has_item ?robot_p4 ?pickupable_p1)\n\
+    \t(station_empty ?station_p6 )\n\t(not (clear ?pickupable_p1 ))\n\t(not (item_on\
+    \ ?pickupable_p1 ?station_p6))\n\t(not (nothing ?robot_p4 ))\n) \n:effect (and\
+    \ \n \t(clear ?pickupable_p1 ) \n\t(item_on ?pickupable_p1 ?station_p6) \n\t(nothing\
+    \ ?robot_p4 ) \n\t(not (has_item ?robot_p4 ?pickupable_p1))\n\t(not (station_empty\
+    \ ?station_p6 ))\n ) \n)\n"
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    pickupable: The second object to be underneath the first one.
+    robot: robot that executes the stack skill.
+  types:
+  - robot
+  - pickupable
+  - pickupable
+: - "(:action Stack_106 \n:parameters ( ?pickupable_p1 - pickupable  ?pickupable_p2\
+    \ - pickupable  ?robot_p4 - robot )\n:precondition (and \n\t(not (= ?pickupable_p1\
+    \ ?pickupable_p2))\n\t(clear ?pickupable_p2 )\n\t(has_item ?robot_p4 ?pickupable_p1)\n\
+    \t(not (atop ?pickupable_p1 ?pickupable_p2))\n\t(not (has_item ?robot_p4 ?pickupable_p2))\n\
+    \t(not (nothing ?robot_p4 ))\n) \n:effect (and \n \t(atop ?pickupable_p1 ?pickupable_p2)\
+    \ \n\t(clear ?pickupable_p1 ) \n\t(nothing ?robot_p4 ) \n\t(not (clear ?pickupable_p2\
+    \ ))\n\t(not (has_item ?robot_p4 ?pickupable_p1))\n ) \n)\n"
+? !Skill
+  name: Cut
+  params: []
+  semantics:
+    cuttable: the object that is being cut.
+    robot: robot that executes the cut skill.
+  types:
+  - robot
+  - cuttable
+: - "(:action Cut_107 \n:parameters ( ?pickupable_p1 - pickupable  ?pickupable_p2\
+    \ - pickupable  ?pickupable_p3 - pickupable  ?pickupable_p5 - pickupable  ?robot_p4\
+    \ - robot  ?station_p0 - station )\n:precondition (and \n\t(not (= ?pickupable_p1\
+    \ ?pickupable_p2))\n\t(not (= ?pickupable_p1 ?pickupable_p3))\n\t(not (= ?pickupable_p1\
+    \ ?pickupable_p5))\n\t(not (= ?pickupable_p2 ?pickupable_p3))\n\t(not (= ?pickupable_p2\
+    \ ?pickupable_p5))\n\t(not (= ?pickupable_p3 ?pickupable_p5))\n\t(clear ?pickupable_p3\
+    \ )\n\t(item_on ?pickupable_p3 ?station_p0)\n\t(nothing ?robot_p4 )\n\t(not (atop\
+    \ ?pickupable_p3 ?pickupable_p5))\n\t(not (has_item ?robot_p4 ?pickupable_p1))\n\
+    \t(not (has_item ?robot_p4 ?pickupable_p2))\n\t(not (has_item ?robot_p4 ?pickupable_p3))\n\
+    \t(not (iscut ?pickupable_p3 ))\n) \n:effect (and \n \t(iscut ?pickupable_p3 )\
+    \ \n ) \n)\n"
+? !Skill
+  name: Cook
+  params: []
+  semantics:
+    cookable: the object that is being cooked.
+    robot: robot that executes the cook skill.
+  types:
+  - robot
+  - cookable
+: - "(:action Cook_108 \n:parameters ( ?pickupable_p1 - pickupable  ?pickupable_p2\
+    \ - pickupable  ?pickupable_p5 - pickupable  ?robot_p4 - robot  ?station_p6 -\
+    \ station )\n:precondition (and \n\t(not (= ?pickupable_p1 ?pickupable_p2))\n\t\
+    (not (= ?pickupable_p1 ?pickupable_p5))\n\t(not (= ?pickupable_p2 ?pickupable_p5))\n\
+    \t(clear ?pickupable_p1 )\n\t(item_on ?pickupable_p1 ?station_p6)\n\t(nothing\
+    \ ?robot_p4 )\n\t(not (atop ?pickupable_p1 ?pickupable_p2))\n\t(not (atop ?pickupable_p5\
+    \ ?pickupable_p1))\n\t(not (has_item ?robot_p4 ?pickupable_p1))\n\t(not (has_item\
+    \ ?robot_p4 ?pickupable_p2))\n\t(not (iscooked ?pickupable_p1 ))\n) \n:effect\
+    \ (and \n \t(iscooked ?pickupable_p1 ) \n ) \n)\n"

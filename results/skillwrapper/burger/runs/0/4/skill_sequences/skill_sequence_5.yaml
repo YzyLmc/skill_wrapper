@@ -1,0 +1,174 @@
+- !Skill
+  name: Pick
+  params:
+  - Robot
+  - TopBun
+  semantics: &id001 {}
+  types:
+  - robot
+  - pickupable
+- !Skill
+  name: Cook
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - cookable
+- !Skill
+  name: Place
+  params:
+  - Robot
+  - TopBun
+  - Stove
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - station
+- !Skill
+  name: Cook
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - cookable
+- !Skill
+  name: Pick
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+- !Skill
+  name: Cut
+  params:
+  - Robot
+  - Lettuce
+  semantics: *id001
+  types:
+  - robot
+  - cuttable
+- !Skill
+  name: Place
+  params:
+  - Robot
+  - Patty
+  - CuttingBoard
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - station
+- !Skill
+  name: Cook
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - cookable
+- !Skill
+  name: Pick
+  params:
+  - Robot
+  - Lettuce
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+- !Skill
+  name: Cook
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - cookable
+- !Skill
+  name: Cut
+  params:
+  - Robot
+  - Lettuce
+  semantics: *id001
+  types:
+  - robot
+  - cuttable
+- !Skill
+  name: Place
+  params:
+  - Robot
+  - Lettuce
+  - Stove
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - station
+- !Skill
+  name: Pick
+  params:
+  - Robot
+  - BottomBun
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+- !Skill
+  name: Stack
+  params:
+  - Robot
+  - BottomBun
+  - TopBun
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - pickupable
+- !Skill
+  name: Place
+  params:
+  - Robot
+  - BottomBun
+  - CuttingBoard
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - station
+- !Skill
+  name: Cut
+  params:
+  - Robot
+  - Lettuce
+  semantics: *id001
+  types:
+  - robot
+  - cuttable
+- !Skill
+  name: Stack
+  params:
+  - Robot
+  - TopBun
+  - Lettuce
+  semantics: *id001
+  types:
+  - robot
+  - pickupable
+  - pickupable
+- !Skill
+  name: Cook
+  params:
+  - Robot
+  - Patty
+  semantics: *id001
+  types:
+  - robot
+  - cookable

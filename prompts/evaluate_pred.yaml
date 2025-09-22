@@ -20,7 +20,7 @@ burger: |
   `[LIFTED_PRED]`: [SEMANTIC]
 
 burger_step_1: |
-  Given the current observation of the simulated kitchen domain, the object types, and the list of predicates, what are the true grounded predicates? (Lettuce is cut if it appears to be in pieces. Patty is cooked if it has grill marks. If an object is held by the robot over its head, it's no longer on an object stack, since robot is not an object. )
+  Given the current observation of the simulated kitchen domain, the object types, and the list of predicates, what are the true grounded predicates? (Lettuce is cut if it appears to be in pieces. Patty is cooked if it has grill marks. If an object appears above the robot over its head, it is held by the object and no longer on an object stack, since the robot is not an object.)
 
   Objects:
   [OBJECTS]

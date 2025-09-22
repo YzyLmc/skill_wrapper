@@ -20,7 +20,6 @@ lettuce1 has nothing above it
 Item patty1:
 patty1 is a hamburger patty
 patty1 can be cooked on a stove
-patty1 is cooked
 patty1 is at stove1
 patty1 is directly on top of stove1
 patty1 has nothing above it

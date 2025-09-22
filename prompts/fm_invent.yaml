@@ -19,7 +19,7 @@ burger: |
   types: {type1, type2, ...}
   semantics: {semantic description of the predicate}
   [PRED_LIST]
-  Give your reasoning step by step in one paragraph starting with the heading `Reasoning:`, and then list five to ten predicates in separate lines with the heading `Predicates:` but without any additional formatting.
+  Give your reasoning step by step in one paragraph starting with the heading `Reasoning:`, and then list five predicates in separate lines with the heading `Predicates:` but without any additional formatting. (No need to alway list five predicates if you think less than five predicates are needed.)
   
 franka: |
   A robot with two arm is attempting to learn the preconditions and effects for a finite set of skills by executing exploratory skill sequences and exploring the environment.

@@ -1,3 +1,4 @@
+from xml.parsers.expat import model
 from openai import OpenAI
 import base64
 import requests
@@ -225,39 +226,62 @@ class GPT4:
         if logprobs:
             payload["top_logprobs"] = 2
         msg = {"role": "user", "content": []}
+        messages = []
         for line_txt in txts:
-            line_txt["type"] = "text"
-            msg["content"].append(line_txt)
+            # line_txt["type"] = "text"
+            # msg["content"].append(line_txt)
+            messages.append(
+                {
+                    "role": line_txt["role"],
+                    "content":[
+                        {
+                            "type": "text",
+                            "text": line_txt["text"]
+                        }
+                    ]
+                }
+            )
         for img in imgs:
             base64_img = encode_image(img)
-            line_img = {"type": "image_url", "image_url": {
-            "url": f"data:image/jpeg;base64,{base64_img}"
-          }}
-            msg["content"].append(line_img)
-        payload["messages"].append(msg)
+            messages[-1]["content"].append( # append to the last message
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/png;base64,{base64_img}"
+                    },
+                }
+            )
+
         complete = False
         ntries = 0
 
+        # breakpoint()
         while not complete and ntries < 15:
             try:
-                raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
+                response = client.chat.completions.create(
+                    model=self.engine,
+                    messages=messages,
+                    )
+                # raw_responses = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload).json()
                 complete = True
-                sleep(0.2)
+                # sleep(0.2)
             except Exception as e:
                 print(e)
-                sleep(10)
-                print(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                sleep(5)
+                print(f"{ntries}: waiting for the server. sleep for 5 sec...")
                 print(f"The prompt right now is:\n\n{query_prompt}")
-                logging.info(f"{ntries}: waiting for the server. sleep for 10 sec...")
+                logging.info(f"{ntries}: waiting for the server. sleep for 5 sec...")
                 logging.info(f"The prompt right now is:\n\n{query_prompt}")
                 # logging.info(f"{ntries}: waiting for the server. sleep for 30 sec...\n{query_prompt}")
                 logging.info("OK continue")
                 ntries += 1
 
         if self.n == 1:
-            responses = [raw_responses["choices"][0]["message"]["content"].strip()]
+            # responses = [raw_responses["choices"][0]["message"]["content"].strip()]
+            responses = [response.choices[0].message.content]
         else:
-            responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
+            # responses = [choice["message"]["content"].strip() for choice in raw_responses["choices"]]
+            responses = [choice["message"]["content"].strip() for choice in response["choices"]]
         # breakpoint()
         return responses
 

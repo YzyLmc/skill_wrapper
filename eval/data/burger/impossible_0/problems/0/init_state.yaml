@@ -247,7 +247,7 @@ predicates:
     semantic: args1(`pickupable`) is cooked
     types: !!python/tuple
     - pickupable
-  truth_value: true
+  truth_value: false
 - predicate: !Predicate
     name: iscooked
     params: !!python/tuple

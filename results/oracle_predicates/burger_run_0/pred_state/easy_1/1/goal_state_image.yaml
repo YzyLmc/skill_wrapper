@@ -1,0 +1,334 @@
+!PredicateState
+predicates:
+- predicate: !Predicate
+    name: iscooked
+    params: !!python/tuple
+    - Lettuce
+    semantic: args1(`pickupable`) is cooked
+    types: &id001 !!python/tuple
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: iscooked
+    params: !!python/tuple
+    - TopBun
+    semantic: args1(`pickupable`) is cooked
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: iscooked
+    params: !!python/tuple
+    - BottomBun
+    semantic: args1(`pickupable`) is cooked
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: iscooked
+    params: !!python/tuple
+    - Patty
+    semantic: args1(`pickupable`) is cooked
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: iscut
+    params: !!python/tuple
+    - Lettuce
+    semantic: args1(`pickupable`) is cut
+    types: &id002 !!python/tuple
+    - pickupable
+  truth_value: true
+- predicate: !Predicate
+    name: iscut
+    params: !!python/tuple
+    - TopBun
+    semantic: args1(`pickupable`) is cut
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: iscut
+    params: !!python/tuple
+    - BottomBun
+    semantic: args1(`pickupable`) is cut
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: iscut
+    params: !!python/tuple
+    - Patty
+    semantic: args1(`pickupable`) is cut
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: nothing
+    params: !!python/tuple
+    - Robot
+    semantic: args1(`robot`) is holding nothing
+    types: !!python/tuple
+    - robot
+  truth_value: true
+- predicate: !Predicate
+    name: station_empty
+    params: !!python/tuple
+    - Stove
+    semantic: args1(`station`) has nothing on it
+    types: &id003 !!python/tuple
+    - station
+  truth_value: false
+- predicate: !Predicate
+    name: station_empty
+    params: !!python/tuple
+    - CuttingBoard
+    semantic: args1(`station`) has nothing on it
+    types: *id003
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - Lettuce
+    - Stove
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: &id004 !!python/tuple
+    - pickupable
+    - station
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - Lettuce
+    - CuttingBoard
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: true
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - TopBun
+    - Stove
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - TopBun
+    - CuttingBoard
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - BottomBun
+    - Stove
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - BottomBun
+    - CuttingBoard
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - Patty
+    - Stove
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: true
+- predicate: !Predicate
+    name: item_on
+    params: !!python/tuple
+    - Patty
+    - CuttingBoard
+    semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+      has args1(`pickupable`) directly on top of it
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: clear
+    params: !!python/tuple
+    - Lettuce
+    semantic: args1(`pickupable`) has nothing above it
+    types: &id005 !!python/tuple
+    - pickupable
+  truth_value: true
+- predicate: !Predicate
+    name: clear
+    params: !!python/tuple
+    - TopBun
+    semantic: args1(`pickupable`) has nothing above it
+    types: *id005
+  truth_value: true
+- predicate: !Predicate
+    name: clear
+    params: !!python/tuple
+    - BottomBun
+    semantic: args1(`pickupable`) has nothing above it
+    types: *id005
+  truth_value: true
+- predicate: !Predicate
+    name: clear
+    params: !!python/tuple
+    - Patty
+    semantic: args1(`pickupable`) has nothing above it
+    types: *id005
+  truth_value: true
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Lettuce
+    - TopBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: &id006 !!python/tuple
+    - pickupable
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Lettuce
+    - BottomBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Lettuce
+    - Patty
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - TopBun
+    - Lettuce
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - TopBun
+    - BottomBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - TopBun
+    - Patty
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - BottomBun
+    - Lettuce
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - BottomBun
+    - TopBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - BottomBun
+    - Patty
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Patty
+    - Lettuce
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Patty
+    - TopBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: atop
+    params: !!python/tuple
+    - Patty
+    - BottomBun
+    semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+      is directly under args1(`pickupable`)
+    types: *id006
+  truth_value: false
+- predicate: !Predicate
+    name: has_item
+    params: !!python/tuple
+    - Robot
+    - Lettuce
+    semantic: args1(`robot`) is holding args2(`pickupable`), and args2(`pickupable`)
+      is held by args1(`robot`)
+    types: &id007 !!python/tuple
+    - robot
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: has_item
+    params: !!python/tuple
+    - Robot
+    - TopBun
+    semantic: args1(`robot`) is holding args2(`pickupable`), and args2(`pickupable`)
+      is held by args1(`robot`)
+    types: *id007
+  truth_value: false
+- predicate: !Predicate
+    name: has_item
+    params: !!python/tuple
+    - Robot
+    - BottomBun
+    semantic: args1(`robot`) is holding args2(`pickupable`), and args2(`pickupable`)
+      is held by args1(`robot`)
+    types: *id007
+  truth_value: false
+- predicate: !Predicate
+    name: has_item
+    params: !!python/tuple
+    - Robot
+    - Patty
+    semantic: args1(`robot`) is holding args2(`pickupable`), and args2(`pickupable`)
+      is held by args1(`robot`)
+    types: *id007
+  truth_value: false

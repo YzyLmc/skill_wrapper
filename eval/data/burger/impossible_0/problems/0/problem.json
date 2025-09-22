@@ -75,7 +75,7 @@
             "x": 3,
             "y": 5,
             "stack-level": 1,
-            "predicates": ["iscookable", "iscooked"],
+            "predicates": ["iscookable"],
             "id": "p"
         },
         {

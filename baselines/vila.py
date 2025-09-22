@@ -98,9 +98,13 @@ def main(cfg: DictConfig):
                 if "done" in skill_string.lower():
                     logging.info("done")
                     break
-
-                proposed_skill = Skill.from_string(skill_string)
-                logging.info(f"Proposed skill: {str(proposed_skill)}")
+                try:
+                    proposed_skill = Skill.from_string(skill_string)
+                    logging.info(f"Proposed skill: {str(proposed_skill)}")
+                except:
+                    logging.info(f"Failed to parse skill from {skill_string}, try again.")
+                    step -= 1
+                    continue
                 # If skill arguments match the types
                 primitive_skill = [s for sname, s in skills.items() if s.name == proposed_skill.name][0]
                 # object types of the proposed skill should match the types of the primitive skill

@@ -1,0 +1,54 @@
+- !Predicate
+  name: iscooked
+  params: !!python/tuple []
+  semantic: args1(`pickupable`) is cooked
+  types: !!python/tuple
+  - pickupable
+- !Predicate
+  name: iscut
+  params: !!python/tuple []
+  semantic: args1(`pickupable`) is cut
+  types: !!python/tuple
+  - pickupable
+- !Predicate
+  name: nothing
+  params: !!python/tuple []
+  semantic: args1(`robot`) is holding nothing
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: station_empty
+  params: !!python/tuple []
+  semantic: args1(`station`) has nothing on it
+  types: !!python/tuple
+  - station
+- !Predicate
+  name: item_on
+  params: !!python/tuple []
+  semantic: args1(`pickupable`) is directly on top of args2(`station`), and args2(`station`)
+    has args1(`pickupable`) directly on top of it
+  types: !!python/tuple
+  - pickupable
+  - station
+- !Predicate
+  name: clear
+  params: !!python/tuple []
+  semantic: args1(`pickupable`) has nothing above it
+  types: !!python/tuple
+  - pickupable
+- !Predicate
+  name: atop
+  params: !!python/tuple []
+  semantic: args1(`pickupable`) is directly on top of args2(`pickupable`), and args2(`pickupable`)
+    is directly under args1(`pickupable`)
+  types: !!python/tuple
+  - pickupable
+  - pickupable
+- !Predicate
+  name: has_item
+  params: !!python/tuple []
+  semantic: args1(`robot`) is holding args2(`pickupable`), and args2(`pickupable`)
+    is held by args1(`robot`)
+  types: !!python/tuple
+  - robot
+  - pickupable

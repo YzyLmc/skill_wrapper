@@ -1,0 +1,113 @@
+{
+    "0": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    },
+    "1": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    },
+    "2": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    },
+    "3": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+        ]
+    },
+    "4": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": []
+    },
+    "avg_planning_budget": 8.333333333333334,
+    "success_rate": 0.0
+}

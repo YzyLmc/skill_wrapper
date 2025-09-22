@@ -1,0 +1,274 @@
+!PredicateState
+predicates:
+- predicate: !Predicate
+    name: hand_empty
+    params: !!python/tuple []
+    semantic: The agent's hand is empty.
+    types: !!python/tuple []
+  truth_value: true
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - Lettuce
+    semantic: The agent is holding a `pickupable` object.
+    types: &id001 !!python/tuple
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - TopBun
+    semantic: The agent is holding a `pickupable` object.
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - BottomBun
+    semantic: The agent is holding a `pickupable` object.
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: is_holding
+    params: !!python/tuple
+    - Patty
+    semantic: The agent is holding a `pickupable` object.
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: obj_free
+    params: !!python/tuple
+    - Lettuce
+    semantic: A `pickupable` object has nothing on top.
+    types: &id002 !!python/tuple
+    - pickupable
+  truth_value: true
+- predicate: !Predicate
+    name: obj_free
+    params: !!python/tuple
+    - TopBun
+    semantic: A `pickupable` object has nothing on top.
+    types: *id002
+  truth_value: true
+- predicate: !Predicate
+    name: obj_free
+    params: !!python/tuple
+    - BottomBun
+    semantic: A `pickupable` object has nothing on top.
+    types: *id002
+  truth_value: true
+- predicate: !Predicate
+    name: obj_free
+    params: !!python/tuple
+    - Patty
+    semantic: A `pickupable` object has nothing on top.
+    types: *id002
+  truth_value: true
+- predicate: !Predicate
+    name: station_free
+    params: !!python/tuple
+    - Stove
+    semantic: A `station` is free and has nothing on top.
+    types: &id003 !!python/tuple
+    - station
+  truth_value: false
+- predicate: !Predicate
+    name: station_free
+    params: !!python/tuple
+    - CuttingBoard
+    semantic: A `station` is free and has nothing on top.
+    types: *id003
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Lettuce
+    - TopBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: &id004 !!python/tuple
+    - pickupable
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Lettuce
+    - BottomBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Lettuce
+    - Patty
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - TopBun
+    - Lettuce
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - TopBun
+    - BottomBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - TopBun
+    - Patty
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - BottomBun
+    - Lettuce
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - BottomBun
+    - TopBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - BottomBun
+    - Patty
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Patty
+    - Lettuce
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Patty
+    - TopBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_top
+    params: !!python/tuple
+    - Patty
+    - BottomBun
+    semantic: The first `pickupable` object is right on top of the second `pickupable`
+      object with nothing in between.
+    types: *id004
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - Lettuce
+    - Stove
+    semantic: A `pickupable` object is on top of a `station`.
+    types: &id005 !!python/tuple
+    - pickupable
+    - station
+  truth_value: true
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - Lettuce
+    - CuttingBoard
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - TopBun
+    - Stove
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - TopBun
+    - CuttingBoard
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - BottomBun
+    - Stove
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - BottomBun
+    - CuttingBoard
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - Patty
+    - Stove
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: is_on_station
+    params: !!python/tuple
+    - Patty
+    - CuttingBoard
+    semantic: A `pickupable` object is on top of a `station`.
+    types: *id005
+  truth_value: true
+- predicate: !Predicate
+    name: is_cut
+    params: !!python/tuple
+    - Lettuce
+    semantic: The `cuttable` object is cut or sliced.
+    types: !!python/tuple
+    - cuttable
+  truth_value: false
+- predicate: !Predicate
+    name: is_cooked
+    params: !!python/tuple
+    - Patty
+    semantic: The `cookable` object is cooked and ready for consumption or further
+      meal preparation.
+    types: !!python/tuple
+    - cookable
+  truth_value: false

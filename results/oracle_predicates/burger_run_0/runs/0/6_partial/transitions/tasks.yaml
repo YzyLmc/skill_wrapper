@@ -1,0 +1,1643 @@
+2025-9-20-1-51-29:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/1.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: &id001 {}
+      types:
+      - robot
+      - cookable
+    success: false
+  '10':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/10.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '11':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/11.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '12':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/12.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '13':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/13.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    success: false
+  '14':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/14.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/15.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/16.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '17':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/17.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '18':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/18.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '19':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/19.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Patty
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: true
+  '2':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '20':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/20.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '21':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/21.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: true
+  '3':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/3.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '4':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/4.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '5':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/6.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '7':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/7.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '8':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/8.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '9':
+    image: results/oracle_predicates/burger/runs/0/0_partial/transitions/2025-9-20-1-51-29/9.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    success: false
+2025-9-20-1-56-54:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/1.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: &id002 {}
+      types:
+      - robot
+      - pickupable
+    success: true
+  '10':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '11':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/11.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '12':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/12.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - cookable
+    success: false
+  '13':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/13.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '14':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/14.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Patty
+      - BottomBun
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/15.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/16.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '17':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/17.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '18':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/18.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id002
+      types:
+      - robot
+      - cookable
+    success: false
+  '19':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/19.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '2':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - CuttingBoard
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '20':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/20.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '21':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/21.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/3.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '4':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/4.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id002
+      types:
+      - robot
+      - cuttable
+    success: false
+  '5':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/6.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '7':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/7.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id002
+      types:
+      - robot
+      - cuttable
+    success: false
+  '8':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/8.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '9':
+    image: results/oracle_predicates/burger/runs/0/1_partial/transitions/2025-9-20-1-56-54/9.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+2025-9-20-2-13-17:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/1.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: &id003 {}
+      types:
+      - robot
+      - pickupable
+    success: false
+  '10':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '11':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/11.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id003
+      types:
+      - robot
+      - cuttable
+    success: false
+  '12':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/12.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '13':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/13.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id003
+      types:
+      - robot
+      - cuttable
+    success: true
+  '14':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/14.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - BottomBun
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/15.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/16.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id003
+      types:
+      - robot
+      - cookable
+    success: false
+  '2':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - Stove
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/3.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - BottomBun
+      - TopBun
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '4':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/4.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: false
+  '5':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/5.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/6.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '7':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/7.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id003
+      types:
+      - robot
+      - cookable
+    success: false
+  '8':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/8.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '9':
+    image: results/oracle_predicates/burger/runs/0/3_partial/transitions/2025-9-20-2-13-17/9.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id003
+      types:
+      - robot
+      - cookable
+    success: true
+2025-9-20-2-5-24:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/1.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: &id004 {}
+      types:
+      - robot
+      - cuttable
+    success: false
+  '10':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/10.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '11':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/11.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id004
+      types:
+      - robot
+      - cuttable
+    success: true
+  '12':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/12.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+    success: true
+  '13':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/13.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - CuttingBoard
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '14':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/14.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/15.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/16.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+    success: false
+  '17':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/17.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '2':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/2.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/3.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id004
+      types:
+      - robot
+      - cuttable
+    success: false
+  '4':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/4.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id004
+      types:
+      - robot
+      - cookable
+    success: false
+  '5':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/5.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id004
+      types:
+      - robot
+      - cuttable
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/6.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+    success: true
+  '7':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/7.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '8':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/8.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id004
+      types:
+      - robot
+      - cookable
+    success: true
+  '9':
+    image: results/oracle_predicates/burger/runs/0/2_partial/transitions/2025-9-20-2-5-24/9.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id004
+      types:
+      - robot
+      - pickupable
+    success: true
+2025-9-20-3-34-24:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/1.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: &id005 {}
+      types:
+      - robot
+      - pickupable
+    success: true
+  '10':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/10.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Patty
+      - BottomBun
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '11':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/11.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+    success: false
+  '12':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/12.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '13':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/13.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id005
+      types:
+      - robot
+      - cuttable
+    success: false
+  '14':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/14.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/15.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id005
+      types:
+      - robot
+      - cookable
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/16.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '2':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/2.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id005
+      types:
+      - robot
+      - cookable
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/3.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '4':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/4.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id005
+      types:
+      - robot
+      - cookable
+    success: false
+  '5':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/5.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+    success: true
+  '6':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/6.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Patty
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: true
+  '7':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/7.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '8':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/8.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+    success: true
+  '9':
+    image: results/oracle_predicates/burger/runs/0/4_partial/transitions/2025-9-20-3-34-24/9.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - CuttingBoard
+      semantics: *id005
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+2025-9-21-16-45-35:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/1.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: &id006 {}
+      types:
+      - robot
+      - pickupable
+    success: false
+  '10':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+    success: true
+  '11':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/11.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '12':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/12.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+    success: true
+  '13':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/13.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: true
+  '14':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/14.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id006
+      types:
+      - robot
+      - cookable
+    success: true
+  '15':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/15.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/16.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+    success: true
+  '2':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/2.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/3.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '4':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/4.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+    success: true
+  '5':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/5.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id006
+      types:
+      - robot
+      - cookable
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/6.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '7':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/7.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '8':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/8.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id006
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '9':
+    image: results/oracle_predicates/burger/runs/0/5_partial/transitions/2025-9-21-16-45-35/9.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id006
+      types:
+      - robot
+      - cuttable
+    success: false
+2025-9-21-16-53-23:
+  '0':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/0.jpg
+    skill: null
+    success: null
+  '1':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/1.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: &id007 {}
+      types:
+      - robot
+      - pickupable
+    success: true
+  '10':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/10.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: false
+  '11':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/11.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '12':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/12.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id007
+      types:
+      - robot
+      - cuttable
+    success: false
+  '13':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/13.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: false
+  '14':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/14.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '15':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/15.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id007
+      types:
+      - robot
+      - cookable
+    success: false
+  '16':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/16.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: false
+  '17':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/17.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - BottomBun
+      - Stove
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '18':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/18.jpg
+    skill: !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      semantics: *id007
+      types:
+      - robot
+      - cuttable
+    success: false
+  '2':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/2.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: false
+  '3':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/3.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - CuttingBoard
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - station
+    success: true
+  '4':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/4.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - BottomBun
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: true
+  '5':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/5.jpg
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    success: false
+  '6':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/6.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id007
+      types:
+      - robot
+      - cookable
+    success: false
+  '7':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/7.jpg
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+    success: false
+  '8':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/8.jpg
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id007
+      types:
+      - robot
+      - pickupable
+      - station
+    success: false
+  '9':
+    image: results/oracle_predicates/burger/runs/0/6_partial/transitions/2025-9-21-16-53-23/9.jpg
+    skill: !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      semantics: *id007
+      types:
+      - robot
+      - cookable
+    success: false

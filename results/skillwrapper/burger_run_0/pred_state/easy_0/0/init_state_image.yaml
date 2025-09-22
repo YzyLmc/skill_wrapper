@@ -1,0 +1,331 @@
+!PredicateState
+predicates:
+- predicate: !Predicate
+    name: gripper_empty
+    params: !!python/tuple
+    - Robot
+    semantic: "the robot\u2019s gripper holds no pickupable object (no pickupable\
+      \ is attached to or overlapping the robot\u2019s hand)."
+    types: !!python/tuple
+    - robot
+  truth_value: true
+- predicate: !Predicate
+    name: holding
+    params: !!python/tuple
+    - Robot
+    - Lettuce
+    semantic: "the pickupable visually overlaps the robot\u2019s gripper, indicating\
+      \ the robot is holding that pickupable."
+    types: &id001 !!python/tuple
+    - robot
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: holding
+    params: !!python/tuple
+    - Robot
+    - TopBun
+    semantic: "the pickupable visually overlaps the robot\u2019s gripper, indicating\
+      \ the robot is holding that pickupable."
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: holding
+    params: !!python/tuple
+    - Robot
+    - BottomBun
+    semantic: "the pickupable visually overlaps the robot\u2019s gripper, indicating\
+      \ the robot is holding that pickupable."
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: holding
+    params: !!python/tuple
+    - Robot
+    - Patty
+    semantic: "the pickupable visually overlaps the robot\u2019s gripper, indicating\
+      \ the robot is holding that pickupable."
+    types: *id001
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Lettuce
+    - TopBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: &id002 !!python/tuple
+    - pickupable
+    - pickupable
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Lettuce
+    - BottomBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Lettuce
+    - Patty
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - TopBun
+    - Lettuce
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - TopBun
+    - BottomBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - TopBun
+    - Patty
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - BottomBun
+    - Lettuce
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - BottomBun
+    - TopBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - BottomBun
+    - Patty
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Patty
+    - Lettuce
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Patty
+    - TopBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: stacked_on
+    params: !!python/tuple
+    - Patty
+    - BottomBun
+    semantic: the first pickupable visually overlaps and occludes the second pickupable
+      such that the second lies underneath, indicating the first is resting on the
+      second.
+    types: *id002
+  truth_value: false
+- predicate: !Predicate
+    name: on_cutting_board
+    params: !!python/tuple
+    - Lettuce
+    semantic: the cuttable visually overlaps and occludes the cutting board surface
+      so that the board lies underneath the cuttable.
+    types: !!python/tuple
+    - cuttable
+  truth_value: false
+- predicate: !Predicate
+    name: cut_into_pieces
+    params: !!python/tuple
+    - Lettuce
+    semantic: the cuttable appears as at least two non-touching visible pieces (its
+      mask has multiple disconnected regions), indicating it is cut rather than a
+      single intact piece.
+    types: !!python/tuple
+    - cuttable
+  truth_value: false
+- predicate: !Predicate
+    name: top_most
+    params: !!python/tuple
+    - Lettuce
+    semantic: the target pickupable is the topmost item in its stack on the ground
+      or a surface for a robot to pick up (nothing rests on it).
+    types: &id003 !!python/tuple
+    - pickupable
+  truth_value: true
+- predicate: !Predicate
+    name: top_most
+    params: !!python/tuple
+    - TopBun
+    semantic: the target pickupable is the topmost item in its stack on the ground
+      or a surface for a robot to pick up (nothing rests on it).
+    types: *id003
+  truth_value: true
+- predicate: !Predicate
+    name: top_most
+    params: !!python/tuple
+    - BottomBun
+    semantic: the target pickupable is the topmost item in its stack on the ground
+      or a surface for a robot to pick up (nothing rests on it).
+    types: *id003
+  truth_value: true
+- predicate: !Predicate
+    name: top_most
+    params: !!python/tuple
+    - Patty
+    semantic: the target pickupable is the topmost item in its stack on the ground
+      or a surface for a robot to pick up (nothing rests on it).
+    types: *id003
+  truth_value: true
+- predicate: !Predicate
+    name: station_unoccupied
+    params: !!python/tuple
+    - Stove
+    semantic: "no pickupable visually overlaps or occludes the station\u2019s top\
+      \ surface; nothing is resting on the station."
+    types: &id004 !!python/tuple
+    - station
+  truth_value: true
+- predicate: !Predicate
+    name: station_unoccupied
+    params: !!python/tuple
+    - CuttingBoard
+    semantic: "no pickupable visually overlaps or occludes the station\u2019s top\
+      \ surface; nothing is resting on the station."
+    types: *id004
+  truth_value: true
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - Lettuce
+    - Stove
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: &id005 !!python/tuple
+    - pickupable
+    - station
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - Lettuce
+    - CuttingBoard
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - TopBun
+    - Stove
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - TopBun
+    - CuttingBoard
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - BottomBun
+    - Stove
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - BottomBun
+    - CuttingBoard
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - Patty
+    - Stove
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: on_station
+    params: !!python/tuple
+    - Patty
+    - CuttingBoard
+    semantic: "the pickupable visually overlaps and occludes the station\u2019s top\
+      \ surface so that the station lies underneath the pickupable, indicating the\
+      \ pickupable is resting on that station."
+    types: *id005
+  truth_value: false
+- predicate: !Predicate
+    name: cooked
+    params: !!python/tuple
+    - Patty
+    semantic: "the cookable\u2019s surface appears browned/darkened with visible sear\
+      \ or grill marks (not raw-pink), indicating it is in a cooked state."
+    types: !!python/tuple
+    - cookable
+  truth_value: false

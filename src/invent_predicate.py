@@ -487,7 +487,7 @@ def in_alpha(possible_groundings, transition: list[PredicateState, PredicateStat
                 return True
     return False
 
-def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> list[list[tuple, tuple]]:
+def detect_mismatch(lifted_skill: Skill, skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, pred_type: str) -> list[list[tuple, tuple]]: # TODO: remove small partitions and then detect mismatch, when there are enough many transitions
     """
     Find mismatch state pairs where they both belong to Union Precondition or Effect.
 
@@ -675,7 +675,7 @@ def score_by_partition(lifted_skill: Skill, hypothetical_grounded_predicate_trut
             for task_step_tuple, transition_meta in task2state.items():
                 state_in_alpha = False
                 # first iteration when no operators set to true so we invent
-                assert hypothetical_operators, "There must be at least one operator learned"
+                # assert hypothetical_operators, "There must be at least one operator learned"
                 for operator, skill_param2pid in hypothetical_operators:
                     possible_groundings = generate_possible_groundings(operator, grounded_skill, skill_param2pid, type_dict)
                     # if not possible_groundings: breakpoint()
@@ -753,7 +753,7 @@ def calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_v
 
     return skill2operator
 
-def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounded_predicate_truth_value_log, tasks, type_dict, threshold={"precond":0.5, "eff":0.5}) -> list[Predicate]:
+def filter_predicates(skill2operator, lifted_pred_list: list[Predicate], grounded_predicate_truth_value_log, tasks, type_dict, threshold={"precond":0.6, "eff":0.6}) -> list[Predicate]:
     """
     After running all iterations in main function, score all predicates again
     This function will only be called in main.
@@ -1020,7 +1020,9 @@ def partition_by_lifted_effect(skill2task2state, type_dict, skill=None) -> dict:
         skill2partition[lifted_skill] = [task_step_tuple_list for eff, task_step_tuple_list in eff2task_step_list.items()]
         # filter out partitions with few elements
         num_parts = len(sum(skill2partition[lifted_skill], []))
-        skill2partition[lifted_skill] = [part for part in skill2partition[lifted_skill] if len(part) > max(1, num_parts * 0.15)] # NOTE: each partition must contain at least some amount of tasks
+        # if lifted_skill.name == "Pick":
+        #     breakpoint()
+        skill2partition[lifted_skill] = [part for part in skill2partition[lifted_skill] if len(part) > max(1, num_parts * 0.05) or num_parts < 3] # NOTE: each partition must contain at least some amount of tasks
 
     return skill2partition
 

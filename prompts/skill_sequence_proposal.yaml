@@ -4,7 +4,7 @@
 
 dorfl:
   system_prompt: >
-    A robot with one arm is attempting to learn the preconditions and effects 
+    A robot with two arms is attempting to learn the preconditions and effects 
     for a finite set of skills by executing exploratory skill sequences and exploring the environment.
 
   prompt: |
@@ -25,10 +25,10 @@ dorfl:
     Certain skills have similar names and arguments, but different preconditions and effects. 
     Using the list of objects and the skill preconditions / effects learned, 
     generate 5 skill sequences and their sequence of skills such that: 
-    (1) the skill sequences purposefully violate skill preconditions often 
-    (2) the ordering of skills in each skill sequence is unique 
-    (3) at least 1 unexplored skill pair is used in each skill sequence 
-    (4) all skill sequences have at least 12 skills in sequence.
+    (1) the skill sequences should have each skill executed successfully once but violate their preconditions occasionally.
+    (2) at least 1 unexplored skill pair is used in each skill sequence.
+    (3) all skill sequences have at least 15 skills in sequence.
+    (4) there are no same skills with same arguments consecutively in the sequence.
 
     Output only the sequence of skills to execute, 
     ensuring to follow the naming/syntax/arguments for skills provided. 
@@ -98,10 +98,9 @@ burger:
       Using the list of objects and the skill preconditions / effects learned, 
       generate 5 skill sequences and their sequence of skills such that: 
       (1) the skill sequences should violate their preconditions occasionally.
-      (2) the ordering of skills in each skill sequence is unique.
-      (3) at least 1 unexplored skill pair is used in each skill sequence.
-      (4) all skill sequences have at least 15 skills in sequence.
-      (5) there are no same skills with same arguments consecutively in the sequence.
+      (2) at least 1 unexplored skill pair is used in each skill sequence.
+      (3) all skill sequences have at least 15 skills in sequence.
+      (4) there are no same skills with same arguments consecutively in the sequence.
 
       Output only the sequence of skills to execute, 
       ensuring to follow the naming/syntax/arguments for skills provided. 

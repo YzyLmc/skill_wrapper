@@ -1,0 +1,63 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    robot: robot that executes the pick skill.
+  types:
+  - robot
+  - pickupable
+: - "(:action Pick_35 \n:parameters ( ?pickupable_p2 - pickupable  ?robot_p0 - robot\
+    \ )\n:precondition (and \n\t(clear ?pickupable_p2 )\n\t(nothing ?robot_p0 )\n\t\
+    (not (has_item ?robot_p0 ?pickupable_p2))\n) \n:effect (and \n \t(has_item ?robot_p0\
+    \ ?pickupable_p2) \n\t(not (clear ?pickupable_p2 ))\n\t(not (nothing ?robot_p0\
+    \ ))\n ) \n)\n"
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be dropped.
+    robot: robot that executes the place skill.
+    station: the receptacle onto which object is dropped.
+  types:
+  - robot
+  - pickupable
+  - station
+: []
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    pickupable: The second object to be underneath the first one.
+    robot: robot that executes the stack skill.
+  types:
+  - robot
+  - pickupable
+  - pickupable
+: - "(:action Stack_36 \n:parameters ( ?pickupable_p2 - pickupable  ?pickupable_p3\
+    \ - pickupable  ?robot_p0 - robot )\n:precondition (and \n\t(not (= ?pickupable_p2\
+    \ ?pickupable_p3))\n\t(clear ?pickupable_p3 )\n\t(has_item ?robot_p0 ?pickupable_p2)\n\
+    \t(not (atop ?pickupable_p2 ?pickupable_p3))\n\t(not (nothing ?robot_p0 ))\n)\
+    \ \n:effect (and \n \t(atop ?pickupable_p2 ?pickupable_p3) \n\t(clear ?pickupable_p2\
+    \ ) \n\t(nothing ?robot_p0 ) \n\t(not (clear ?pickupable_p3 ))\n\t(not (has_item\
+    \ ?robot_p0 ?pickupable_p2))\n ) \n)\n"
+? !Skill
+  name: Cut
+  params: []
+  semantics:
+    cuttable: the object that is being cut.
+    robot: robot that executes the cut skill.
+  types:
+  - robot
+  - cuttable
+: []
+? !Skill
+  name: Cook
+  params: []
+  semantics:
+    cookable: the object that is being cooked.
+    robot: robot that executes the cook skill.
+  types:
+  - robot
+  - cookable
+: []

@@ -23,6 +23,8 @@ def main(cfg: DictConfig):
 
     # list all directories under problem_dir
     results = {}
+    suc_list = []
+    pb_list = []
     for root, dirs, files in os.walk(problem_dir):
         for d in dirs:
             root_components = root.split(os.sep)[-3:]
@@ -55,14 +57,21 @@ def main(cfg: DictConfig):
                 results[d]["planning_budget"] = min(i for i, suc in enumerate(results[d]["suc"]) if suc)
             else:
                 results[d]["solved"] = False
-                results[d]["planning_budget"] = len(results[d]["suc"])
+                # results[d]["planning_budget"] = len(results[d]["suc"])
+                results[d]["planning_budget"] = 10
+
+            suc_list.append(results[d]["solved"])
+            pb_list.append(results[d]["planning_budget"])
+
             # if d == 0:
             #     breakpoint()
             # except: # no plan found
             #     results[d] = {"suc": [], "solved": False, "planning_budget": 0}
 
     assert results, "No results found!"
-
+    print("Success rate:", sum(suc_list) / len(results), "Average planning budget:", sum(pb_list) / len(results))
+    results["success_rate"] = sum(suc_list) / len(results)
+    results["avg_planning_budget"] = sum(pb_list) / len(results)
     log_file = os.path.join("results", cfg.baseline, cfg.env, f"{cfg.env}_{root_components[-3]}_results.json")
     save_to_file(results, log_file)
     print("Results saved to", log_file)
