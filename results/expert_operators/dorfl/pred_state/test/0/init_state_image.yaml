@@ -50,6 +50,15 @@ predicates:
   truth_value: true
 
 - predicate: !Predicate
+    name: is_upright
+    params: !!python/tuple
+    - Knife
+    semantic: "A `utensil` object (such as a knife) is upright and graspable."
+    types: !!python/tuple
+    - utensil
+  truth_value: true
+
+- predicate: !Predicate
     name: is_opened
     params: !!python/tuple
     - PeanutButterJar

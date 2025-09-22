@@ -33,10 +33,12 @@
     \ \t\t:parameters (?robot - robot ?utensil - utensil)\
     \ \n\t\t:precondition (and\ 
     \ \n\t\t\t(righthand_empty ?robot)\
+    \ \n\t\t\t(is_upright ?utensil)\
     \ \n\t\t\t(not (in_righthand ?robot ?utensil))\
     \ \n\t\t)\
     \ \n\t\t:effect (and\
     \ \n\t\t\t(not (righthand_empty ?robot))\
+    \ \n\t\t\t(not (is_upright ?utensil))\
     \ \n\t\t\t(in_righthand ?robot ?utensil)\
     \ \n\t\t)\
     \ \n\t)"

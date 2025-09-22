@@ -10,6 +10,7 @@
 	(lefthand_empty Robot)
 	(righthand_empty Robot)
 	(is_clean Knife)
+	(is_upright Knife)
 )
 
 (:goal (and

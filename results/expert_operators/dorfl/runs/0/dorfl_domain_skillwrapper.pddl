@@ -3,14 +3,14 @@
 	(:requirements :adl :typing :equality :conditional-effects)
 
 	(:types
-		PeanutButterJar - openable
-		Robot - robot
-		Knife - utensil
 		robot - object
+		PeanutButterJar - openable
+		food - object
+		Robot - robot
+		utensil - object
 		Bread - food
 		openable - object
-		utensil - object
-		food - object
+		Knife - utensil
 	)
 
 	(:predicates
@@ -20,6 +20,7 @@
 		(in_righthand ?robot - robot ?utensil - utensil)
 		(is_opened ?openable - openable)
 		(is_clean ?utensil - utensil)
+		(is_upright ?utensil - utensil)
 		(contains_ingredient ?utensil - utensil)
 		(spread_on_top ?food - food)
 	)
@@ -40,10 +41,12 @@
  		:parameters (?robot - robot ?utensil - utensil) 
 		:precondition (and   
 			(righthand_empty ?robot) 
+			(is_upright ?utensil) 
 			(not (in_righthand ?robot ?utensil)) 
 		) 
 		:effect (and 
 			(not (righthand_empty ?robot)) 
+			(not (is_upright ?utensil)) 
 			(in_righthand ?robot ?utensil) 
 		) 
 	)

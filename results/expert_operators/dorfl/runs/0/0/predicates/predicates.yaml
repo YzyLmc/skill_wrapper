@@ -43,6 +43,13 @@
   - utensil
 
 - !Predicate
+  name: is_upright
+  params: !!python/tuple []
+  semantic: "A `utensil` object (such as a knife) is upright and graspable."
+  types: !!python/tuple
+  - utensil
+
+- !Predicate
   name: contains_ingredient
   params: !!python/tuple []
   semantic: "A `utensil` object contains a spreadable ingredient."
