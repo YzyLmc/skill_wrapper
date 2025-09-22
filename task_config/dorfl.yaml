@@ -73,12 +73,11 @@ objects:
       - openable
   Knife:
     types:
-      - pickupable
       - utensil
+
   Bread:
     types:
       - food
-  
   Robot:
     types:
       - robot
