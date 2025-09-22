@@ -1,0 +1,59 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: LeftArmPick
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: &id001 {}
+      types:
+      - robot
+      - openable
+    - !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    - !Skill
+      name: RightArmPick
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    - !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - openable
+    - !Skill
+      name: Spread
+      params:
+      - Robot
+      - Knife
+      - Bread
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - food
+  all_plans:
+  - - (leftarmpick robot peanutbutterjar)
+    - (open robot peanutbutterjar)
+    - (rightarmpick robot knife)
+    - (scoop robot knife peanutbutterjar)
+    - (spread robot knife bread)

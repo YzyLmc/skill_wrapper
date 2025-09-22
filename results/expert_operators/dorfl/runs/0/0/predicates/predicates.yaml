@@ -1,0 +1,58 @@
+- !Predicate
+  name: lefthand_empty
+  params: !!python/tuple []
+  semantic: "The `robot` is not holding anything in its left hand."
+  types: !!python/tuple
+  - robot
+
+- !Predicate
+  name: righthand_empty
+  params: !!python/tuple []
+  semantic: "The `robot` is not holding anything in its right hand."
+  types: !!python/tuple
+  - robot
+
+- !Predicate
+  name: in_lefthand
+  params: !!python/tuple []
+  semantic: "The `robot` is holding an `openable` object in its left hand."
+  types: !!python/tuple
+  - robot
+  - openable
+
+- !Predicate
+  name: in_righthand
+  params: !!python/tuple []
+  semantic: "The `robot` is holding an `utensil` object in its left hand."
+  types: !!python/tuple
+  - robot
+  - utensil
+
+- !Predicate
+  name: is_opened
+  params: !!python/tuple []
+  semantic: "An `openable` object (such as a jar) is opened."
+  types: !!python/tuple
+  - openable
+
+- !Predicate
+  name: is_clean
+  params: !!python/tuple []
+  semantic: "A `utensil` object (such as a knife) is clean."
+  types: !!python/tuple
+  - utensil
+
+- !Predicate
+  name: contains_ingredient
+  params: !!python/tuple []
+  semantic: "A `utensil` object contains a spreadable ingredient."
+  types: !!python/tuple
+  - utensil
+
+- !Predicate
+  name: spread_on_top
+  params: !!python/tuple []
+  semantic: "The `food` object contains a spreadable ingredient on top of it."
+  types: !!python/tuple
+  - food
+

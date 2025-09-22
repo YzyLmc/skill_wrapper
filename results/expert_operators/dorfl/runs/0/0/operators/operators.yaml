@@ -1,0 +1,139 @@
+? !Skill
+  name: LeftArmPick
+  params: []
+  semantics:
+    robot: the robot that performs the pick action with its left arm.
+    openable: the openable object to be picked up.
+  types:
+  - robot
+  - openable
+: - "(:action LeftArmPick\n\
+    \ \t\t:parameters (?robot - robot ?openable - openable)\
+    \ \n\t\t:precondition (and\ 
+    \ \n\t\t\t(lefthand_empty ?robot)\
+    \ \n\t\t\t(not (in_lefthand ?robot ?openable))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (lefthand_empty ?robot))\
+    \ \n\t\t\t(in_lefthand ?robot ?openable)\
+    \ \n\t\t)\
+    \ \n\t)"
+
+
+? !Skill
+  name: RightArmPick
+  params: []
+  semantics:
+    robot: the robot that performs the pick action with its right arm.
+    utensil: the utensil to be picked up.
+  types:
+  - robot
+  - utensil
+: - "(:action RightArmPick\n\
+    \ \t\t:parameters (?robot - robot ?utensil - utensil)\
+    \ \n\t\t:precondition (and\ 
+    \ \n\t\t\t(righthand_empty ?robot)\
+    \ \n\t\t\t(not (in_righthand ?robot ?utensil))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (righthand_empty ?robot))\
+    \ \n\t\t\t(in_righthand ?robot ?utensil)\
+    \ \n\t\t)\
+    \ \n\t)"
+
+
+? !Skill
+  name: Drop
+  params: []
+  semantics:
+    robot: the robot that performs the drop action.
+    utensil: the utensil to be dropped.
+  types:
+  - robot
+  - utensil
+: - "(:action Drop\n\
+    \ \t\t:parameters (?robot - robot ?utensil - utensil)\
+    \ \n\t\t:precondition (and\ 
+    \ \n\t\t\t(not (righthand_empty ?robot))\
+    \ \n\t\t\t(in_righthand ?robot ?utensil)\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(righthand_empty ?robot)\
+    \ \n\t\t\t(not (in_righthand ?robot ?utensil))\
+    \ \n\t\t)\
+    \ \n\t)"
+
+
+? !Skill
+  name: Open
+  params: []
+  semantics:
+    robot: the robot that performs the open action.
+    openable: the container that can be opened.
+  types:
+  - robot
+  - openable
+: - "(:action Open\n\
+    \ \t:parameters (?robot - robot ?openable - openable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(not (is_opened ?openable))\ 
+    \ \n\t\t\t(in_lefthand ?robot ?openable)\
+    \ \n\t\t\t(not (lefthand_empty ?robot))\
+    \ \n\t\t\t(righthand_empty ?robot)\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_opened ?openable)\
+    \ \n\t\t)\
+    \ \n\t)"
+
+
+? !Skill
+  name: Scoop
+  params: []
+  semantics:
+    robot: the robot that performs the scoop action.
+    utensil: the utensil used to scoop from a container.
+    openable: the container that can be opened to be scooped from.
+  types:
+  - robot
+  - utensil
+  - openable
+: - "(:action Scoop\n\
+    \ \t:parameters (?robot - robot ?knife - utensil ?jar - openable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(in_lefthand ?robot ?jar)\
+    \ \n\t\t\t(in_righthand ?robot ?knife)\
+    \ \n\t\t\t(is_opened ?jar)\
+    \ \n\t\t\t(is_clean ?knife)\
+    \ \n\t\t\t(not (contains_ingredient ?knife))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(contains_ingredient ?knife)\
+    \ \n\t\t\t(not (is_clean ?knife))\
+    \ \n\t\t)\
+    \ \n\t)"
+
+? !Skill
+  name: Spread
+  params: []
+  semantics:
+    robot: the robot that performs the spread action.
+    utensil: the utensil used to spread ingredients on food.
+    food: the food that need ingredients to be spread on.
+  types:
+  - robot
+  - utensil
+  - food
+: - "(:action Spread\n\
+    \ \t\t:parameters (?robot - robot ?knife - utensil ?bread - food)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(in_righthand ?robot ?knife)\
+    \ \n\t\t\t(contains_ingredient ?knife)\
+    \ \n\t\t\t(not (spread_on_top ?bread))\ 
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (contains_ingredient ?knife))\ 
+    \ \n\t\t\t(spread_on_top ?bread)\
+    \ \n\t\t)\
+    \ \n\t)"
+
