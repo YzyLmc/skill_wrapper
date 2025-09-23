@@ -28,7 +28,7 @@ from src.skill_sequence_proposing import SkillSequenceProposing
 from src.data_structure import Skill, PredicateState, Predicate
 
 
-def propose_and_execute(cfg, save_dir, steps=10):
+def propose_and_execute(cfg, save_dir, steps=15):
     task_config_fpath = f"task_config/{cfg.env}.yaml"
     task_config = load_from_file(task_config_fpath)
 
@@ -54,6 +54,7 @@ def propose_and_execute(cfg, save_dir, steps=10):
         grounded_skill = lifted_skill.ground_with(params)
 
         skill_sequence.append(grounded_skill)
+    print("skill sequence:", [str(skill) for skill in skill_sequence])
     save_path = get_save_fpath(f"{save_dir}/skill_sequences", "skill_sequence", "yaml")
     save_to_file(skill_sequence, save_path)
     print(f"Saved random skill sequence to {save_path}")
@@ -102,9 +103,6 @@ def main(cfg: DictConfig):
     log_save_path = setup_logging(log_dir, cfg.env) # configure logging
 
     model = GPT4(engine=cfg.model)
-
-    # init skill sequence proposing system
-    skill_sequence_proposing = SkillSequenceProposing(task_config_fpath=task_config_fpath)
     
     # main loop
     iter_idx = cfg.iter_idx if cfg.iter_idx else 0

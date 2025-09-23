@@ -5,6 +5,12 @@ tasks/
 outputs/
 omnigibson/
 dorfl_env/output_trajs/
-
+test_tasks/
+.hydra/
+0_tasks/
 **/__pycache__/
 **/*.pyc
+*.log
+results/**/*.jpg
+results/**/*.png
+**/cached

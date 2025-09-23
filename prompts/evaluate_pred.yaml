@@ -1,19 +1,10 @@
 # prompts for evaluating the truth value of predicates
 ---
-
-dorfl: |
-  A robot with two arms is executing skills in a table top setting. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene. All images are taken from the robot's egocentric camera, so the gripper of the left of the image is the left gripper, and the gripper on the right is the right gripper.
-  `[LIFTED_PRED]`: [SEMANTIC]
-
 franka: |
   A robot arm is executing skills in a table top setting. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
   `[LIFTED_PRED]`: [SEMANTIC]
 
-spot: |
-  A quadraped robot with an arm on its back is executing mobile manipulation tasks. Given the following egocentric observation from the robot's body camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
-  `[LIFTED_PRED]`: [SEMANTIC]
-
-burger: |
+burger_cache: |
   A kitchen robot with a torso and an arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen, and overlapping objects means the objects are stacked together (higher objects in the stack will occlude lower objects for visualization purpose). Each object has annotation of its name that does not cause any obstruction. 
 
   Given the following observation, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
@@ -33,3 +24,21 @@ burger_step_2: |
   """
   [RESPONSE]
   ""
+
+dorfl_step_1: |
+  Given the egocentric observation of the robot, the object types, and the list of predicates, what are the true grounded predicates? (The left gripper is the gripper close to the peanut butter jar, the right gripper is the gripper close to the red cup. The peanut butter jar has a lid in red and black.)
+  Objects:
+  [OBJECTS]
+
+  Predicates: 
+  [PREDICATES]
+
+dorfl_step_2: |
+  Summarize what the true grounded predicates are from this response, and list them in the format of predicate_name(arg1, arg2, ...) in separate lines with no any formatting. If the response contains typos of object names or redundant indices, you should correct them. Correct object names are: [OBJECT_NAMES]. If the response include redundent predicates that are not in this list, you should filter them. Correct predicates are: [PRED_NAMES]. The response is:
+  """
+  [RESPONSE]
+  ""
+
+spot: |
+  A quadraped robot with an arm on its back is executing mobile manipulation tasks. Given the following egocentric observation from the robot's body camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
+  `[LIFTED_PRED]`: [SEMANTIC]

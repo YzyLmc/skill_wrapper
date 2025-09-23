@@ -112,6 +112,7 @@ def generate_pred_pool(tasks, task_config, lifted_pred_list: list[Predicate], mo
     # parse the parameters from the output string into predicate parameters
     # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
     [print(p, p.semantic) for p in new_pred_list]
+    breakpoint()
     return new_pred_list
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
@@ -156,23 +157,20 @@ def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pr
     replay_buffer, grounded_predicate_dictionary, grounded_skill_dictionary are from task proposal.
     skill2tasks:: dict(skill:dict(id: dict('s0':img_path, 's1':img_path, 'obj':str, 'loc':str, 'success': Bool)))
     '''
-    for lifted_skill in skill2operator:
-        grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
-        for new_lifted_pred in pred_pool:
-            if not new_lifted_pred in lifted_pred_list:
-                hypothetical_pred_list = deepcopy(lifted_pred_list)
-                hypothetical_pred_list.append(new_lifted_pred)
-                hypothetical_grounded_predicate_truth_value_log = deepcopy(grounded_predicate_truth_value_log)
-                hypothetical_grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, hypothetical_pred_list, type_dict, hypothetical_grounded_predicate_truth_value_log, env, skill=lifted_skill)
-                if True: # Add predicate directly
-                    lifted_pred_list.append(new_lifted_pred)
-                    grounded_predicate_truth_value_log = hypothetical_grounded_predicate_truth_value_log
-                    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, lifted_pred_list)
-                    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env) # udpate for all skills
-    
-    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
 
-    return skill2operator, lifted_pred_list, grounded_predicate_truth_value_log
+    for lifted_pred in pred_pool:
+        # not predicate with same name
+        dup = [pred for pred in lifted_pred_list if pred.name == lifted_pred.name]
+        if dup:
+            lifted_pred_list.append(lifted_pred)
+
+    grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
+    filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
+    skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
+    
+    return skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log
 
 @hydra.main(version_base=None, config_path="../hydra_conf", config_name="fm_invent_config")
 def main(cfg: DictConfig):
