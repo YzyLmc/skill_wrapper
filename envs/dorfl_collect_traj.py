@@ -9,7 +9,7 @@ import argparse
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
 from datetime import datetime
-from dorfl_env import DorflEnv
+from dorfl.dorfl_env import DorflEnv
 from src.data_structure import Skill
 
 

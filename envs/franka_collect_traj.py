@@ -9,7 +9,7 @@ import argparse
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
 from datetime import datetime
-from franka_env import FrankaEnv
+from franka.franka_env import FrankaEnv
 from src.data_structure import Skill
 
 
