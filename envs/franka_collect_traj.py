@@ -14,8 +14,9 @@ from src.data_structure import Skill
 
 
 class FrankaTrajectoryCollector:
-    def __init__(self):
-        self.env = FrankaEnv()
+    def __init__(self, scene_id=1):
+        self.env = FrankaEnv(scene_id=scene_id)
+        self.scene_id = scene_id
         self.yaml_domain_path = "../../task_config/franka.yaml"
         self.task_config = self.load_yaml(self.yaml_domain_path)
         
@@ -264,10 +265,10 @@ class FrankaTrajectoryCollector:
 
 
 def main():
-    collector = FrankaTrajectoryCollector()
+    collector = FrankaTrajectoryCollector(scene_id=args.scene_id)
     
     # Collect all trajectories from trajs_to_use.yaml
-    print("Loading trajectories from trajs_to_use.yaml...")
+    print(f"Loading trajectories from trajs_to_use.yaml for scene {args.scene_id}...")
     results = collector.collect_all_trajectories()
     
     print(f"\nTrajectory collection completed!")
@@ -283,11 +284,12 @@ def main():
 
 
 if __name__ == "__main__":
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("--traj_yaml", type=str, default="trajs_to_use.yaml")
-    argparser.add_argument("--output_dir", type=str, default="output")
-    argparser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
-    argparser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
-    argparser.add_argument("--baseline", type=str, choices=["skillwrapper", "oracle_predicates"], default="skillwrapper", help="which baseline to run")
+    argparser = argparse.ArgumentParser(description="Franka Trajectory Collector")
+    argparser.add_argument("--scene_id", type=int, required=True, choices=[1, 2, 3], help="Scene ID to initialize the environment with (1, 2, or 3)")
+    argparser.add_argument("--traj_yaml", type=str, default="trajs_to_use.yaml", help="Path to trajectory YAML file")
+    argparser.add_argument("--output_dir", type=str, default="output", help="Output directory for collected trajectories")
+    argparser.add_argument("--run_idx", type=int, default=0, help="Index of the run that produced the best operators")
+    argparser.add_argument("--iter_idx", type=int, help="Index of iter run the full refinement and proposal loop")
+    argparser.add_argument("--baseline", type=str, choices=["skillwrapper", "oracle_predicates"], default="skillwrapper", help="Which baseline to run")
     args = argparser.parse_args()
     main()
