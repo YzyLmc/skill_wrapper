@@ -17,7 +17,7 @@ from src.data_structure import Skill
 class DorflTrajectoryCollector:
     def __init__(self):
         self.env = DorflEnv()
-        self.yaml_domain_path = "../task_config/dorfl.yaml"
+        self.yaml_domain_path = "../../task_config/dorfl.yaml"
         self.task_config = self.load_yaml(self.yaml_domain_path)
         
         # Action mapping from convert_dorfl_data.py
