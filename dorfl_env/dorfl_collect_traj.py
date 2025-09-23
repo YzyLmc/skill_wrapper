@@ -58,7 +58,8 @@ class DorflTrajectoryCollector:
     def convert_skill_seq_to_actions(self, skill_sequence):
         """Convert skill strings to action integers"""
         actions = []
-        for skill_str in skill_sequence:
+        for skill in skill_sequence:
+            skill_str = str(skill)
             if skill_str in self.skill_to_action:
                 actions.append(self.skill_to_action[skill_str])
             else:
@@ -79,7 +80,7 @@ class DorflTrajectoryCollector:
         time_now = datetime.now()
         timestamp = str(time_now.year) + "-" + str(time_now.month) + "-" + str(time_now.day) + "-" + str(time_now.hour) + "-" + str(time_now.minute) + "-" + str(time_now.second)
         # timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        data_folder = "output_trajs"
+        data_folder = "transitions"
         # if traj_name:
         #     output_dir = f"{data_folder}/{traj_name}"
         # else:
@@ -96,7 +97,7 @@ class DorflTrajectoryCollector:
         }
         
         # Save initial state image
-        pre_img_name = f"0.jpg"
+        pre_img_name = f"0.png"
         self.save_image(obs, output_dir, pre_img_name)
         
         # Execute each action in the sequence
@@ -143,7 +144,6 @@ class DorflTrajectoryCollector:
         
         # Generate skill wrapper format YAML
         skill_wrapper_data = self.convert_to_skill_wrapper_format(trajectory_data, output_dir)
-        breakpoint()
         # Save skill wrapper YAML
         yaml_path = os.path.join(data_folder, "tasks.yaml")
         if os.path.exists(yaml_path):
@@ -179,10 +179,10 @@ class DorflTrajectoryCollector:
         seq = trajectory_data["seq"]
         
         skill_wrapper_result = {}
-        
+        dir_prefix = f"results/{args.baseline}/dorfl/runs/{args.run_idx}/{args.iter_idx}_partial"
         # Initial state (step 0)
-        skill_wrapper_result[0] = {
-            "image": f"transitions/{timestamp}/0.png",
+        skill_wrapper_result[str(0)] = {
+            "image": f"{dir_prefix}/transitions/{timestamp}/0.png",
             "skill": None,
             "success": None
         }
@@ -197,9 +197,9 @@ class DorflTrajectoryCollector:
             
             skill = Skill(name=skill_name, params=parameters, types=types)
             
-            skill_wrapper_result[i + 1] = {
+            skill_wrapper_result[str(i + 1)] = {
                 "skill": skill,
-                "image": f"transitions/{timestamp}/{i+1}.png", 
+                "image": f"{dir_prefix}/transitions/{timestamp}/{i+1}.png", 
                 "success": traj["success"]
             }
         
@@ -222,13 +222,18 @@ class DorflTrajectoryCollector:
         """
         Load trajectories from trajs_to_use.yaml and collect data for each one
         """
-        trajectories = self.load_trajectories_from_yaml(args.traj_yaml)
-        breakpoint()
+        trajectories = [self.load_trajectories_from_yaml(args.traj_yaml)]
         all_results = {}
-        
-        for traj_name, traj_data in trajectories.items():
+        # breakpoint()
+
+        for skill_sequence in trajectories:
+
+            time_now = datetime.now()
+            timestamp = str(time_now.year) + "-" + str(time_now.month) + "-" + str(time_now.day) + "-" + str(time_now.hour) + "-" + str(time_now.minute) + "-" + str(time_now.second)
+            traj_name = timestamp
+
             print(f"\nProcessing trajectory: {traj_name}")
-            skill_sequence = traj_data['seq']
+   
             print(f"Skills: {skill_sequence}")
             
             # Convert skill strings to action integers
@@ -275,5 +280,8 @@ if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument("--traj_yaml", type=str, default="trajs_to_use.yaml")
     argparser.add_argument("--output_dir", type=str, default="output")
+    argparser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
+    argparser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
+    argparser.add_argument("--baseline", type=str, choices=["skillwrapper", "oracle_predicates"], default="skillwrapper", help="which baseline to run")
     args = argparser.parse_args()
     main()
