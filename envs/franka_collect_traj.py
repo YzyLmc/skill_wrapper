@@ -17,7 +17,7 @@ class FrankaTrajectoryCollector:
     def __init__(self, scene_id=1):
         self.env = FrankaEnv(scene_id=scene_id)
         self.scene_id = scene_id
-        self.yaml_domain_path = "../../task_config/franka.yaml"
+        self.yaml_domain_path = "../task_config/franka.yaml"
         self.task_config = self.load_yaml(self.yaml_domain_path)
         
         # Action mapping based on franka environment actions
