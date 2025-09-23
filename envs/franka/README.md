@@ -25,6 +25,7 @@ bit 5 - plate:
 - 2 - has teapot
 - 3 - has bowl
 - 4 - has sponge
+- 5 - dirty
 bit 6 - mug_location:
 - 0 - not in scene
 - 1 - at origin

@@ -189,6 +189,8 @@ class FrankaEnv(Env):
             self.state = np.array([0, 1, 1, 0, 1, 0, 0])
         elif self.scene_id == 2:
             self.state = np.array([0, 0, 1, 1, 5, 0, 0])
+        elif self.scene_id == 3:
+            self.state = np.array([0, 1, 0, 1, 0, 1, 0])
         else:
             raise ValueError(f"Unsupported scene_id: {self.scene_id}. Currently only scene_id=1 and scene_id=2 are supported.")
         observation = self._get_curr_image()
