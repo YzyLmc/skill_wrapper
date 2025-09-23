@@ -210,7 +210,7 @@ def postprocess_plans(plans: list[str], yaml_data: dict, skill2operator, method)
 
             if skill2operator and skill in skill2operator:
                 object_parts = action_parts[1:]
-                operator_tuple = [(op, skill_param2pid) for op, skill_param2pid in skill2operator[skill] if op.action_id.lower().split('_')[0] == action_parts[0].lower().split('_')[0]][0] # ugly, i know
+                operator_tuple = [(op, skill_param2pid) for op, skill_param2pid in skill2operator[skill] if op.action_id.lower() == action_parts[0].lower()][0] # ugly, i know
                 operator, skill_param2pid = operator_tuple
                 param_list: list = operator.parameters
                 param_list = [p for p in param_list if not p.type == ""]

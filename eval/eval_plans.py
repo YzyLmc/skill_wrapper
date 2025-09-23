@@ -1,5 +1,5 @@
 """
-For all problems, run the result skill sequence, return Done if the goal state is reached, and log them.
+For all problems, run the result skill sequence, return Done if the goal state is reached, and log them. For burger only
 
 Example command:
         python eval/eval_plans.py +dataset=easy +baseline=vila ++env=burger
