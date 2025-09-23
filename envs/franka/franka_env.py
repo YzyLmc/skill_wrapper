@@ -2,6 +2,7 @@ from gymnasium import Env, spaces
 import numpy as np
 import os
 import cv2
+import argparse
 
 class FrankaEnv(Env):
     def __init__(self, scene_id=1):
@@ -28,7 +29,7 @@ class FrankaEnv(Env):
         # bit 2 - teapot: 0=not in scene, 1=origin, 2=on plate, 3=in gripper
         # bit 3 - bowl: 0=not in scene, 1=origin, 2=on plate, 3=in gripper
         # bit 4 - sponge: 0=not in scene, 1=origin, 2=on plate, 3=in gripper
-        # bit 5 - plate: 0=not in scene, 1=empty, 2=has teapot, 3=has bowl, 4=has sponge
+        # bit 5 - plate: 0=not in scene, 1=empty, 2=has teapot, 3=has bowl, 4=has sponge, 5=dirty/has ranch
         # bit 6 - mug_location: 0=not in scene, 1=at origin
         # bit 7 - mug_content: 0=nothing, 1=beans
         self.scene_id = scene_id
@@ -120,7 +121,7 @@ class FrankaEnv(Env):
                 success = True
                 
         elif action == 10:  # Wipe plate with sponge
-            if gripper == 3 and sponge == 3 and plate != 0:  # holding sponge and plate in scene
+            if gripper == 3 and sponge == 3 and plate == 5:  # holding sponge and plate is dirty/has ranch
                 # plate becomes empty after wiping
                 next_state[4] = 1  # plate empty
                 success = True
@@ -186,8 +187,10 @@ class FrankaEnv(Env):
         super().reset(seed=seed)
         if self.scene_id == 1:
             self.state = np.array([0, 1, 1, 0, 1, 0, 0])
+        elif self.scene_id == 2:
+            self.state = np.array([0, 0, 1, 1, 5, 0, 0])
         else:
-            raise ValueError("Unsupported scene_id. Currently only scene_id=1 is supported.")
+            raise ValueError(f"Unsupported scene_id: {self.scene_id}. Currently only scene_id=1 and scene_id=2 are supported.")
         observation = self._get_curr_image()
         info = {"success": None, "state": self.state.copy()}
         return observation, info
@@ -211,13 +214,13 @@ class FrankaEnv(Env):
         cv2.destroyAllWindows()
 
 
-def main():
+def main(scene_id=1):
     # Create environment
-    env = FrankaEnv()
+    env = FrankaEnv(scene_id=scene_id)
     
     # Reset environment
     obs, info = env.reset()
-    print("Environment initialized. Current state:", env.state)
+    print(f"Environment initialized with scene {scene_id}. Current state:", env.state)
     print("State encoding: [gripper, teapot, bowl, sponge, plate, mug_location, mug_content]")
     print("\nControls:")
     print("0: Pick teapot")
@@ -292,4 +295,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Franka Environment")
+    parser.add_argument("--scene_id", type=int, default=1, help="Scene ID to initialize the environment with (default: 1)")
+    args = parser.parse_args()
+    
+    main(scene_id=args.scene_id)
