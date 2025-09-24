@@ -1,0 +1,48 @@
+env: franka
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: &id001 {}
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Teapot
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  all_plans:
+  - - (pickfromtable robot sponge plate)
+    - (place robot sponge)
+    - (pick robot teapot)
+    - (stack robot teapot plate)

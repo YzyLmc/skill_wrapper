@@ -20,6 +20,34 @@
     \ \n\t)"
 
 ? !Skill
+  name: PickFromTable
+  params: []
+  semantics:
+    robot: robot that executes this skill.
+    pickupable: the object to be picked up.
+    plate: the plate upon which the object is placed.
+  types:
+  - robot
+  - pickupable
+  - plate
+: - "(:action PickFromTable\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable ?plate - plate)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty ?robot)\
+    \ \n\t\t\t(not (is_holding ?robot ?pickupable))\
+    \ \n\t\t\t(is_on_top ?pickupable ?plate)\
+    \ \n\t\t\t(not (plate_empty ?plate))\
+    \ \n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty ?robot))\
+    \ \n\t\t\t(is_holding ?robot ?pickupable)\
+    \ \n\t\t\t(not (is_on_top ?pickupable ?plate))\
+    \ \n\t\t\t(plate_empty ?plate)\
+    \ \n\t\t)\ 
+    \ \n\t)"
+
+
+? !Skill
   name: Place
   params: []
   semantics:
