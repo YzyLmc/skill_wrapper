@@ -43,7 +43,7 @@ predicates:
     semantic: The `plate` object is cleaned after wiping.
     types: &id003 !!python/tuple
     - plate
-  truth_value: false
+  truth_value: true
 
 - predicate: !Predicate
     name: is_on_top

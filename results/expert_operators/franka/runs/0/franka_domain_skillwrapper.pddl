@@ -3,20 +3,20 @@
 	(:requirements :adl :typing :equality :conditional-effects)
 
 	(:types
-		container - object
-		robot - object
-		Bowl - pickupable
-		plate - object
-		Plate - plate
-		sponge - object
-		pourable - object
-		Teapot - pourable
-		Robot - robot
-		Sponge - pickupable
-		Teapot - pickupable
 		Mug - container
+		container - object
+		plate - object
+		Bowl - pickupable
+		robot - object
 		Sponge - sponge
+		sponge - object
 		pickupable - object
+		Sponge - pickupable
+		Robot - robot
+		Plate - plate
+		Teapot - pickupable
+		Teapot - pourable
+		pourable - object
 	)
 
 	(:predicates
@@ -86,6 +86,7 @@
 			(is_holding ?robot ?pickupable) 
 			(not (is_on_top ?pickupable ?plate)) 
 			(plate_empty ?plate) 
+			(is_clean ?plate) 
 		) 
 		:effect (and 
 			(hand_empty ?robot) 

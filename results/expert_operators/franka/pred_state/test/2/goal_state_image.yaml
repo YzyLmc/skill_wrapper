@@ -54,7 +54,7 @@ predicates:
     types: &id004 !!python/tuple
     - pickupable
     - plate
-  truth_value: false
+  truth_value: true
 - predicate: !Predicate
     name: is_on_top
     params: !!python/tuple
@@ -70,7 +70,7 @@ predicates:
     - Plate
     semantic: A `pickupable` object is on top of a `plate` object.
     types: *id004
-  truth_value: true
+  truth_value: false
 
 - predicate: !Predicate
     name: container_filled
