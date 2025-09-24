@@ -108,6 +108,7 @@
     \ \n\t\t\t(is_holding ?robot ?pickupable)\
     \ \n\t\t\t(not (is_on_top ?pickupable ?plate))\
     \ \n\t\t\t(plate_empty ?plate)\
+    \ \n\t\t\t(is_clean ?plate)\
     \ \n\t\t)\
     \ \n\t\t:effect (and\
     \ \n\t\t\t(hand_empty ?robot)\
