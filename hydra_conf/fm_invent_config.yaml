@@ -3,10 +3,10 @@ defaults:
   - game: base_game
   
 env: burger
-model: gpt-4o-2024-11-20
+model: gpt-5
 run_idx: 0
 num_iter: 1
-max_retry_time: 3
+max_retry_time: 1
 invent_pred_only: false
 skill_seq_only: false
 iter_idx: null

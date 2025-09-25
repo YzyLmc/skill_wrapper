@@ -5,7 +5,7 @@ defaults:
   - game: test_game
   
 env: dorfl
-model: gpt-4o
+model: gpt-5
 max_steps: 10
 init_img: null
 goal_img: null

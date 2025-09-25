@@ -247,3 +247,45 @@ burger:
     Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
 
     One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] (Using only these parameter types: [PARAMETERS]):
+
+franka:
+
+  precond: |
+    You are an expert in accurately writing PDDL language. Your task is to propose a new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+    
+    A manipulation robot agent with one arm is executing skills in a tabletop environment. The images are from the camera right in front of it. The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. This suggests that the existing predicate set is insufficient to capture the preconditions of this skill.
+
+    Predicates should meet these criteria:
+    - The predicate must be grounded in visual state only (e.g., “the object is cooked” “robot is holding object”).
+    - Describe object state or spatial relations relevant to task success.
+    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.)
+    - The predicates must be binary, unary, or nullary.
+    - The semantic meaning of the predicate should be as specific as possible to avoid ambiguity, e.g., no disjunctive statements ("or") are allowed, and no ambiguise terms like "part of", "close to", etc.
+
+    Format your output as follows:
+    `predicate_name(parameters)`: semantic_meaning.
+    [PRED_LIST]
+    [TRIED_PRED]
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+    One new predicate candidate for improving the representation of the precondition for [LIFTED_SKILL] (Using only these parameter types: [PARAMETERS]):
+
+  eff: |
+    You are an expert in accurately writing PDDL language. Your task is to propose a new high-level predicate and its semantic meaning based on the visual comparison of the two input images taken before each execution.
+
+    A manipulation robot agent with one arm is executing skills in a tabletop environment. The robot has been programmed with the skill [LIFTED_SKILL] two times. In the first execution, the grounded skill [GROUNDED_SKILL_1] [SUCCESS_1], and in the second execution, [GROUNDED_SKILL_2] [SUCCESS_2]. This suggests that the existing predicate set is insufficient to capture the effect of this skill.
+
+    Predicates should meet these criteria:
+    - The predicate must be grounded in visual state only (e.g., “the object is cooked” “robot is holding object”).
+    - Describe object state or spatial relations relevant to task success.
+    - Do not infer properties like affordances (path is clear, path is collision free, object is graspable, etc.)
+    - The predicates must be binary, unary, or nullary.
+    - The semantic meaning of the predicate should be as specific as possible to avoid ambiguity, e.g., no disjunctive statements ("or") are allowed, and no ambiguise terms like "part of", "close to", etc.
+
+    Format your output as follows:
+    `predicate_name(parameters)`: semantic_meaning.
+    [PRED_LIST]
+    [TRIED_PRED]
+    Avoid duplicates or near-duplicates of existing predicates and rejected predicates. Reason over using a paragraph and generate the predicate and the semantic meaning in the given format in a separate line.
+
+    One new predicate candidate for improving the representation of the effect for [LIFTED_SKILL] (Using only these parameter types: [PARAMETERS]):

@@ -116,8 +116,8 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=["gpt-4o-2024-08-06", 'gpt-4o-2024-11-20', 'o3', 'gpt-5'], default='gpt-5')
     parser.add_argument("--run_idx", type=int, default=0, help="index of the run that produce the best operators.")
     parser.add_argument("--iter_idx", type=int, help="index of iter run the full refinement and proposal loop.")
-    parser.add_argument("--baseline", type=str, choices=["fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
-    parser.add_argument("--dataset", type=str, choices=["test", "test1", "suc", "imp", "in_domain", "easy_0", "easy_1", "easy_2", "easy_3", "hard_0", "hard_1", "hard_2", "hard_3", "impossible_0", "impossible_1"], help="the name of the dataset")
+    parser.add_argument("--baseline", type=str, choices=[ "fm_invent", "oracle_predicates", "expert_operators", "random_explore", "skillwrapper"], help="the name of the baseline")
+    parser.add_argument("--dataset", type=str, choices=["generalization", "test", "test1", "suc", "imp", "in_domain", "easy_0", "easy_1", "easy_2", "easy_3", "hard_0", "hard_1", "hard_2", "hard_3", "impossible_0", "impossible_1"], help="the name of the dataset")
     parser.add_argument("--env", type=str, choices=["dorfl", "franka", "spot", "burger"], default="burger", help="the name of the environment")
 
     parser.add_argument("--input_modality", type=str, choices=["image", "text"], default="image", help="the input modality of the state")

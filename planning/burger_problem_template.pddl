@@ -1,5 +1,6 @@
 (define (problem burger_problem) (:domain <domain>)
 (:objects
+    Robot - Robot
     TopBun - TopBun
     BottomBun - BottomBun
     Lettuce - Lettuce

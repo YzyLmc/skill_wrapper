@@ -1,8 +1,30 @@
 # prompts for evaluating the truth value of predicates
 ---
-franka: |
-  A robot arm is executing skills in a table top setting. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
+franka_cache: |
+  A robot arm is executing skills in a table top setting. The arm has a gripper only in white and blue color, so if you see anything yellow in a different color around it, that's a sponge grasped by the gripper. Given the following visual observation from the camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
   `[LIFTED_PRED]`: [SEMANTIC]
+
+franka_step_1: |
+  Given the current observation of the table top setting, the object types, and the list of predicates, what are the true grounded predicates? You don't need to list the negation of a predicate as true predicate if that predicate is false, and you don't need to mention any other predicates not in the list. The arm has a gripper only in white and blue color, so if you see anything yellow in a different color around it, that's a sponge grasped by the gripper. (If you didn't see that object presented in the scene, any predicate involving that object is false. If the robot holds an object, it will go back to the neutral position with the object in its gripper.)  (Remember: object types are NOT predicates! Only apply objects with the correct type to the predicates!)
+
+  Objects:
+  [OBJECTS]
+
+  Predicates: 
+  [PREDICATES]
+
+  - Teapot is a purple toy teapot, and will be shown on a side view when grasped by the arm. 
+  - Bowl is a white paper bowl with blue and orange borders. 
+  - Sponge is a green and yellow kitchen sponge with the green side facing up, and will be squeezed when grasped by the arm *IF YOU SEE ANYTHING YELLOW ABOVE THE TABLE, THAT IS THE SPONGE!* (*If you see anything yellow, like a yellow foam attached to the gripper, that must be the Sponge being picked up!*). 
+  - Mug is a white mug with small cartoon patterns. 
+  - Plate is a flat pink plate with some black tapes on it, and it can have a blob of sticky white ranch on the center of the plate, which makes it dirty. However, the black tapes on it are decoration but not dirt. If you didn't see anything pink, that means the plate is not in the scene.
+
+franka_step_2: |
+  List only the predicates that are true from this response, and list them in the format of predicate_name(arg1, arg2, ...) in separate lines with no any additional formatting. If the response contains typos of object names or redundant indices, you should correct them. Correct object names are: [OBJECT_NAMES]. If the response include redundent predicates that are not in this list, you should filter them. Here is the only legal predicate list: [[PRED_NAMES]]. The response is:
+  """
+  [RESPONSE]
+  ""
+  True predicates with no formatting:
 
 burger_cache: |
   A kitchen robot with a torso and an arm is executing skills in a simulated kitchen domain. The images are from a top-down view of the kitchen, and overlapping objects means the objects are stacked together (higher objects in the stack will occlude lower objects for visualization purpose). Each object has annotation of its name that does not cause any obstruction. 
@@ -34,10 +56,11 @@ dorfl_step_1: |
   [PREDICATES]
 
 dorfl_step_2: |
-  Summarize what the true grounded predicates are from this response, and list them in the format of predicate_name(arg1, arg2, ...) in separate lines with no any formatting. If the response contains typos of object names or redundant indices, you should correct them. Correct object names are: [OBJECT_NAMES]. If the response include redundent predicates that are not in this list, you should filter them. Correct predicates are: [PRED_NAMES]. The response is:
+  Summarize what the true grounded predicates are from this response, and list them in the format of predicate_name(arg1, arg2, ...) in separate lines with no any additional formatting. If the response contains typos of object names or redundant indices, you should correct them. Correct object names are: [OBJECT_NAMES]. If the response include redundent predicates that are not in this list, you should filter them. Legal predicates are: [PRED_NAMES]. The response is:
   """
   [RESPONSE]
   ""
+  True predicates:
 
 spot: |
   A quadraped robot with an arm on its back is executing mobile manipulation tasks. Given the following egocentric observation from the robot's body camera, what is the truth value of the predicate `[GROUNDED_PRED]`? Answer with reasoning and True or False in a separate line. Do not assume the object is in the scene.
