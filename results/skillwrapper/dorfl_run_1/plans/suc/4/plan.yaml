@@ -1,0 +1,15 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: LeftArmPick
+      params:
+      - robot
+      - peanutbutterjar
+      semantics: {}
+      types:
+      - robot
+      - openable
+  all_plans:
+  - - (leftarmpick_152 peanutbutterjar robot)

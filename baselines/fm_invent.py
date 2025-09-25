@@ -112,7 +112,7 @@ def generate_pred_pool(tasks, task_config, lifted_pred_list: list[Predicate], mo
     # parse the parameters from the output string into predicate parameters
     # e.g., "At(obj, loc)"" -> Predicate(name="At", types=["obj", "loc"])
     [print(p, p.semantic) for p in new_pred_list]
-    breakpoint()
+    # breakpoint()
     return new_pred_list
 
 def propose_and_execute(skill_sequence_proposing: SkillSequenceProposing, tasks, lifted_pred_list, skill2operator, save_dir, cfg):
@@ -162,14 +162,14 @@ def invent_predicates_for_all_skill(pred_pool: list[Predicate], model, lifted_pr
     for lifted_pred in pred_pool:
         # not predicate with same name
         dup = [pred for pred in lifted_pred_list if pred.name == lifted_pred.name]
-        if dup:
+        if not len(dup):
             lifted_pred_list.append(lifted_pred)
 
     grounded_predicate_truth_value_log = update_empty_predicates(model, tasks, lifted_pred_list, type_dict, grounded_predicate_truth_value_log, env)
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict)
     filtered_lifted_pred_list = filter_predicates(skill2operator, lifted_pred_list, grounded_predicate_truth_value_log, tasks, type_dict)
     skill2operator = calculate_operators_for_all_skill(skill2operator, grounded_predicate_truth_value_log, tasks, type_dict, filtered_lifted_pred_list)
-    
+    breakpoint()
     return skill2operator, filtered_lifted_pred_list, grounded_predicate_truth_value_log
 
 @hydra.main(version_base=None, config_path="../hydra_conf", config_name="fm_invent_config")

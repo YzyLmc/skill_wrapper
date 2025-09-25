@@ -1,0 +1,2716 @@
+env: burger
+plan_method: kstar
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: &id001 {}
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Lettuce
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+  - - !Skill
+      name: Pick
+      params:
+      - Robot
+      - TopBun
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - TopBun
+      - BottomBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - Patty
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Stack
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Pick
+      params:
+      - Robot
+      - Lettuce
+      - TopBun
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - station
+    - !Skill
+      name: Cut
+      params:
+      - Robot
+      - Lettuce
+      - CuttingBoard
+      semantics: *id001
+      types:
+      - robot
+      - cuttable
+    - !Skill
+      name: Cook
+      params:
+      - Robot
+      - Patty
+      - Stove
+      semantics: *id001
+      types:
+      - robot
+      - cookable
+  all_plans:
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 10
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 10
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - cook robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    cost: 10
+  - actions:
+    - pickfromstation robot topbun stove
+    - place robot topbun stove
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - place robot topbun stove
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot topbun bottombun
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce patty
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce patty
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - place robot topbun stove
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - cook robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot topbun bottombun
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce patty
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce patty
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun lettuce
+    - pickfromstack robot topbun lettuce
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstack robot lettuce topbun
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot topbun bottombun
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - cook robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty cuttingboard
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12
+  - actions:
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce patty
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - cook robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstack robot lettuce topbun
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cook robot patty stove
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun lettuce
+    - pickfromstack robot topbun lettuce
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - cook robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    cost: 12
+  - actions:
+    - pickfromstation robot topbun stove
+    - stack robot topbun bottombun
+    - pickfromstack robot lettuce patty
+    - stack robot lettuce topbun
+    - pickfromstation robot patty cuttingboard
+    - place robot patty stove
+    - pickfromstation robot patty stove
+    - place robot patty stove
+    - pickfromstack robot lettuce topbun
+    - place robot lettuce cuttingboard
+    - cut robot lettuce cuttingboard
+    - cook robot patty stove
+    cost: 12

@@ -137,8 +137,11 @@ def main(cfg: DictConfig):
                 else:
                     next_img = input("Enter path to the current image (or type 'done' to finish): ").strip()
 
+                    if next_img == 'done':
+                        break
+
                     if not os.path.exists(next_img):
-                        logging("Image path does not exist. Try again.")
+                        logging.info("Image path does not exist. Try again.")
                         continue
                     logging.info(f"Next image: {next_img}")
 

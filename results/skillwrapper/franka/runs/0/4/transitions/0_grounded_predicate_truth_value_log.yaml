@@ -1,0 +1,4177 @@
+2025-9-24-4-39-20:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id003 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: &id004 !!python/tuple
+        - robot
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id005 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: &id001 !!python/tuple
+        - robot
+        - pickupable
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id006 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id007 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id008 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: &id009 !!python/tuple
+        - container
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id010 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: &id011 !!python/tuple
+        - plate
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id012 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: &id002 !!python/tuple
+        - pickupable
+        - plate
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id013 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id014 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id015 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: &id016 !!python/tuple
+        - plate
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id017 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: &id018 !!python/tuple
+        - plate
+      truth_value: true
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id003
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id005
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id006
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id007
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id008
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id010
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id012
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id013
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id014
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id015
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id017
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id003
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id005
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id006
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id007
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id008
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id010
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id012
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id013
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id014
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id015
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id017
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id003
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id005
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id006
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id007
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id008
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id010
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id012
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id013
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id014
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id015
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id017
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id003
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id005
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id006
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id007
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id008
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id010
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id012
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id013
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id014
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id015
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id017
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id019 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id020 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id021 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id022 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id023 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id024 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id025 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id026 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id027 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id028 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id029 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id019
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id020
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id021
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id022
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id023
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id024
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id025
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id026
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id027
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id028
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id029
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id030 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id031 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id032 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id033 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id034 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id035 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id036 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id037 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id038 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id039 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id040 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id030
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id031
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id032
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id033
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id034
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id035
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id036
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id037
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id038
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id039
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id040
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id030
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id031
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id032
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id033
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id034
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id035
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id036
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id037
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id038
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id039
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id040
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  15: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id030
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id031
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id032
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id033
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id034
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id035
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id036
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id037
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id038
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id039
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id040
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  16: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id030
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id031
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id032
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id033
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id034
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id035
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id036
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id037
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id038
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id039
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id040
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+2025-9-24-4-39-37:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id041 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id042 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id043 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id044 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id045 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id046 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id047 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id048 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id049 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id050 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id051 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id041
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id042
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id043
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id044
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id045
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id046
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id047
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id048
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id049
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id050
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id051
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id041
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id042
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id043
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id044
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id045
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id046
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id047
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id048
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id049
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id050
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id051
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id041
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id042
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id043
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id044
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id045
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id046
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id047
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id048
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id049
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id050
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id051
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: true
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id052 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id053 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id054 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id055 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id056 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id057 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id058 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id059 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id060 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id061 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id062 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id052
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id053
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id054
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id055
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id056
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id057
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id058
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id059
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id060
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id061
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id062
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  15: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id063 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id064 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id065 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id066 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id067 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id068 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id069 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id070 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id071 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id072 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id073 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+  16: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id063
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id064
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id065
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id066
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id067
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id068
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: true
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id069
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id070
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id071
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id072
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id073
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: true
+2025-9-24-4-39-43:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: &id074 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: &id075 !!python/tuple
+        - Robot
+        - Teapot
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id076 !!python/tuple
+        - Robot
+        - Sponge
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: &id077 !!python/tuple
+        - Robot
+        - Bowl
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: &id078 !!python/tuple
+        - Mug
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: &id079 !!python/tuple
+        - Plate
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id080 !!python/tuple
+        - Teapot
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id081 !!python/tuple
+        - Sponge
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: &id082 !!python/tuple
+        - Bowl
+        - Plate
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: &id083 !!python/tuple
+        - Plate
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: &id084 !!python/tuple
+        - Plate
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  15: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false
+  16: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: gripper_empty
+        params: *id074
+        semantic: "the robot\u2019s gripper is visually not holding any object."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: holding
+        params: *id075
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id076
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: holding
+        params: *id077
+        semantic: "the robot\u2019s gripper is visually grasping the specified pickupable\
+          \ object."
+        types: *id001
+      truth_value: false
+    - predicate: !Predicate
+        name: mug_full
+        params: *id078
+        semantic: "the mug container\u2019s visible contents reach the inner rim or\
+          \ above (no empty interior region is visible above the contents)."
+        types: *id009
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_top_unoccupied
+        params: *id079
+        semantic: no object is visibly resting in contact with the upper surface of
+          the specified plate (its food area is empty).
+        types: *id011
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id080
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id081
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: stacked_on
+        params: *id082
+        semantic: the specified pickupable object is visually resting in direct contact
+          with the upper surface of the specified plate.
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_has_visible_residue
+        params: *id083
+        semantic: "the specified plate\u2019s upper surface contains at least one\
+          \ contiguous region within its food area whose appearance differs from the\
+          \ plate\u2019s base surface (visible residue to be wiped)."
+        types: *id016
+      truth_value: false
+    - predicate: !Predicate
+        name: plate_is_dirty
+        params: *id084
+        semantic: The plate object is visible dirty with food trace on it (to be wiped).
+        types: *id018
+      truth_value: false

@@ -3,13 +3,13 @@
 	(:requirements :adl :typing :equality :conditional-effects)
 
 	(:types
+		openable - object
+		utensil - object
 		robot - object
-		PeanutButterJar - openable
 		food - object
 		Robot - robot
-		utensil - object
 		Bread - food
-		openable - object
+		PeanutButterJar - openable
 		Knife - utensil
 	)
 

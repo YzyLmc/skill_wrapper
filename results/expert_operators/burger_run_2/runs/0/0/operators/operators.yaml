@@ -1,0 +1,152 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+  types:
+  - pickupable
+: - "(:action Pick\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?pickupable)\
+    \ \n\t\t\t(not (is_holding ?pickupable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(not (obj_free ?pickupable))\
+    \ \n\t\t\t(is_holding ?pickupable)\
+    \ \n\t\t)\n\t)"
+
+
+? !Skill
+  name: PickFromStack
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    pickupable: the object below an object being picked up.
+  types:
+  - pickupable
+  - pickupable
+: - "(:action PickFromStack\n\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - pickupable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(is_on_top ?top ?bot)\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(obj_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\
+    \ \n\t\t\t(not (is_on_top ?top ?bot))\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: PickFromStation
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    station: the station below an object being picked up.
+  types:
+  - pickupable
+  - station
+: - "(:action PickFromStation\n\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - station)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(is_on_station ?top ?bot)\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(not (hand_empty))\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(station_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\
+    \ \n\t\t\t(not (is_on_station ?top ?bot))\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be dropped.
+    station: the receptacle onto which object is dropped.
+  types:
+  - pickupable
+  - station
+: - "(:action Place\n\
+    \ \t\t:parameters (?robot - robot ?pickupable - pickupable ?station - station)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?pickupable)\ 
+    \ \n\t\t\t(station_free ?station)\
+    \ \n\t\t\t(not (obj_free ?pickupable))\n\t\t)\
+    \ \n\t\t:effect (and\ 
+    \ \n\t\t\t(not (is_holding ?pickupable))\ 
+    \ \n\t\t\t(obj_free ?pickupable)\
+    \ \n\t\t\t(hand_empty)\ 
+    \ \n\t\t\t(not (station_free ?station))\
+    \ \n\t\t\t(is_on_station ?pickupable ?station)\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    pickupable: The first object to put on the other.
+    pickupable: The second object to be underneath the first one.
+  types:
+  - pickupable
+  - pickupable
+: - "(:action Stack\n\
+    \ \t\t:parameters (?robot - robot ?top - pickupable ?bot - pickupable)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(is_holding ?top)\
+    \ \n\t\t\t(obj_free ?bot)\
+    \ \n\t\t\t(not (obj_free ?top))\n\t\t)\
+    \ \n\t\t:effect (and\ 
+    \ \n\t\t\t(not (is_holding ?top))\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?top)\
+    \ \n\t\t\t(not (obj_free ?bot))\
+    \ \n\t\t\t(is_on_top ?top ?bot)\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: Cut
+  params: []
+  semantics:
+    cuttable: the object that is being cut.
+    cuttingboard: the object that the cuttable is placed on top of.
+  types:
+  - cuttable
+  - cuttingboard
+: - "(:action Cut\n\
+    \ \t:parameters (?robot - robot ?cuttable - cuttable ?board - cuttingboard)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?cuttable)\
+    \ \n\t\t\t(is_on_station ?cuttable ?board)\
+    \ \n\t\t\t(not (is_cut ?cuttable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_cut ?cuttable)\
+    \ \n\t\t)\n\t)"
+
+? !Skill
+  name: Cook
+  params: []
+  semantics:
+    cookable: the object that is being cooked.
+    cooker: the object that will be used for cooking
+  types:
+  - cookable
+: - "(:action Cook\n\
+    \ \t:parameters (?robot - robot ?cookable - cookable ?cooker - cooker)\
+    \ \n\t\t:precondition (and\
+    \ \n\t\t\t(hand_empty)\
+    \ \n\t\t\t(obj_free ?cookable)\
+    \ \n\t\t\t(is_on_station ?cookable ?cooker)\
+    \ \n\t\t\t(not (is_cooked ?cookable))\n\t\t)\
+    \ \n\t\t:effect (and\
+    \ \n\t\t\t(is_cooked ?cookable)\
+    \ \n\t\t)\n\t)"

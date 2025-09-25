@@ -1,0 +1,605 @@
+env: franka
+plan_method: kstar
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: &id001 {}
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - sponge
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - sponge
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - sponge
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - sponge
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - sponge
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  - - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Place
+      params:
+      - robot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pick
+      params:
+      - robot
+      - teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    - !Skill
+      name: Pour
+      params:
+      - robot
+      - teapot
+      - bowl
+      semantics: *id001
+      types:
+      - robot
+      - pourable
+      - container
+    - !Skill
+      name: Stack
+      params:
+      - robot
+      - teapot
+      - plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+  all_plans:
+  - actions:
+    - pick_2 sponge bowl teapot plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug bowl teapot robot
+    - stack_5 bowl teapot sponge plate robot
+    cost: 5
+  - actions:
+    - pick_2 teapot bowl sponge plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug bowl teapot robot
+    - stack_5 bowl teapot sponge plate robot
+    cost: 5
+  - actions:
+    - pick_2 sponge bowl teapot plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug sponge teapot robot
+    - stack_5 bowl teapot sponge plate robot
+    cost: 5
+  - actions:
+    - pick_2 sponge bowl teapot plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug bowl teapot robot
+    - stack_5 sponge teapot bowl plate robot
+    cost: 5
+  - actions:
+    - pick_2 teapot bowl sponge plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug sponge teapot robot
+    - stack_5 bowl teapot sponge plate robot
+    cost: 5
+  - actions:
+    - pick_2 teapot bowl sponge plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug bowl teapot robot
+    - stack_5 sponge teapot bowl plate robot
+    cost: 5
+  - actions:
+    - pick_2 sponge bowl teapot plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug sponge teapot robot
+    - stack_5 sponge teapot bowl plate robot
+    cost: 5
+  - actions:
+    - pick_2 teapot bowl sponge plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug sponge teapot robot
+    - stack_5 sponge teapot bowl plate robot
+    cost: 5
+  - actions:
+    - pick_2 sponge bowl teapot plate robot
+    - place_3 bowl robot
+    - pick_1 bowl robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug sponge teapot robot
+    - stack_5 bowl teapot sponge plate robot
+    cost: 7
+  - actions:
+    - pick_1 teapot robot
+    - place_3 teapot robot
+    - pick_2 teapot bowl sponge plate robot
+    - place_3 bowl robot
+    - pick_1 teapot robot
+    - pour_4 mug bowl teapot robot
+    - stack_5 sponge teapot bowl plate robot
+    cost: 7

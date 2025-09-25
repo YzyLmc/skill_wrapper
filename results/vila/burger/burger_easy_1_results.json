@@ -1,0 +1,39 @@
+{
+    "0": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "1": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true
+        ]
+    },
+    "2": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "3": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "4": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": [
+            false
+        ]
+    },
+    "avg_planning_budget": 6.666666666666667,
+    "success_rate": 0.2
+}

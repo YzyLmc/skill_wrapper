@@ -1,0 +1,89 @@
+? !Skill
+  name: Pick
+  params: []
+  semantics:
+    pickupable: the object to be picked up.
+    robot: robot that executes this skill.
+  types:
+  - robot
+  - pickupable
+: - "(:action Pick_1 \n:parameters ( ?pickupable_p1 - pickupable  ?robot_p2 - robot\
+    \ )\n:precondition (and \n\t(gripper_empty ?robot_p2 )\n\t(not (holding ?robot_p2\
+    \ ?pickupable_p1))\n) \n:effect (and \n \t(holding ?robot_p2 ?pickupable_p1) \n\
+    \t(not (gripper_empty ?robot_p2 ))\n ) \n)\n"
+  - "(:action Pick_2 \n:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p1 -\
+    \ pickupable  ?pickupable_p3 - pickupable  ?plate_p4 - plate  ?robot_p2 - robot\
+    \ )\n:precondition (and \n\t(not (= ?pickupable_p0 ?pickupable_p1))\n\t(not (=\
+    \ ?pickupable_p0 ?pickupable_p3))\n\t(not (= ?pickupable_p1 ?pickupable_p3))\n\
+    \t(gripper_empty ?robot_p2 )\n\t(stacked_on ?pickupable_p1 ?plate_p4)\n\t(not\
+    \ (holding ?robot_p2 ?pickupable_p0))\n\t(not (holding ?robot_p2 ?pickupable_p1))\n\
+    \t(not (holding ?robot_p2 ?pickupable_p3))\n\t(not (plate_is_dirty ?plate_p4 ))\n\
+    \t(not (plate_top_unoccupied ?plate_p4 ))\n) \n:effect (and \n \t(holding ?robot_p2\
+    \ ?pickupable_p1) \n\t(plate_top_unoccupied ?plate_p4 ) \n\t(not (gripper_empty\
+    \ ?robot_p2 ))\n\t(not (stacked_on ?pickupable_p1 ?plate_p4))\n ) \n)\n"
+? !Skill
+  name: Place
+  params: []
+  semantics:
+    pickupable: the object to be placed back.
+    robot: robot that executes this skill.
+  types:
+  - robot
+  - pickupable
+: - "(:action Place_3 \n:parameters ( ?pickupable_p1 - pickupable  ?robot_p2 - robot\
+    \ )\n:precondition (and \n\t(holding ?robot_p2 ?pickupable_p1)\n\t(not (gripper_empty\
+    \ ?robot_p2 ))\n) \n:effect (and \n \t(gripper_empty ?robot_p2 ) \n\t(not (holding\
+    \ ?robot_p2 ?pickupable_p1))\n ) \n)\n"
+? !Skill
+  name: Pour
+  params: []
+  semantics:
+    container: the container to pour liquid to.
+    pourable: the object to pour liquid from.
+    robot: robot that executes this skill.
+  types:
+  - robot
+  - pourable
+  - container
+: - "(:action Pour_4 \n:parameters ( ?container_p0 - container  ?pickupable_p0 - pickupable\
+    \  ?pickupable_p3 - pourable  ?robot_p2 - robot )\n:precondition (and \n\t(not\
+    \ (= ?pickupable_p0 ?pickupable_p3))\n\t(holding ?robot_p2 ?pickupable_p3)\n\t\
+    (not (gripper_empty ?robot_p2 ))\n\t(not (holding ?robot_p2 ?pickupable_p0))\n\
+    \t(not (mug_full ?container_p0 ))\n) \n:effect (and \n \t(mug_full ?container_p0\
+    \ ) \n ) \n)\n"
+? !Skill
+  name: Stack
+  params: []
+  semantics:
+    pickupable: the pickupable object that can be stacked on a plate.
+    plate: the plate that the pickupable object can be stacked on.
+    robot: robot that executes this skill.
+  types:
+  - robot
+  - pickupable
+  - plate
+: - "(:action Stack_5 \n:parameters ( ?pickupable_p0 - pickupable  ?pickupable_p1\
+    \ - pickupable  ?pickupable_p3 - pickupable  ?plate_p4 - plate  ?robot_p2 - robot\
+    \ )\n:precondition (and \n\t(not (= ?pickupable_p0 ?pickupable_p1))\n\t(not (=\
+    \ ?pickupable_p0 ?pickupable_p3))\n\t(not (= ?pickupable_p1 ?pickupable_p3))\n\
+    \t(holding ?robot_p2 ?pickupable_p1)\n\t(plate_top_unoccupied ?plate_p4 )\n\t\
+    (not (gripper_empty ?robot_p2 ))\n\t(not (holding ?robot_p2 ?pickupable_p0))\n\
+    \t(not (holding ?robot_p2 ?pickupable_p3))\n\t(not (plate_is_dirty ?plate_p4 ))\n\
+    \t(not (stacked_on ?pickupable_p1 ?plate_p4))\n) \n:effect (and \n \t(gripper_empty\
+    \ ?robot_p2 ) \n\t(stacked_on ?pickupable_p1 ?plate_p4) \n\t(not (holding ?robot_p2\
+    \ ?pickupable_p1))\n\t(not (plate_top_unoccupied ?plate_p4 ))\n ) \n)\n"
+? !Skill
+  name: Wipe
+  params: []
+  semantics:
+    plate: the dirty plate need to be wiped.
+    robot: robot that executes this skill.
+    sponge: sponge object used to wipe the plate.
+  types:
+  - robot
+  - sponge
+  - plate
+: - "(:action Wipe_6 \n:parameters ( ?pickupable_p0 - sponge  ?plate_p4 - plate\
+    \  ?robot_p2 - robot )\n:precondition (and \n\t(holding ?robot_p2 ?pickupable_p0)\n\
+    \t(plate_is_dirty ?plate_p4 )\n\t(not (gripper_empty ?robot_p2 ))\n) \n:effect\
+    \ (and \n \t(not (plate_is_dirty ?plate_p4 ))\n ) \n)\n"

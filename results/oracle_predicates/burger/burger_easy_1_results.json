@@ -1,0 +1,50 @@
+{
+    "0": {
+        "planning_budget": 0,
+        "solved": true,
+        "suc": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        ]
+    },
+    "1": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": []
+    },
+    "2": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": []
+    },
+    "3": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": []
+    },
+    "4": {
+        "planning_budget": 10,
+        "solved": false,
+        "suc": []
+    },
+    "avg_planning_budget": 6.666666666666667,
+    "success_rate": 0.2
+}

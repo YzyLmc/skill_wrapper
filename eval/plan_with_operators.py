@@ -25,10 +25,11 @@ else:
 from src.utils import save_to_file, load_from_file
 from src.data_structure import PredicateState, Skill
 
-planner_path = '/home/ziyi/git/downward/fast-downward.py'
 
-# if os.environ["FD_PATH"]:
-#     planner_path = os.environ["FD_PATH"]
+if "FD_PATH" in os.environ:
+    planner_path = os.environ["FD_PATH"]
+else:
+    raise ValueError("Please set the environment variable FD_PATH to the path of the Fast Downward planner.")
 
 algorithms = ['astar', 'eager', 'lazy', ]
 heuristics = ['lmcut', 'ff', ]

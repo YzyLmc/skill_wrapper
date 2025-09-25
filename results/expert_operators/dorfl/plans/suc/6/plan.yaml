@@ -1,0 +1,15 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: {}
+      types:
+      - robot
+      - openable
+  all_plans:
+  - - (open robot peanutbutterjar)

@@ -1,0 +1,44 @@
+- !Predicate
+  name: gripper-empty
+  params: !!python/tuple []
+  semantic: "the robot\u2019s end-effector has no pickupable object held within the\
+    \ gripper; the space between the gripper fingers is visually empty."
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: holding
+  params: !!python/tuple []
+  semantic: "the robot\u2019s end-effector is visibly grasping the specified pickupable;\
+    \ the object is within the gripper fingers or clamped by the tool and supported\
+    \ by it (i.e., not resting freely on the surface)."
+  types: !!python/tuple
+  - robot
+  - pickupable
+- !Predicate
+  name: on_plate
+  params: !!python/tuple []
+  semantic: "the pickupable is visibly resting directly on the top surface of the\
+    \ specified plate; it is above the plate, in physical contact with it, and the\
+    \ 2D projection of the pickupable\u2019s base overlaps the plate\u2019s interior\
+    \ area (indicating the plate is supporting the pickupable)."
+  types: !!python/tuple
+  - pickupable
+  - plate
+- !Predicate
+  name: plate-top-unoccupied
+  params: !!python/tuple []
+  semantic: "no pickupable is visibly resting on the specified plate\u2019s top surface;\
+    \ i.e., there is no pickupable in contact with and overlapping the plate\u2019\
+    s interior area."
+  types: !!python/tuple
+  - plate
+
+- !Predicate
+  name: container-has-visible-contents
+  params: !!python/tuple []
+  semantic: "the interior cavity of the specified container is visibly occupied by
+    liquid or loose material; content is observable within the rim/opening, indicating
+    the container is not empty."
+  types: !!python/tuple
+  - container
+

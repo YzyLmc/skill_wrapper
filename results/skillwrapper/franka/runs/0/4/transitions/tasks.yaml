@@ -1,0 +1,619 @@
+2025-9-24-4-39-20:
+  '0':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/0.png
+    skill: null
+    success: null
+  '1':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/1.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: &id001 {}
+      types:
+      - robot
+      - pickupable
+    success: false
+  '10':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/10.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Bowl
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: false
+  '11':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/11.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '12':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/12.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Bowl
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: true
+  '13':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/13.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '14':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/14.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Teapot
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: false
+  '15':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/15.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '16':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/16.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '2':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/2.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '3':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/3.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: false
+  '4':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/4.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Teapot
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: false
+  '5':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/5.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Bowl
+      - Plate
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: true
+  '6':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/6.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '7':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/7.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Bowl
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '8':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/8.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+  '9':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-20/9.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id001
+      types:
+      - robot
+      - pickupable
+    success: true
+2025-9-24-4-39-37:
+  '0':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/0.png
+    skill: null
+    success: null
+  '1':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/1.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: &id002 {}
+      types:
+      - robot
+      - pickupable
+    success: true
+  '10':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/10.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '11':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/11.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '12':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/12.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '13':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/13.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: true
+  '14':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/14.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: true
+  '15':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/15.png
+    skill: !Skill
+      name: Wipe
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: *id002
+      types:
+      - robot
+      - sponge
+      - plate
+    success: false
+  '16':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/16.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '2':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/2.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: false
+  '3':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/3.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '4':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/4.png
+    skill: !Skill
+      name: Stack
+      params:
+      - Robot
+      - Teapot
+      - Plate
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+      - plate
+    success: false
+  '5':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/5.png
+    skill: !Skill
+      name: Wipe
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: *id002
+      types:
+      - robot
+      - sponge
+      - plate
+    success: true
+  '6':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/6.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+  '7':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/7.png
+    skill: !Skill
+      name: Wipe
+      params:
+      - Robot
+      - Sponge
+      - Plate
+      semantics: *id002
+      types:
+      - robot
+      - sponge
+      - plate
+    success: false
+  '8':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/8.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: true
+  '9':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-37/9.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id002
+      types:
+      - robot
+      - pickupable
+    success: false
+2025-9-24-4-39-43:
+  '0':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/0.png
+    skill: null
+    success: null
+  '1':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/1.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: &id003 {}
+      types:
+      - robot
+      - pickupable
+    success: true
+  '10':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/10.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '11':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/11.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '12':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/12.png
+    skill: !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id003
+      types:
+      - robot
+      - pourable
+      - container
+    success: false
+  '13':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/13.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '14':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/14.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '15':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/15.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '16':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/16.png
+    skill: !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id003
+      types:
+      - robot
+      - pourable
+      - container
+    success: false
+  '2':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/2.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: false
+  '3':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/3.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: false
+  '4':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/4.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '5':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/5.png
+    skill: !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id003
+      types:
+      - robot
+      - pourable
+      - container
+    success: false
+  '6':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/6.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Sponge
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '7':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/7.png
+    skill: !Skill
+      name: Place
+      params:
+      - Robot
+      - Sponge
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '8':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/8.png
+    skill: !Skill
+      name: Pick
+      params:
+      - Robot
+      - Teapot
+      semantics: *id003
+      types:
+      - robot
+      - pickupable
+    success: true
+  '9':
+    image: results/skillwrapper/franka/runs/0/3_partial/transitions/2025-9-24-4-39-43/9.png
+    skill: !Skill
+      name: Pour
+      params:
+      - Robot
+      - Teapot
+      - Mug
+      semantics: *id003
+      types:
+      - robot
+      - pourable
+      - container
+    success: true

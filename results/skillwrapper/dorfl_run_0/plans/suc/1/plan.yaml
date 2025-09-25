@@ -1,0 +1,41 @@
+env: dorfl
+plan_method: kstar
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Scoop
+      params:
+      - robot
+      - knife
+      - peanutbutterjar
+      semantics: &id001 {}
+      types:
+      - robot
+      - utensil
+      - openable
+    - !Skill
+      name: Spread
+      params:
+      - robot
+      - knife
+      - peanutbutterjar
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - food
+    - !Skill
+      name: Drop
+      params:
+      - robot
+      - knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+  all_plans:
+  - actions:
+    - scoop_156 peanutbutterjar robot knife
+    - spread_157 bread peanutbutterjar robot knife
+    - drop_154 robot knife
+    cost: 3

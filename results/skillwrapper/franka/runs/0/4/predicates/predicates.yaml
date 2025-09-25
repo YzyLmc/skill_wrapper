@@ -1,0 +1,43 @@
+- !Predicate
+  name: gripper_empty
+  params: !!python/tuple []
+  semantic: the robot's gripper is visually not holding any object.
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: holding
+  params: !!python/tuple []
+  semantic: the robot's gripper is visually grasping the specified pickupable object.
+  types: !!python/tuple
+  - robot
+  - pickupable
+- !Predicate
+  name: mug_full
+  params: !!python/tuple []
+  semantic: the mug container's visible contents reach the inner rim or above (no
+    empty interior region is visible above the contents).
+  types: !!python/tuple
+  - container
+- !Predicate
+  name: plate_top_unoccupied
+  params: !!python/tuple []
+  semantic: no object is visibly resting in contact with the upper surface of the
+    specified plate (its food area is empty).
+  types: !!python/tuple
+  - plate
+- !Predicate
+  name: stacked_on
+  params: !!python/tuple []
+  semantic: the specified pickupable object is visually resting in direct contact
+    with the upper surface of the specified plate.
+  types: !!python/tuple
+  - pickupable
+  - plate
+- !Predicate
+  name: plate_is_dirty
+  params: !!python/tuple []
+  semantic: the specified plate's upper surface contains visible food traces (possibly
+    ranch sauce) whose appearance differs from the plate's base surface (visible residue
+    to be wiped).
+  types: !!python/tuple
+  - plate

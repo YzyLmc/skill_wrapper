@@ -1,0 +1,15 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: {}
+      types:
+      - robot
+      - utensil
+  all_plans:
+  - - (drop robot knife)
