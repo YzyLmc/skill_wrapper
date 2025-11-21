@@ -1,0 +1,362 @@
+2025-9-22-1-13-38:
+  '0':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/0.png
+    skill: null
+    success: null
+  '1':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/1.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: &id001 {}
+      types:
+      - robot
+      - utensil
+    success: false
+  '10':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/10.png
+    skill: !Skill
+      name: LeftArmPick
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    success: true
+  '11':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/11.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    success: false
+  '12':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/12.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    success: true
+  '13':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/13.png
+    skill: !Skill
+      name: RightArmPick
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    success: false
+  '14':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/14.png
+    skill: !Skill
+      name: LeftArmPick
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    success: false
+  '2':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/2.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    success: false
+  '3':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/3.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    success: false
+  '4':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/4.png
+    skill: !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - openable
+    success: false
+  '5':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/5.png
+    skill: !Skill
+      name: RightArmPick
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    success: true
+  '6':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/6.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    success: true
+  '7':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/7.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - openable
+    success: false
+  '8':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/8.png
+    skill: !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - openable
+    success: false
+  '9':
+    image: results/skillwrapper/dorfl/runs/0/0_partial/transitions/2025-9-22-1-13-38/9.png
+    skill: !Skill
+      name: Spread
+      params:
+      - Robot
+      - Knife
+      - Bread
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+      - food
+    success: false
+2025-9-22-1-58-34:
+  '0':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/0.png
+    skill: null
+    success: null
+  '1':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/1.png
+    skill: !Skill
+      name: LeftArmPick
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: &id002 {}
+      types:
+      - robot
+      - openable
+    success: true
+  '10':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/10.png
+    skill: !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+      - openable
+    success: false
+  '11':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/11.png
+    skill: !Skill
+      name: Spread
+      params:
+      - Robot
+      - Knife
+      - Bread
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+      - food
+    success: false
+  '12':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/12.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+    success: false
+  '13':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/13.png
+    skill: !Skill
+      name: LeftArmPick
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - openable
+    success: false
+  '14':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/14.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - openable
+    success: false
+  '2':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/2.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - openable
+    success: true
+  '3':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/3.png
+    skill: !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+      - openable
+    success: false
+  '4':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/4.png
+    skill: !Skill
+      name: Spread
+      params:
+      - Robot
+      - Knife
+      - Bread
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+      - food
+    success: false
+  '5':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/5.png
+    skill: !Skill
+      name: RightArmPick
+      params:
+      - Robot
+      - Knife
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+    success: true
+  '6':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/6.png
+    skill: !Skill
+      name: Drop
+      params:
+      - Robot
+      - Knife
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+    success: true
+  '7':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/7.png
+    skill: !Skill
+      name: Scoop
+      params:
+      - Robot
+      - Knife
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+      - openable
+    success: false
+  '8':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/8.png
+    skill: !Skill
+      name: Open
+      params:
+      - Robot
+      - PeanutButterJar
+      semantics: *id002
+      types:
+      - robot
+      - openable
+    success: false
+  '9':
+    image: results/skillwrapper/dorfl/runs/0/1_partial/transitions/2025-9-22-1-58-34/9.png
+    skill: !Skill
+      name: RightArmPick
+      params:
+      - Robot
+      - Knife
+      semantics: *id002
+      types:
+      - robot
+      - utensil
+    success: false

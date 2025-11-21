@@ -1,0 +1,156 @@
+- !Skill
+  name: RightArmPick
+  params:
+  - Robot
+  - Knife
+  semantics: &id001 {}
+  types:
+  - robot
+  - utensil
+- !Skill
+  name: Open
+  params:
+  - Robot
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - openable
+- !Skill
+  name: LeftArmPick
+  params:
+  - Robot
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - openable
+- !Skill
+  name: Scoop
+  params:
+  - Robot
+  - Knife
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - openable
+- !Skill
+  name: Spread
+  params:
+  - Robot
+  - Knife
+  - Bread
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - food
+- !Skill
+  name: RightArmPick
+  params:
+  - Robot
+  - Knife
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+- !Skill
+  name: Drop
+  params:
+  - Robot
+  - Knife
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+- !Skill
+  name: Scoop
+  params:
+  - Robot
+  - Knife
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - openable
+- !Skill
+  name: Spread
+  params:
+  - Robot
+  - Knife
+  - Bread
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - food
+- !Skill
+  name: Drop
+  params:
+  - Robot
+  - Knife
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+- !Skill
+  name: Scoop
+  params:
+  - Robot
+  - Knife
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - openable
+- !Skill
+  name: Open
+  params:
+  - Robot
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - openable
+- !Skill
+  name: LeftArmPick
+  params:
+  - Robot
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - openable
+- !Skill
+  name: Spread
+  params:
+  - Robot
+  - Knife
+  - Bread
+  semantics: *id001
+  types:
+  - robot
+  - utensil
+  - food
+- !Skill
+  name: Open
+  params:
+  - Robot
+  - PeanutButterJar
+  semantics: *id001
+  types:
+  - robot
+  - openable
+- !Skill
+  name: RightArmPick
+  params:
+  - Robot
+  - Knife
+  semantics: *id001
+  types:
+  - robot
+  - utensil

@@ -1,0 +1,998 @@
+2025-9-22-1-13-38:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id001 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: &id002 !!python/tuple
+        - robot
+        - openable
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id003 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: &id004 !!python/tuple
+        - robot
+        - utensil
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id005 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: &id006 !!python/tuple
+        - robot
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id007 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: &id008 !!python/tuple
+        - openable
+      truth_value: false
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: false
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id009 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id010 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id011 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id012 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id009
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id010
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id011
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id012
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id009
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id010
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id011
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id012
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id009
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id010
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id011
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id012
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id013 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id014 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id015 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id016 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id017 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id018 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id019 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id020 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id017
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id018
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id019
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id020
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id017
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id018
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id019
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id020
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+2025-9-22-1-58-34:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id021 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id022 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id023 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id024 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id021
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id022
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id023
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id024
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id021
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id022
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id023
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id024
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: false
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id025 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id026 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id027 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id028 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true

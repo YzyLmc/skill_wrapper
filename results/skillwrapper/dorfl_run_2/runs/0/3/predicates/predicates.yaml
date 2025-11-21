@@ -1,0 +1,88 @@
+- !Predicate
+  name: InLeftGripper
+  params: !!python/tuple []
+  semantic: the openable object is currently grasped by the robot's left gripper,
+    with the gripper fingers in contact enclosing the object.
+  types: !!python/tuple
+  - robot
+  - openable
+- !Predicate
+  name: InRightGripper
+  params: !!python/tuple []
+  semantic: the utensil is physically enclosed and held by the robot's right gripper,
+    with the gripper fingers in contact around the utensil.
+  types: !!python/tuple
+  - robot
+  - utensil
+- !Predicate
+  name: RightGripperEmpty
+  params: !!python/tuple []
+  semantic: the robot's right gripper is visibly not holding anything.the fingers
+    are not enclosing or contacting any part of the utensil, and the grasping space
+    is empty.
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: LidOff
+  params: !!python/tuple []
+  semantic: the openable object's lid/cover is not attached; its opening is exposed
+    and the interior is visible.
+  types: !!python/tuple
+  - openable
+- !Predicate
+  name: LeftGripperEmpty
+  params: !!python/tuple []
+  semantic: the robot's left gripper is visibly not holding any object. the fingers
+    are not enclosing or contacting anything and the grasping space is clear.
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: InContainer
+  params: !!python/tuple []
+  semantic: the utensil is located within another object's interior volume, with part
+    of it below that object's rim and laterally enclosed by its walls.
+  types: !!python/tuple
+  - utensil
+- !Predicate
+  name: OpenableOnTable
+  params: !!python/tuple []
+  semantic: the openable object's base is in contact with and supported from below
+    by the tabletop (resting stably on the surface).
+  types: !!python/tuple
+  - openable
+- !Predicate
+  name: UtensilOnTable
+  params: !!python/tuple []
+  semantic: the utensil is resting on and supported by the tabletop, with part of
+    it visibly contacting the table surface (i.e., not enclosed within another object).
+  types: !!python/tuple
+  - utensil
+- !Predicate
+  name: Closed
+  params: !!python/tuple []
+  semantic: the openable's lid is visibly attached and covering its opening; the interior
+    is not visible.
+  types: !!python/tuple
+  - openable
+- !Predicate
+  name: Coated
+  params: !!python/tuple []
+  semantic: a visible layer or clump of material adheres to the utensil's working
+    end (e.g., the blade shows a smear that was absent before).
+  types: !!python/tuple
+  - utensil
+- !Predicate
+  name: SpreadOn
+  params: !!python/tuple []
+  semantic: the food's top surface shows a visible layer or patch of spread material
+    (e.g., a smear) on it.
+  types: !!python/tuple
+  - food
+- !Predicate
+  name: HeldByRobot
+  params: !!python/tuple []
+  semantic: the openable object is currently enclosed and held by any of the robot's
+    grippers (left or right), with the gripper fingers in contact around the object.
+  types: !!python/tuple
+  - robot
+  - openable

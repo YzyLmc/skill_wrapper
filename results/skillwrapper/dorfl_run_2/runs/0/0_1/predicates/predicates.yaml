@@ -1,0 +1,56 @@
+- !Predicate
+  name: InLeftGripper
+  params: !!python/tuple []
+  semantic: "the openable object is currently grasped by the robot\u2019s left gripper,\
+    \ with the gripper fingers in contact enclosing the object."
+  types: !!python/tuple
+  - robot
+  - openable
+- !Predicate
+  name: InRightGripper
+  params: !!python/tuple []
+  semantic: "in the failed attempt, the knife appears to be in the red cup while the\
+    \ right gripper is open and empty; in the successful attempt, the right gripper\
+    \ visibly encloses and holds the knife. For a Drop(robot, utensil) skill to work,\
+    \ the robot must already be holding the utensil. The existing predicate only covers\
+    \ the left gripper with openable objects, not a utensil in the right gripper.\
+    \ Thus a predicate capturing \u201Cutensil held in right gripper\u201D would explain\
+    \ the outcome difference.\n\nInRightGripper(robot, utensil): the utensil is physically\
+    \ enclosed and held by the robot\u2019s right gripper, with the gripper fingers\
+    \ in contact around the utensil."
+  types: !!python/tuple
+  - robot
+  - utensil
+- !Predicate
+  name: RightGripperEmpty
+  params: !!python/tuple []
+  semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+    the fingers are not enclosing or contacting any part of the utensil, and the grasping\
+    \ space is empty."
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: LidOff
+  params: !!python/tuple []
+  semantic: "the openable object\u2019s lid/cover is not attached; its opening is\
+    \ exposed and the interior is visible."
+  types: !!python/tuple
+  - openable
+- !Predicate
+  name: LeftGripperEmpty
+  params: !!python/tuple []
+  semantic: "in the successful case, the left gripper is open and empty while the\
+    \ peanut-butter jar sits on the table; in the failed case, the left gripper is\
+    \ already holding the jar. This suggests the pick skill should require the left\
+    \ gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`: the robot\u2019\
+    s left gripper is visibly not holding any object\u2014the fingers are not enclosing\
+    \ or contacting anything and the grasping space is clear."
+  types: !!python/tuple
+  - robot
+- !Predicate
+  name: InContainer
+  params: !!python/tuple []
+  semantic: "the utensil is located within another object\u2019s interior volume,\
+    \ with part of it below that object\u2019s rim and laterally enclosed by its walls."
+  types: !!python/tuple
+  - utensil

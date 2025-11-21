@@ -1,0 +1,82 @@
+? !Skill
+  name: LeftArmPick
+  params: []
+  semantics:
+    openable: the openable object to be picked up.
+    robot: the robot that performs the pick action with its left arm.
+  types:
+  - robot
+  - openable
+: - "(:action LeftArmPick_72 \n:parameters ( ?openable_p0 - openable  ?robot_p1 -\
+    \ robot )\n:precondition (and \n\t(LeftGripperEmpty ?robot_p1 )\n\t(not (InLeftGripper\
+    \ ?robot_p1 ?openable_p0))\n\t(not (LidOff ?openable_p0 ))\n) \n:effect (and \n\
+    \  ) \n)\n"
+? !Skill
+  name: RightArmPick
+  params: []
+  semantics:
+    robot: the robot that performs the pick action with its right arm.
+    utensil: the utensil to be picked up.
+  types:
+  - robot
+  - utensil
+: - "(:action RightArmPick_73 \n:parameters ( ?robot_p1 - robot  ?utensil_p0 - utensil\
+    \ )\n:precondition (and \n\t(InContainer ?utensil_p0 )\n\t(RightGripperEmpty ?robot_p1\
+    \ )\n\t(not (InRightGripper ?robot_p1 ?utensil_p0))\n) \n:effect (and \n \t(InRightGripper\
+    \ ?robot_p1 ?utensil_p0) \n\t(not (InContainer ?utensil_p0 ))\n\t(not (RightGripperEmpty\
+    \ ?robot_p1 ))\n ) \n)\n"
+? !Skill
+  name: Drop
+  params: []
+  semantics:
+    robot: the robot that performs the drop action.
+    utensil: the utensil to be dropped.
+  types:
+  - robot
+  - utensil
+: - "(:action Drop_74 \n:parameters ( ?robot_p1 - robot  ?utensil_p0 - utensil )\n\
+    :precondition (and \n\t(InRightGripper ?robot_p1 ?utensil_p0)\n\t(not (InContainer\
+    \ ?utensil_p0 ))\n\t(not (RightGripperEmpty ?robot_p1 ))\n) \n:effect (and \n\
+    \ \t(RightGripperEmpty ?robot_p1 ) \n\t(not (InRightGripper ?robot_p1 ?utensil_p0))\n\
+    \ ) \n)\n"
+? !Skill
+  name: Open
+  params: []
+  semantics:
+    openable: the container that can be opened.
+    robot: the robot that performs the open action.
+  types:
+  - robot
+  - openable
+: - "(:action Open_75 \n:parameters ( ?openable_p0 - openable  ?robot_p1 - robot )\n\
+    :precondition (and \n\t(LeftGripperEmpty ?robot_p1 )\n\t(not (InLeftGripper ?robot_p1\
+    \ ?openable_p0))\n\t(not (LidOff ?openable_p0 ))\n) \n:effect (and \n \t(InLeftGripper\
+    \ ?robot_p1 ?openable_p0) \n\t(LidOff ?openable_p0 ) \n\t(not (LeftGripperEmpty\
+    \ ?robot_p1 ))\n ) \n)\n"
+  - "(:action Open_76 \n:parameters ( ?openable_p0 - openable  ?robot_p1 - robot )\n\
+    :precondition (and \n\t(LeftGripperEmpty ?robot_p1 )\n\t(not (InLeftGripper ?robot_p1\
+    \ ?openable_p0))\n\t(not (LidOff ?openable_p0 ))\n) \n:effect (and \n  ) \n)\n"
+? !Skill
+  name: Scoop
+  params: []
+  semantics:
+    openable: the container that can be opened to be scooped from.
+    robot: the robot that performs the scoop action.
+    utensil: the utensil used to scoop from a container.
+  types:
+  - robot
+  - utensil
+  - openable
+: []
+? !Skill
+  name: Spread
+  params: []
+  semantics:
+    food: the food that need ingredients to be spread on.
+    robot: the robot that performs the spread action.
+    utensil: the utensil used to spread ingredients on food.
+  types:
+  - robot
+  - utensil
+  - food
+: []

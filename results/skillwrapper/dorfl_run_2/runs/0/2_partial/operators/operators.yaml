@@ -1,0 +1,92 @@
+? !Skill
+  name: LeftArmPick
+  params: []
+  semantics:
+    openable: the openable object to be picked up.
+    robot: the robot that performs the pick action with its left arm.
+  types:
+  - robot
+  - openable
+: - "(:action LeftArmPick_167 \n:parameters ( ?openable_p1 - openable  ?robot_p0 -\
+    \ robot )\n:precondition (and \n\t(Closed ?openable_p1 )\n\t(LeftGripperEmpty\
+    \ ?robot_p0 )\n\t(OpenableOnTable ?openable_p1 )\n\t(not (InLeftGripper ?robot_p0\
+    \ ?openable_p1))\n\t(not (LidOff ?openable_p1 ))\n) \n:effect (and \n  ) \n)\n"
+? !Skill
+  name: RightArmPick
+  params: []
+  semantics:
+    robot: the robot that performs the pick action with its right arm.
+    utensil: the utensil to be picked up.
+  types:
+  - robot
+  - utensil
+: - "(:action RightArmPick_168 \n:parameters ( ?robot_p0 - robot  ?utensil_p0 - utensil\
+    \ )\n:precondition (and \n\t(InContainer ?utensil_p0 )\n\t(RightGripperEmpty ?robot_p0\
+    \ )\n\t(not (Coated ?utensil_p0 ))\n\t(not (InRightGripper ?robot_p0 ?utensil_p0))\n\
+    \t(not (UtensilOnTable ?utensil_p0 ))\n) \n:effect (and \n  ) \n)\n"
+? !Skill
+  name: Drop
+  params: []
+  semantics:
+    robot: the robot that performs the drop action.
+    utensil: the utensil to be dropped.
+  types:
+  - robot
+  - utensil
+: - "(:action Drop_169 \n:parameters ( ?utensil_p0 - utensil )\n:precondition (and\
+    \ \n\t(not (UtensilOnTable ?utensil_p0 ))\n) \n:effect (and \n  ) \n)\n"
+? !Skill
+  name: Open
+  params: []
+  semantics:
+    openable: the container that can be opened.
+    robot: the robot that performs the open action.
+  types:
+  - robot
+  - openable
+: - "(:action Open_170 \n:parameters ( ?openable_p1 - openable  ?robot_p0 - robot\
+    \  ?utensil_p0 - utensil )\n:precondition (and \n\t(Closed ?openable_p1 )\n\t\
+    (LeftGripperEmpty ?robot_p0 )\n\t(OpenableOnTable ?openable_p1 )\n\t(RightGripperEmpty\
+    \ ?robot_p0 )\n\t(not (InLeftGripper ?robot_p0 ?openable_p1))\n\t(not (InRightGripper\
+    \ ?robot_p0 ?utensil_p0))\n\t(not (LidOff ?openable_p1 ))\n) \n:effect (and \n\
+    \  ) \n)\n"
+? !Skill
+  name: Scoop
+  params: []
+  semantics:
+    openable: the container that can be opened to be scooped from.
+    robot: the robot that performs the scoop action.
+    utensil: the utensil used to scoop from a container.
+  types:
+  - robot
+  - utensil
+  - openable
+: - "(:action Scoop_171 \n:parameters ( ?openable_p1 - openable  ?robot_p0 - robot\
+    \  ?utensil_p0 - utensil )\n:precondition (and \n\t(Closed ?openable_p1 )\n\t\
+    (InContainer ?utensil_p0 )\n\t(LeftGripperEmpty ?robot_p0 )\n\t(OpenableOnTable\
+    \ ?openable_p1 )\n\t(RightGripperEmpty ?robot_p0 )\n\t(not (Coated ?utensil_p0\
+    \ ))\n\t(not (InLeftGripper ?robot_p0 ?openable_p1))\n\t(not (InRightGripper ?robot_p0\
+    \ ?utensil_p0))\n\t(not (LidOff ?openable_p1 ))\n\t(not (UtensilOnTable ?utensil_p0\
+    \ ))\n) \n:effect (and \n \t(Coated ?utensil_p0 ) \n\t(InLeftGripper ?robot_p0\
+    \ ?openable_p1) \n\t(InRightGripper ?robot_p0 ?utensil_p0) \n\t(LidOff ?openable_p1\
+    \ ) \n\t(not (Closed ?openable_p1 ))\n\t(not (InContainer ?utensil_p0 ))\n\t(not\
+    \ (LeftGripperEmpty ?robot_p0 ))\n\t(not (OpenableOnTable ?openable_p1 ))\n\t\
+    (not (RightGripperEmpty ?robot_p0 ))\n ) \n)\n"
+? !Skill
+  name: Spread
+  params: []
+  semantics:
+    food: the food that need ingredients to be spread on.
+    robot: the robot that performs the spread action.
+    utensil: the utensil used to spread ingredients on food.
+  types:
+  - robot
+  - utensil
+  - food
+: - "(:action Spread_172 \n:parameters ( ?food_p0 - food  ?openable_p1 - openable\
+    \  ?robot_p0 - robot  ?utensil_p0 - utensil )\n:precondition (and \n\t(Coated\
+    \ ?utensil_p0 )\n\t(InLeftGripper ?robot_p0 ?openable_p1)\n\t(InRightGripper ?robot_p0\
+    \ ?utensil_p0)\n\t(not (InContainer ?utensil_p0 ))\n\t(not (LeftGripperEmpty ?robot_p0\
+    \ ))\n\t(not (RightGripperEmpty ?robot_p0 ))\n\t(not (SpreadOn ?food_p0 ))\n\t\
+    (not (UtensilOnTable ?utensil_p0 ))\n) \n:effect (and \n \t(SpreadOn ?food_p0\
+    \ ) \n ) \n)\n"

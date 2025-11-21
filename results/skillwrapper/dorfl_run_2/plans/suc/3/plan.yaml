@@ -1,0 +1,7 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - []
+  all_plans:
+  - []

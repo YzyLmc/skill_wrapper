@@ -1,0 +1,35 @@
+env: dorfl
+plan_method: fd
+0:
+  all_parsed_plans:
+  - - !Skill
+      name: LeftArmPick
+      params:
+      - robot
+      - peanutbutterjar
+      semantics: &id001 {}
+      types:
+      - robot
+      - openable
+    - !Skill
+      name: RightArmPick
+      params:
+      - robot
+      - knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+    - !Skill
+      name: Drop
+      params:
+      - robot
+      - knife
+      semantics: *id001
+      types:
+      - robot
+      - utensil
+  all_plans:
+  - - (leftarmpick_1 peanutbutterjar robot)
+    - (rightarmpick_2 robot knife)
+    - (drop_3 robot knife)

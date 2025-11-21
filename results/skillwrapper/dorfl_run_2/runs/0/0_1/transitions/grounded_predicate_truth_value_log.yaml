@@ -1,0 +1,1846 @@
+2025-9-22-1-13-38:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id001 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: &id002 !!python/tuple
+        - robot
+        - openable
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id003 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: &id004 !!python/tuple
+        - robot
+        - utensil
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id005 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: &id006 !!python/tuple
+        - robot
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id007 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: &id008 !!python/tuple
+        - openable
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id009 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: &id010 !!python/tuple
+        - robot
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: &id011 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: &id012 !!python/tuple
+        - utensil
+      truth_value: true
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id009
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id011
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id009
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id011
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id001
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id003
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id005
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id007
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id009
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id011
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: false
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id013 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id014 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id015 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id016 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id017 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: &id018 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id017
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id018
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id017
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id018
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id017
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id018
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id017
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id018
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id013
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id014
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id015
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id016
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id017
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id018
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id019 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id020 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id021 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id022 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id023 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: &id024 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id019
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id020
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id021
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id022
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id023
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id024
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+2025-9-22-1-58-34:
+  0: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id025 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id026 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id027 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id028 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id029 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: &id030 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  1: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id029
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id030
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  2: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id029
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id030
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  3: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id025
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: false
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id026
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id027
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id028
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: false
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id029
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: true
+    - predicate: !Predicate
+        name: InContainer
+        params: *id030
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  4: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: true
+  5: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: true
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: false
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  6: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id031 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id032 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id033 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id034 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id035 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: &id036 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  7: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id031
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id032
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id033
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id034
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id035
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id036
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  8: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  9: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: &id037 !!python/tuple
+        - Robot
+        - PeanutButterJar
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: &id038 !!python/tuple
+        - Robot
+        - Knife
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: &id039 !!python/tuple
+        - Robot
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: &id040 !!python/tuple
+        - PeanutButterJar
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: &id041 !!python/tuple
+        - Robot
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: &id042 !!python/tuple
+        - Knife
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  10: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id037
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id038
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id039
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id040
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id041
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id042
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  11: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id037
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id038
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id039
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id040
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id041
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id042
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  12: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id037
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id038
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id039
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id040
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id041
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id042
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  13: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id037
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id038
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id039
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id040
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id041
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id042
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
+  14: !PredicateState
+    predicates:
+    - predicate: !Predicate
+        name: InLeftGripper
+        params: *id037
+        semantic: "the openable object is currently grasped by the robot\u2019s left\
+          \ gripper, with the gripper fingers in contact enclosing the object."
+        types: *id002
+      truth_value: true
+    - predicate: !Predicate
+        name: InRightGripper
+        params: *id038
+        semantic: "in the failed attempt, the knife appears to be in the red cup while\
+          \ the right gripper is open and empty; in the successful attempt, the right\
+          \ gripper visibly encloses and holds the knife. For a Drop(robot, utensil)\
+          \ skill to work, the robot must already be holding the utensil. The existing\
+          \ predicate only covers the left gripper with openable objects, not a utensil\
+          \ in the right gripper. Thus a predicate capturing \u201Cutensil held in\
+          \ right gripper\u201D would explain the outcome difference.\n\nInRightGripper(robot,\
+          \ utensil): the utensil is physically enclosed and held by the robot\u2019\
+          s right gripper, with the gripper fingers in contact around the utensil."
+        types: *id004
+      truth_value: false
+    - predicate: !Predicate
+        name: RightGripperEmpty
+        params: *id039
+        semantic: "the robot\u2019s right gripper is visibly not holding anything\u2014\
+          the fingers are not enclosing or contacting any part of the utensil, and\
+          \ the grasping space is empty."
+        types: *id006
+      truth_value: true
+    - predicate: !Predicate
+        name: LidOff
+        params: *id040
+        semantic: "the openable object\u2019s lid/cover is not attached; its opening\
+          \ is exposed and the interior is visible."
+        types: *id008
+      truth_value: true
+    - predicate: !Predicate
+        name: LeftGripperEmpty
+        params: *id041
+        semantic: "in the successful case, the left gripper is open and empty while\
+          \ the peanut-butter jar sits on the table; in the failed case, the left\
+          \ gripper is already holding the jar. This suggests the pick skill should\
+          \ require the left gripper to be empty prior to execution.\n\n`LeftGripperEmpty(robot)`:\
+          \ the robot\u2019s left gripper is visibly not holding any object\u2014\
+          the fingers are not enclosing or contacting anything and the grasping space\
+          \ is clear."
+        types: *id010
+      truth_value: false
+    - predicate: !Predicate
+        name: InContainer
+        params: *id042
+        semantic: "the utensil is located within another object\u2019s interior volume,\
+          \ with part of it below that object\u2019s rim and laterally enclosed by\
+          \ its walls."
+        types: *id012
+      truth_value: false
